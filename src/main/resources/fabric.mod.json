@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "g4mespeed-expansions",
+  "version": "${version}",
+
+  "name": "G4mespeed Expansions",
+  "description": "Awesome expansions to the G4mespeed mod by G4me4u",
+  "authors": [
+    "G4me4u"
+  ],
+  "contact": {
+    "homepage": "https://youtube.com/user/G4me4u"
+  },
+
+  "license": "CC-BY-ND-4.0",
+  "icon": "assets/g4mespeed/expansions/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+  },
+  "mixins": [
+    "g4mespeed.expansions.mixins.json"
+  ],
+
+  "depends": {
+  	"minecraft": "1.14.x"
+  }
+}
