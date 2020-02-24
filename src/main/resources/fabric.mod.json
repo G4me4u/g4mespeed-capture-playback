@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "g4mespeed-expansions",
+  "id": "g4mespeed-planner",
   "version": "${version}",
 
-  "name": "G4mespeed Expansions",
-  "description": "Awesome expansions to the G4mespeed mod by G4me4u",
+  "name": "G4mespeed Planner",
+  "description": "Sexy piston layout planner for the G4mespeed mod by G4me4u",
   "authors": [
     "G4me4u"
   ],
@@ -13,16 +13,20 @@
   },
 
   "license": "CC-BY-ND-4.0",
-  "icon": "assets/g4mespeed/expansions/icon.png",
+  "icon": "assets/g4mespeed/planner/icon.png",
 
   "environment": "*",
   "entrypoints": {
+    "main": [
+      "com.g4mesoft.planner.G4mespeedPlannerMod"
+    ]
   },
   "mixins": [
-    "g4mespeed.expansions.mixins.json"
+    "g4mespeed.planner.mixins.json"
   ],
 
   "depends": {
-  	"minecraft": "1.14.x"
+  	"minecraft": "1.14.x",
+  	"g4mespeed": "*"
   }
 }
