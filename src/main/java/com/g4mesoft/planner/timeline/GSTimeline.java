@@ -18,7 +18,7 @@ public class GSTimeline {
 	}
 	
 	public boolean tryAddEntry(GSTimelineEntry entry) {
-		if (isOverlappingEntries(entry))
+		if (isOverlappingEntries(entry.getStartTime(), entry.getEndTime(), null))
 			return false;
 		
 		entries.add(entry);
@@ -26,17 +26,20 @@ public class GSTimeline {
 		return true;
 	}
 	
-	private boolean isOverlappingEntries(GSTimelineEntry entry) {
+	public boolean isOverlappingEntries(GSBlockEventTime startTime, GSBlockEventTime endTime, GSTimelineEntry ignoreEntry) {
+		if (startTime.isAfter(endTime))
+			return false;
+		
 		for (GSTimelineEntry other : entries) {
-			if (other.isOverlapping(entry))
+			if (other != ignoreEntry && other.isOverlapping(startTime, endTime))
 				return true;
 		}
 		return false;
 	}
 	
-	public GSTimelineEntry getEntryAt(GSBlockEventTime time) {
+	public GSTimelineEntry getEntryAt(GSBlockEventTime time, boolean preciseSearch) {
 		for (GSTimelineEntry entry : entries) {
-			if (entry.containsTimestamp(time))
+			if (entry.containsTimestamp(time, preciseSearch))
 				return entry;
 		}
 		

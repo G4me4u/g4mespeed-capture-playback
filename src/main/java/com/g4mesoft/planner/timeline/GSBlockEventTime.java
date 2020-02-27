@@ -12,6 +12,10 @@ public class GSBlockEventTime {
 		this.gameTime = gameTime;
 		this.blockEventDelay = blockEventDelay;
 	}
+
+	public GSBlockEventTime offsetCopy(long gameTime, int blockEventDelay) {
+		return new GSBlockEventTime(this.gameTime + gameTime, this.blockEventDelay + blockEventDelay);
+	}
 	
 	public boolean isAfter(GSBlockEventTime other) {
 		if (gameTime == other.gameTime)

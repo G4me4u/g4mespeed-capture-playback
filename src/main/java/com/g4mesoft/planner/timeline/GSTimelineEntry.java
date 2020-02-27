@@ -46,16 +46,20 @@ public class GSTimelineEntry {
 		this.endTime = endTime;
 	}
 	
-	public boolean isOverlapping(GSTimelineEntry other) {
-		if (other.startTime.isBefore(startTime) && other.endTime.isAfter(startTime))
+	public boolean isOverlapping(GSBlockEventTime startTime, GSBlockEventTime endTime) {
+		if (startTime.isBefore(this.startTime) && endTime.isAfter(this.startTime))
 			return true;
-		if (other.startTime.isBefore(endTime) && other.endTime.isAfter(endTime))
+		if (startTime.isBefore(this.endTime) && endTime.isAfter(this.endTime))
 			return true;
 		return false;
 	}
 	
-	public boolean containsTimestamp(GSBlockEventTime time) {
-		return !startTime.isAfter(time) && endTime.isAfter(time);
+	public boolean containsTimestamp(GSBlockEventTime time, boolean includeBlockEventDelay) {
+		if (includeBlockEventDelay)
+			return !startTime.isAfter(time) && !endTime.isBefore(time);
+		
+		return time.getGameTime() >= startTime.getGameTime() &&
+		       time.getGameTime() <= endTime.getGameTime();
 	}
 	
 	public GSBlockEventTime getEndTime() {
