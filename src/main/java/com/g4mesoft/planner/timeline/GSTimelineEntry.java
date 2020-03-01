@@ -47,11 +47,7 @@ public class GSTimelineEntry {
 	}
 	
 	public boolean isOverlapping(GSBlockEventTime startTime, GSBlockEventTime endTime) {
-		if (startTime.isBefore(this.startTime) && endTime.isAfter(this.startTime))
-			return true;
-		if (startTime.isBefore(this.endTime) && endTime.isAfter(this.endTime))
-			return true;
-		return false;
+		return !startTime.isAfter(this.endTime) && !endTime.isBefore(this.startTime);
 	}
 	
 	public boolean containsTimestamp(GSBlockEventTime time, boolean includeBlockEventDelay) {

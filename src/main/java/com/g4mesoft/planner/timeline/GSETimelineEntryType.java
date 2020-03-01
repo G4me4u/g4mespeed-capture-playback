@@ -3,7 +3,7 @@ package com.g4mesoft.planner.timeline;
 public enum GSETimelineEntryType {
 
 	EVENT_BOTH(0),
-	EVENT_BEGINNING(1),
+	EVENT_START(1),
 	EVENT_END(2);
 	
 	private final int index;

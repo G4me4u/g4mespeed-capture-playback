@@ -2,6 +2,7 @@ package com.g4mesoft.planner.gui;
 
 import com.g4mesoft.core.GSCoreOverride;
 import com.g4mesoft.gui.GSParentGUI;
+import com.g4mesoft.planner.module.GSPlannerModule;
 import com.g4mesoft.planner.timeline.GSBlockEventTime;
 import com.g4mesoft.planner.timeline.GSETimelineEntryType;
 import com.g4mesoft.planner.timeline.GSTimeline;
@@ -22,7 +23,7 @@ public class GSPlannerGUI extends GSParentGUI {
 	private final GSPositionGUI positionGUI;
 	private final GSTimelineTableGUI timelineTableGUI;
 	
-	public GSPlannerGUI() {
+	public GSPlannerGUI(GSPlannerModule plannerModule) {
 		super(NarratorManager.EMPTY);
 	
 		positionGUI = new GSPositionGUI();
@@ -43,7 +44,7 @@ public class GSPlannerGUI extends GSParentGUI {
 
 		t3.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(2, 2), new GSBlockEventTime(11, 2)));
 		
-		timelineTableGUI = new GSTimelineTableGUI(table);
+		timelineTableGUI = new GSTimelineTableGUI(table, plannerModule);
 	}
 	
 	@Override

@@ -1,12 +1,17 @@
 package com.g4mesoft.planner.gui;
 
+import java.awt.Rectangle;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.lwjgl.glfw.GLFW;
 
+import com.g4mesoft.core.GSCoreOverride;
 import com.g4mesoft.gui.GSParentGUI;
+import com.g4mesoft.planner.module.GSPlannerModule;
 import com.g4mesoft.planner.timeline.GSBlockEventTime;
 import com.g4mesoft.planner.timeline.GSETimelineEntryType;
 import com.g4mesoft.planner.timeline.GSTimeline;
@@ -18,16 +23,17 @@ import net.minecraft.util.math.BlockPos;
 
 public class GSTimelineTableGUI extends GSParentGUI {
 
-	private static final int LABEL_COLUMN_COLOR = 0x40000000;
-	private static final int COLUMN_HEADER_COLOR = 0x80000000;
+	private static final int LABEL_COLUMN_COLOR = 0x80000000;
+	private static final int COLUMN_COLOR = 0x60000000;
+	private static final int DARK_COLUMN_COLOR = 0x60202020;
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
-
+	private static final int ROW_SPACING_COLOR = 0xFF444444;
+	private static final int ROW_HOVER_COLOR = 0x30FFFFFF;
+	private static final int COLUMN_LINE_COLOR = darkenColor(ROW_HOVER_COLOR);
+	
 	private static final int LABEL_COLUMN_WIDTH = 100;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 
-	private static final int ROW_SPACING_COLOR = 0xFF444444;
-	private static final int ROW_HOVER_COLOR = 0x80666666;
-	
 	private static final int DOTTED_LINE_LENGTH = 4;
 	
 	private static final int ROW_SPACING = 1;
@@ -35,40 +41,61 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	
 	private static final int ROW_LABEL_PADDING = 2;
 	private static final int ENTRY_HEIGHT = 8;
+	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	private static final int GAMETIME_COLUMN_WIDTH = 30;
+	private static final int MULTI_COLUMN_WIDTH = 10;
 	private static final int MT_COLUMN_WIDTH = 20;
 	
 	private static final int EXTRA_GAMETICKS = 1;
 	private static final int EXTRA_MICROTICKS = 1;
 	
-	private static final int DRAGGING_AREA_SIZE = 5;
+	private static final int DRAGGING_AREA_SIZE = 6;
 	private static final int DRAGGING_PADDING = 2;
 	private static final int DRAGGING_AREA_COLOR = 0x40FFFFFF;
 	
-	private static final int NOT_RESIZING = 0;
-	private static final int RESIZING_START = 1;
-	private static final int RESIZING_END = 2;
+	private static final int NOT_DRAGGING = 0;
+	private static final int NOT_RESIZING = 1;
+	private static final int RESIZING_START = 2;
+	private static final int RESIZING_END = 3;
 	
 	private final GSTimelineTable table;
+	private final GSPlannerModule plannerModule;
+	
 	private int[] gameTickDurations;
+	private int rowHeight;
 	
 	private GSBlockEventTime startTime;
 	private GSBlockEventTime endTime;
 	
 	private int expandedColumnIndex;
 	
-	private GSTimeline draggedTimeline;
-	private GSTimelineEntry draggedEntry;
-	private int draggingFlag;
+	private int hoveredTimelineIndex;
+	private GSTimeline hoveredTimeline;
+	private GSTimelineEntry hoveredEntry;
 	
+	private int selectedTimelineIndex;
+	private GSTimeline selectedTimeline;
+	private GSTimelineEntry selectedEntry;
+	private boolean toggleSelection;
+	
+	private int draggingFlag;
+	private double draggedMouseX;
 	private GSBlockEventTime draggedStartTime;
 	private GSBlockEventTime draggedEndTime;
-	private double mouseClickedX;
+	private boolean draggedEntryChanged;
 	
-	protected GSTimelineTableGUI(GSTimelineTable table) {
+	private final Map<Integer, Map<Integer, Integer>> timelinesMultiCellCounts;
+	
+	private double currentMouseX;
+	private double currentMouseY;
+	
+	protected GSTimelineTableGUI(GSTimelineTable table, GSPlannerModule plannerModule) {
 		super(NarratorManager.EMPTY);
 		
 		this.table = table;
+		this.plannerModule = plannerModule;
+		
+		timelinesMultiCellCounts = new HashMap<Integer, Map<Integer,Integer>>();
 		
 		initTable();
 	}
@@ -78,9 +105,17 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		
 		expandedColumnIndex = -1;
 		
-		draggedTimeline = null;
-		draggedEntry = null;
-		draggingFlag = NOT_RESIZING;
+		selectedTimeline = null;
+		selectedEntry = null;
+		draggingFlag = NOT_DRAGGING;
+	}
+	
+	@Override
+	@GSCoreOverride
+	public void init() {
+		super.init();
+		
+		rowHeight = Math.max(ROW_LABEL_PADDING * 2 + font.fontHeight, ENTRY_HEIGHT);
 	}
 	
 	private void updateGameTickTimes() {
@@ -102,11 +137,33 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		gameTickDurations = new int[numGameTicks];
 		Arrays.fill(gameTickDurations, 1);
 		
-		for (GSTimeline timeline : timelines) {
+		int[] columnEntryCount = new int[numGameTicks];
+		timelinesMultiCellCounts.clear();
+		
+		for (int timelineIndex = 0; timelineIndex < timelines.size(); timelineIndex++) {
+			Arrays.fill(columnEntryCount, 0);
+			
+			GSTimeline timeline = timelines.get(timelineIndex);
 			for (GSTimelineEntry entry : timeline.getEntries()) {
 				updateGameTickDuration(entry.getStartTime());
 				updateGameTickDuration(entry.getEndTime());
+
+				int startOffset = getGameTimeOffset(entry.getStartTime());
+				int endOffset = getGameTimeOffset(entry.getEndTime());
+			
+				columnEntryCount[startOffset]++;
+				if (startOffset != endOffset)
+					columnEntryCount[endOffset]++;
 			}
+			
+			Map<Integer, Integer> multiCellCount = new HashMap<Integer, Integer>();
+			for (int gameTimeOffset = 0; gameTimeOffset < numGameTicks; gameTimeOffset++) {
+				int entryCount = columnEntryCount[gameTimeOffset];
+				if (entryCount > 1)
+					multiCellCount.put(gameTimeOffset, entryCount);
+			}
+			
+			timelinesMultiCellCounts.put(timelineIndex, multiCellCount);
 		}
 
 		for (int i = 0; i < numGameTicks; i++)
@@ -127,72 +184,16 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	public void renderTranslated(int mouseX, int mouseY, float partialTicks) {
 		super.renderTranslated(mouseX, mouseY, partialTicks);
 	
-		fill(0, COLUMN_HEADER_HEIGHT, LABEL_COLUMN_WIDTH, height, LABEL_COLUMN_COLOR);
+		fill(0, 0, LABEL_COLUMN_WIDTH, height, LABEL_COLUMN_COLOR);
+		fill(LABEL_COLUMN_WIDTH, 0, LABEL_COLUMN_WIDTH + 1, height, COLUMN_LINE_COLOR);
 		
-		renderColumnHeaders();
+		renderColumnHeaders(mouseX, mouseY);
 		renderTimelines(mouseX, mouseY);
 		renderHoveredInfo(mouseX, mouseY);
+		renderHoveredEdge(mouseX, mouseY);
 	}
 	
-	private int getRowHeight() {
-		return Math.max(ROW_LABEL_PADDING * 2 + font.fontHeight, ENTRY_HEIGHT);
-	}
-	
-	private void renderTimelines(int mouseX, int mouseY) {
-		int rowHeight = getRowHeight();
-		
-		int rowEnd = modelToView(endTime, true);
-		
-		List<GSTimeline> timelines = table.getTimelines();
-		for (int timelineIndex = 0; timelineIndex < timelines.size(); timelineIndex++) {
-			int y = getTimelineY(timelineIndex);
-			renderTimeline(timelines.get(timelineIndex), y, rowHeight, mouseX, mouseY);
-			y += rowHeight;
-			fill(0, y, rowEnd, y + ROW_SPACING, ROW_SPACING_COLOR);
-		}
-	}
-	
-	private int getTimelineY(int timelineIndex) {
-		return COLUMN_HEADER_HEIGHT + timelineIndex * (getRowHeight() + ROW_SPACING);
-	}
-	
-	private void renderTimeline(GSTimeline timeline, int y, int rowHeight, int mouseX, int mouseY) {
-		int color = (0xFF << 24) | timeline.getInfo().getColor();
-		
-		if (mouseX >= 0 && mouseX < width && mouseY >= y && mouseY < y + rowHeight + ROW_SPACING)
-			fill(0, y, width, y + rowHeight, ROW_HOVER_COLOR);
-		
-		int entryY = y + (rowHeight - ENTRY_HEIGHT) / 2;
-		for (GSTimelineEntry entry : timeline.getEntries())
-			renderTimelineEntry(entry, entryY, entryY + ENTRY_HEIGHT, color, mouseX, mouseY);
-		
-		String name = trimText(timeline.getInfo().getName(), LABEL_COLUMN_WIDTH);
-		int x = (LABEL_COLUMN_WIDTH - font.getStringWidth(name)) / 2;
-		drawString(font, name, x, y + (rowHeight - font.fontHeight) / 2, color);
-	}
-	
-	private void renderTimelineEntry(GSTimelineEntry entry, int y0, int y1, int color, int mouseX, int mouseY) {
-		int x0 = modelToView(entry.getStartTime(), false);
-		int x1 = modelToView(entry.getEndTime(), true);
-		
-		if (mouseX >= x0 && mouseX < x1 && mouseY >= y0 && mouseY < y1)
-			color = darkenColor(color);
-		
-		fill(x0, y0, x1, y1, darkenColor(color));
-		
-		if (entry.getType() != GSETimelineEntryType.EVENT_BEGINNING)
-			x1 -= ENTRY_BORDER_THICKNESS;
-		if (entry.getType() != GSETimelineEntryType.EVENT_END)
-			x0 += ENTRY_BORDER_THICKNESS;
-		
-		fill(x0, y0 + ENTRY_BORDER_THICKNESS, x1, y1 - ENTRY_BORDER_THICKNESS, color);
-	}
-	
-	private void renderColumnHeaders() {
-		fill(0, 0, width, COLUMN_HEADER_HEIGHT, COLUMN_HEADER_COLOR);
-
-		int gridColor = brightenColor(ROW_SPACING_COLOR);
-		
+	private void renderColumnHeaders(int mouseX, int mouseY) {
 		int x0 = LABEL_COLUMN_WIDTH;
 		for (int gt = 0; gt < gameTickDurations.length; gt++) {
 			int x1 = x0;
@@ -202,8 +203,8 @@ public class GSTimelineTableGUI extends GSParentGUI {
 				x1 += GAMETIME_COLUMN_WIDTH;
 			}
 
-			int color = TEXT_COLOR;
 			int y;
+			int color = TEXT_COLOR;
 			if (expandedColumnIndex != gt) {
 				if (expandedColumnIndex != -1)
 					color = darkenColor(TEXT_COLOR);
@@ -211,26 +212,26 @@ public class GSTimelineTableGUI extends GSParentGUI {
 			} else {
 				y = (COLUMN_HEADER_HEIGHT / 2 - font.fontHeight) / 2;
 			}
-			
-			long gameTime = startTime.getGameTime() + gt;
-			String title = String.format(Locale.ENGLISH, "%dgt", gameTime);
-			drawCenteredString(font, title, (x0 + x1) / 2, y, color);
-			
-			fill(x0, 0, x0 + 1, height, gridColor);
 
+			fill(x0, 0, x1, height, (gt & 0x1) != 0 ? COLUMN_COLOR : DARK_COLUMN_COLOR);
+			drawCenteredString(font, getColumnTitle(gt), (x0 + x1) / 2, y, color);
+			
+			if (mouseX >= x0 && mouseX < x1) {
+				fill(x0, 0, x0 + 1, height, COLUMN_LINE_COLOR);
+				fill(x1 - 1, 0, x1, height, COLUMN_LINE_COLOR);
+			}
+			
 			x0 = x1;
 		}
-		
-		fill(x0, 0, x0 + 1, height, gridColor);
 
 		if (expandedColumnIndex != -1) {
-			int mtGridColor = brightenColor(gridColor);
+			int mtGridColor = brightenColor(COLUMN_LINE_COLOR);
 			
 			int gameTickDuration = gameTickDurations[expandedColumnIndex];
 			int xe = LABEL_COLUMN_WIDTH + expandedColumnIndex * GAMETIME_COLUMN_WIDTH;
 			int ye = COLUMN_HEADER_HEIGHT * 3 / 4 - font.fontHeight / 2;
 			for (int mt = 0; mt < gameTickDuration; mt++) {
-				String title = (mt == gameTickDuration - 1) ? "-" : String.format(Locale.ENGLISH, "%d", mt);
+				String title = (mt == gameTickDuration - 1) ? "-" : Integer.toString(mt);
 				int xx = xe + mt * MT_COLUMN_WIDTH;
 				drawCenteredString(font, title, xx + MT_COLUMN_WIDTH / 2, ye, TEXT_COLOR);
 			
@@ -244,6 +245,10 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		
 		fill(0, COLUMN_HEADER_HEIGHT - 1, Math.min(width, x0), COLUMN_HEADER_HEIGHT, ROW_SPACING_COLOR);
 	}
+
+	private String getColumnTitle(int gameTimeOffset) {
+		return Long.toString(startTime.getGameTime() + gameTimeOffset) + "gt";
+	}
 	
 	private void drawDottedLine(int x, int y0, int y1, int color) {
 		int n = (y1 - y0) / DOTTED_LINE_LENGTH / 2;
@@ -255,58 +260,129 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		}
 	}
 	
-	private void renderHoveredInfo(int mouseX, int mouseY) {
-		int hoveredTimelineIndex = getHoveredTimelineIndex(mouseX, mouseY);
-		if (hoveredTimelineIndex != -1) {
-			GSTimeline hoveredTimeline = table.getTimelines().get(hoveredTimelineIndex);
+	private void renderTimelines(int mouseX, int mouseY) {
+		int endOffset = getGameTimeOffset(endTime);
+		int rowEnd = getColumnX(endOffset) + getColumnWidth(endOffset);
+		
+		List<GSTimeline> timelines = table.getTimelines();
+		for (int timelineIndex = 0; timelineIndex < timelines.size(); timelineIndex++) {
+			int y = getTimelineY(timelineIndex);
 			
-			String text = null;
-			GSBlockEventTime mouseTime = viewToModel(mouseX);
-			if (mouseTime != null) {
-				int gameTickOffset = getGametickOffsetFromView(mouseX);
-				
-				if (gameTickOffset != -1) {
-					GSTimelineEntry hoveredEntry = hoveredTimeline.getEntryAt(mouseTime, (gameTickOffset == expandedColumnIndex));
-					if (hoveredEntry != null) {
-						text = String.format(Locale.ENGLISH, "Duration: %dgt", hoveredEntry.getGameTimeDuration());
-
-						renderHoveredEdge(hoveredEntry, hoveredTimelineIndex, mouseX, mouseY);
-					}
-				}
-			}
+			renderTimeline(timelines.get(timelineIndex), timelineIndex, y, mouseX, mouseY);
+			y += rowHeight;
 			
-			if (text == null) {
-				BlockPos pos = hoveredTimeline.getInfo().getPos();
-				text = String.format(Locale.ENGLISH, "Pos: (%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
-			}
-
-			renderHoveredInfoText(text);
+			fill(0, y, rowEnd, y + ROW_SPACING, ROW_SPACING_COLOR);
 		}
 	}
 	
-	private void renderHoveredEdge(GSTimelineEntry hoveredEntry, int hoveredTimelineIndex, int mouseX, int mouseY) {
-		int x = -1;
-		if (hoveringStartResizeArea(hoveredEntry, mouseX) || (hoveredEntry == draggedEntry && draggingFlag == RESIZING_START)) {
-			x = modelToView(hoveredEntry.getStartTime(), false);
-		} else if (hoveringEndResizeArea(hoveredEntry, mouseX) || (hoveredEntry == draggedEntry && draggingFlag == RESIZING_END)) {
-			x = modelToView(hoveredEntry.getEndTime(), true) - DRAGGING_AREA_SIZE;
+	private void renderTimeline(GSTimeline timeline, int timelineIndex, int y, int mouseX, int mouseY) {
+		int color = (0xFF << 24) | timeline.getInfo().getColor();
+		
+		if (mouseX >= 0 && mouseX < width && mouseY >= y && mouseY < y + rowHeight + ROW_SPACING)
+			fill(0, y, width, y + rowHeight, ROW_HOVER_COLOR);
+		
+		for (GSTimelineEntry entry : timeline.getEntries())
+			renderTimelineEntry(timelineIndex, entry, color);
+		
+		renderMultiCells(timelineIndex, y);
+		
+		String name = trimText(timeline.getInfo().getName(), LABEL_COLUMN_WIDTH);
+		int x = (LABEL_COLUMN_WIDTH - font.getStringWidth(name)) / 2;
+		drawString(font, name, x, y + (rowHeight - font.fontHeight) / 2, color);
+	}
+	
+	private void renderTimelineEntry(int timelineIndex, GSTimelineEntry entry, int color) {
+		if (selectedEntry == entry || hoveredEntry == entry)
+			color = darkenColor(color);
+
+		Rectangle rect = modelToView(timelineIndex, entry);
+		
+		if (rect != null) {
+			int x1 = rect.x + rect.width;
+			int y1 = rect.y + rect.height;
+
+			fill(rect.x, rect.y, x1, y1, darkenColor(color));
+			
+			int x0 = rect.x;
+			if (entry.getType() != GSETimelineEntryType.EVENT_START)
+				x1 -= ENTRY_BORDER_THICKNESS;
+			if (entry.getType() != GSETimelineEntryType.EVENT_END)
+				x0 += ENTRY_BORDER_THICKNESS;
+			
+			fill(x0, rect.y + ENTRY_BORDER_THICKNESS, x1, y1 - ENTRY_BORDER_THICKNESS, color);
+		}
+	}
+	
+	private void renderMultiCells(int timelineIndex, int y) {
+		Map<Integer, Integer> multiCellCounts = timelinesMultiCellCounts.get(timelineIndex);
+		if (multiCellCounts == null)
+			return;
+		
+		for (Map.Entry<Integer, Integer> multiCellInfo : multiCellCounts.entrySet()) {
+			int gameTimeOffset = multiCellInfo.getKey();
+			if (gameTimeOffset != expandedColumnIndex) {
+				int count = multiCellInfo.getValue();
+
+				String infoText = (count > 9) ? "+" : Integer.toString(count);
+				int xc = getColumnX(gameTimeOffset) + getColumnWidth(gameTimeOffset) / 2;
+				drawCenteredString(font, infoText, xc, y + (rowHeight - font.fontHeight) / 2, TEXT_COLOR);
+			}
+		}
+	}
+	
+	private void renderHoveredInfo(int mouseX, int mouseY) {
+		String text = null;
+		if (hoveredEntry != null) {
+			text = String.format(Locale.ENGLISH, "Duration: %dgt", hoveredEntry.getGameTimeDuration());
+		} else if (hoveredTimeline != null) {
+			BlockPos pos = hoveredTimeline.getInfo().getPos();
+			text = String.format(Locale.ENGLISH, "Pos: (%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
+		}
+
+		if (text != null)
+			drawCenteredString(font, text, LABEL_COLUMN_WIDTH / 2, (COLUMN_HEADER_HEIGHT - font.fontHeight) / 2, TEXT_COLOR);
+	}
+	
+	private void renderHoveredEdge(int mouseX, int mouseY) {
+		if (hoveredEntry == null && draggingFlag != RESIZING_START && draggingFlag != RESIZING_END)
+			return;
+		
+		Rectangle hoveredRect = null;
+		boolean endTime = false;
+		if (draggingFlag != NOT_DRAGGING) {
+			switch (draggingFlag) {
+			case RESIZING_END:
+				endTime = true;
+			case RESIZING_START:
+				hoveredRect = modelToView(selectedTimelineIndex, selectedEntry);
+				break;
+			}
+		} else {
+			GSResizeArea resizeArea = getHoveredResizeArea(hoveredTimelineIndex, hoveredEntry, mouseX, mouseY);
+			if (resizeArea != null) {
+				hoveredRect = modelToView(hoveredTimelineIndex, hoveredEntry);
+				endTime = (resizeArea == GSResizeArea.HOVERING_END);
+			}
 		}
 		
-		if (x >= 0) {
-			int y0 = getTimelineY(hoveredTimelineIndex) + (getRowHeight() - ENTRY_HEIGHT) / 2 - DRAGGING_PADDING;
-			int y1 = y0 + ENTRY_HEIGHT + DRAGGING_PADDING * 2;
-			fill(x - DRAGGING_PADDING, y0, x + DRAGGING_AREA_SIZE + DRAGGING_PADDING, y1, DRAGGING_AREA_COLOR);
+		if (hoveredRect != null) {
+			int x0;
+			if (endTime) {
+				x0 = hoveredRect.x + hoveredRect.width - DRAGGING_AREA_SIZE;
+			} else {
+				x0 = hoveredRect.x - DRAGGING_PADDING;
+			}
+			
+			int y0 = hoveredRect.y - DRAGGING_PADDING;
+			int y1 = hoveredRect.y + hoveredRect.height + DRAGGING_PADDING;
+			int x1 = x0 + DRAGGING_AREA_SIZE + DRAGGING_PADDING;
+			fill(x0, y0, x1, y1, DRAGGING_AREA_COLOR);
 		}
 	}
 
-	private GSTimeline getHoveredTimeline(int mouseX, int mouseY) {
-		int index = getHoveredTimelineIndex(mouseX, mouseY);
-		return (index == -1) ? null : table.getTimelines().get(index);
-	}
-	
-	private int getHoveredTimelineIndex(int mouseX, int mouseY) {
+	private int getTimelineIndexFromView(int mouseX, int mouseY) {
 		if (mouseX >= 0 && mouseX < width && mouseY >= COLUMN_HEADER_HEIGHT && mouseY < height) {
-			int hoveredIndex = (mouseY - COLUMN_HEADER_HEIGHT) / (getRowHeight() + ROW_SPACING);
+			int hoveredIndex = (mouseY - COLUMN_HEADER_HEIGHT) / (rowHeight + ROW_SPACING);
 			List<GSTimeline> timelines = table.getTimelines();
 			if (hoveredIndex >= 0 && hoveredIndex < timelines.size())
 				return hoveredIndex;
@@ -315,64 +391,92 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		return -1;
 	}
 	
-	private void renderHoveredInfoText(String text) {
-		drawCenteredString(font, text, LABEL_COLUMN_WIDTH / 2, (COLUMN_HEADER_HEIGHT - font.fontHeight) / 2, TEXT_COLOR);
+	@Override
+	public void mouseMovedTranslated(double mouseX, double mouseY) {
+		super.mouseMovedTranslated(mouseX, mouseY);
+		
+		int mx = (int)mouseX;
+		int my = (int)mouseY;
+		hoveredTimelineIndex = getTimelineIndexFromView(mx, my);
+		if (hoveredTimelineIndex != -1) {
+			hoveredTimeline = table.getTimelines().get(hoveredTimelineIndex);
+			
+			GSBlockEventTime time = viewToModel(mx, my);
+			if (time != null && hoveredTimeline != null) {
+				boolean multiCell = isMultiCell(hoveredTimelineIndex, getGameTimeOffset(time));
+				hoveredEntry = hoveredTimeline.getEntryAt(time, (time.getGameTime() == expandedColumnIndex) || multiCell);
+				
+				if (hoveredEntry != null) {
+					Rectangle rect = modelToView(hoveredTimelineIndex, hoveredEntry);
+					if (rect == null || !rect.contains(mouseX, mouseY))
+						hoveredEntry = null;
+				}
+			}
+		} else {
+			hoveredTimeline = null;
+			hoveredEntry = null;
+		}
+		
+		currentMouseX = mouseX;
+		currentMouseY = mouseY;
+	}
+	
+	private boolean expandHoveredTab(double mouseX, double mouseY, boolean allowToggle) {
+		GSBlockEventTime time = viewToModel((int)mouseX, (int)mouseY);
+		if (time != null) {
+			int gameTimeOffset = (int)(time.getGameTime() - startTime.getGameTime());
+			if (gameTimeOffset == expandedColumnIndex && allowToggle) {
+				expandedColumnIndex = -1;
+			} else {
+				expandedColumnIndex = gameTimeOffset;
+			}
+			
+			return true;
+		}
+		
+		return false;
 	}
 	
 	@Override
 	public boolean mouseClickedTranslated(double mouseX, double mouseY, int button) {
-		int mx = (int)mouseX;
-		int my = (int)mouseY;
-		
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY >= 0.0) {
-			GSBlockEventTime time = viewToModel(mx);
-			if (time != null) {
-				if (mouseY < COLUMN_HEADER_HEIGHT) {
-					int gameTimeOffset = (int)(time.getGameTime() - startTime.getGameTime());
-					expandedColumnIndex = (gameTimeOffset == expandedColumnIndex) ? -1 : gameTimeOffset;
+			if (mouseY < COLUMN_HEADER_HEIGHT) {
+				if (expandHoveredTab(mouseX, mouseY, true))
 					return true;
-				} else {
-					GSTimeline clickedTimeline = getHoveredTimeline(mx, my);
-					if (clickedTimeline != null && (expandedColumnIndex == -1 || expandedColumnIndex == time.getGameTime())) {
-						GSTimelineEntry clickedEntry = clickedTimeline.getEntryAt(time, (expandedColumnIndex != -1));
-						if (clickedEntry != null) {
-
-							if (hoveringStartResizeArea(clickedEntry, mouseX)) {
-								draggingFlag = RESIZING_START;
-							} else if (hoveringEndResizeArea(clickedEntry, mouseX)) {
-								draggingFlag = RESIZING_END;
-							} else {
-								draggingFlag = NOT_RESIZING;
-							}
-
-							if (expandedColumnIndex == -1 || draggingFlag != NOT_RESIZING || clickedEntry.getGameTimeDuration() == 0L) {
-								draggedTimeline = clickedTimeline;
-								draggedEntry = clickedEntry;
-								
-								draggedStartTime = clickedEntry.getStartTime();
-								draggedEndTime = clickedEntry.getEndTime();
-								mouseClickedX = mouseX;
-							}
-							
-							return true;
-						}
-					}
+			} else if (hoveredEntry != null) {
+				if (hoveredEntry != selectedEntry) {
+					selectedTimelineIndex = hoveredTimelineIndex;
+					selectedTimeline = hoveredTimeline;
+					selectedEntry = hoveredEntry;
+					
+					toggleSelection = false;
 				}
+				
+				GSResizeArea resizeArea = getHoveredResizeArea(hoveredTimelineIndex, hoveredEntry, (int)mouseX, (int)mouseY);
+
+				int newDraggingFlag;
+				if (resizeArea != null) {
+					newDraggingFlag = (resizeArea == GSResizeArea.HOVERING_START) ? RESIZING_START : RESIZING_END;
+				} else {
+					newDraggingFlag = NOT_RESIZING;
+				}
+				
+				if (expandedColumnIndex == -1 || newDraggingFlag != NOT_RESIZING || hoveredEntry.getGameTimeDuration() == 0L) {
+					draggingFlag = newDraggingFlag;
+					draggedMouseX = mouseX;
+					draggedStartTime = hoveredEntry.getStartTime();
+					draggedEndTime = hoveredEntry.getEndTime();
+				}
+				
+				return true;
 			}
 		} else if (button == GLFW.GLFW_MOUSE_BUTTON_2 && mouseY >= COLUMN_HEADER_HEIGHT) {
-			GSTimeline clickedTimeline = getHoveredTimeline(mx, my);
-			if (clickedTimeline != null) {
-				GSTimelineEntry clickedEntry = clickedTimeline.getEntryAt(viewToModel(mx), (expandedColumnIndex != -1));
-				if (clickedEntry != null) {
-					GSETimelineEntryType newType = null;
-					if (hoveringStartResizeArea(clickedEntry, mouseX)) {
-						newType = GSETimelineEntryType.EVENT_END;
-					} else if (hoveringEndResizeArea(clickedEntry, mouseX)) {
-						newType = GSETimelineEntryType.EVENT_BEGINNING;
-					}
-					
-					if (newType != null)
-						clickedEntry.setType((newType == clickedEntry.getType()) ? GSETimelineEntryType.EVENT_BOTH : newType);
+			if (hoveredEntry != null) {
+				GSResizeArea resizeArea = getHoveredResizeArea(hoveredTimelineIndex, hoveredEntry, (int)mouseX, (int)mouseY);
+				if (resizeArea != null) {
+					GSETimelineEntryType newType = (resizeArea == GSResizeArea.HOVERING_START) ? 
+							GSETimelineEntryType.EVENT_END : GSETimelineEntryType.EVENT_START;
+					hoveredEntry.setType((newType == hoveredEntry.getType()) ? GSETimelineEntryType.EVENT_BOTH : newType);
 				}
 			}
 		}
@@ -382,34 +486,52 @@ public class GSTimelineTableGUI extends GSParentGUI {
 
 	@Override
 	public boolean mouseReleasedTranslated(double mouseX, double mouseY, int button) {
-		draggedTimeline = null;
-		draggedEntry = null;
-		draggingFlag = NOT_RESIZING;
+		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY > COLUMN_HEADER_HEIGHT) {
+			if ((draggingFlag == NOT_DRAGGING || !draggedEntryChanged) && toggleSelection) {
+				if (selectedEntry == hoveredEntry || hoveredEntry == null) {
+					selectedTimelineIndex = -1;
+					selectedTimeline = null;
+					selectedEntry = null;
+				}
+			}
+			
+			toggleSelection = (selectedEntry != null);
+		}
+		
+		draggingFlag = NOT_DRAGGING;
+		draggedEntryChanged = false;
+		
 		return super.mouseReleasedTranslated(mouseX, mouseY, button);
 	}
 
 	@Override
 	public boolean mouseDraggedTranslated(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
-			if (draggedTimeline != null && draggedEntry != null) {
-				boolean changed = false;
+			if (selectedTimeline != null && selectedEntry != null && draggingFlag != NOT_DRAGGING) {
+				boolean changed;
 				switch (draggingFlag) {
 				case NOT_RESIZING:
-					changed = moveDraggedEntry((int)(mouseX - mouseClickedX));
+					changed = moveDraggedEntry((int)(mouseX - draggedMouseX));
 					break;
 				case RESIZING_START:
-					changed = changeDraggedStart(viewToModel((int)mouseX));
+					changed = changeDraggedStart(viewToModel((int)mouseX, (int)mouseY));
 					break;
 				case RESIZING_END:
-					changed = changeDraggedEnd(viewToModel((int)mouseX));
+					changed = changeDraggedEnd(viewToModel((int)mouseX, (int)mouseY));
+					break;
+				
+				default:
+					changed = false;
 					break;
 				}
 					
-				if (changed)
+				if (changed) {
 					updateGameTickTimes();
-		}
-				
-			return true;
+					draggedEntryChanged = true;
+				}
+
+				return true;
+			}
 		}
 		
 		return super.mouseDraggedTranslated(mouseX, mouseY, button, dragX, dragY);
@@ -433,13 +555,11 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		}
 		
 		if (startTime.getGameTime() >= 0 && startTime.getBlockEventDelay() >= 0) {
-			GSTimelineEntry overlappingStart = draggedTimeline.getEntryAt(startTime, expanded);
-			GSTimelineEntry overlappingEnd = draggedTimeline.getEntryAt(endTime, expanded);
-		
-			if ((overlappingStart == null || overlappingStart == draggedEntry) && 
-			    (overlappingEnd == null || overlappingEnd == draggedEntry)) {
-				
-				draggedEntry.setTimespan(startTime, endTime);
+			if (selectedEntry.getStartTime().isEqual(startTime))
+				return false;
+			
+			if (!selectedTimeline.isOverlappingEntries(startTime, endTime, selectedEntry)) {
+				selectedEntry.setTimespan(startTime, endTime);
 				return true;
 			}
 		}
@@ -448,15 +568,20 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	}
 	
 	private boolean isValidDraggedTime(GSBlockEventTime time, GSBlockEventTime currentTime) {
-		return time != null && (expandedColumnIndex == -1 || time.getGameTime() == currentTime.getGameTime());
+		if (time == null)
+			return false;
+		
+		if (expandedColumnIndex != -1)
+			return time.getGameTime() == currentTime.getGameTime() && !time.isEqual(currentTime);
+		return time.getGameTime() != currentTime.getGameTime();
 	}
 	
 	private boolean changeDraggedStart(GSBlockEventTime time) {
-		if (isValidDraggedTime(time, draggedEntry.getStartTime())) {
-			GSBlockEventTime newTime = offsetDraggedTime(draggedEntry.getStartTime(), time);
-			GSBlockEventTime endTime = draggedEntry.getEndTime();
-			if (!newTime.isAfter(endTime) && !draggedTimeline.isOverlappingEntries(newTime, endTime, draggedEntry))
-				draggedEntry.setStartTime(newTime);
+		if (isValidDraggedTime(time, selectedEntry.getStartTime())) {
+			GSBlockEventTime newTime = offsetDraggedTime(selectedEntry.getStartTime(), time);
+			GSBlockEventTime endTime = selectedEntry.getEndTime();
+			if (!newTime.isAfter(endTime) && !selectedTimeline.isOverlappingEntries(newTime, endTime, selectedEntry))
+				selectedEntry.setStartTime(newTime);
 			return true;
 		}
 		
@@ -464,11 +589,11 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	}
 
 	private boolean changeDraggedEnd(GSBlockEventTime time) {
-		if (isValidDraggedTime(time, draggedEntry.getEndTime())) {
-			GSBlockEventTime newTime = offsetDraggedTime(draggedEntry.getEndTime(), time);
-			GSBlockEventTime startTime = draggedEntry.getStartTime();
-			if (!newTime.isBefore(startTime) && !draggedTimeline.isOverlappingEntries(startTime, newTime, draggedEntry))
-				draggedEntry.setEndTime(newTime);
+		if (isValidDraggedTime(time, selectedEntry.getEndTime())) {
+			GSBlockEventTime newTime = offsetDraggedTime(selectedEntry.getEndTime(), time);
+			GSBlockEventTime startTime = selectedEntry.getStartTime();
+			if (!newTime.isBefore(startTime) && !selectedTimeline.isOverlappingEntries(startTime, newTime, selectedEntry))
+				selectedEntry.setEndTime(newTime);
 			return true;
 		}
 		
@@ -479,74 +604,137 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		return (expandedColumnIndex != -1) ? t1 : new GSBlockEventTime(t1.getGameTime(), t0.getBlockEventDelay());
 	}
 	
-	private boolean hoveringStartResizeArea(GSTimelineEntry entry, double mouseX) {
-		GSBlockEventTime time = viewToModel((int)mouseX);
-		if (time == null || (expandedColumnIndex != -1 && expandedColumnIndex != time.getGameTime()))
-			return false;
-
-		GSBlockEventTime startTime = entry.getStartTime();
-		if (expandedColumnIndex != -1 && startTime.getBlockEventDelay() != time.getBlockEventDelay())
-			return false;
-		if (startTime.getGameTime() != time.getGameTime())
-			return false;
-			
-		return (mouseX < modelToView(startTime, false) + DRAGGING_AREA_SIZE);
-	}
-
-	private boolean hoveringEndResizeArea(GSTimelineEntry entry, double mouseX) {
-		GSBlockEventTime time = viewToModel((int)mouseX);
-		if (time == null || (expandedColumnIndex != -1 && expandedColumnIndex != time.getGameTime()))
-			return false;
-
-		GSBlockEventTime endTime = entry.getEndTime();
-		if (expandedColumnIndex != -1 && endTime.getBlockEventDelay() != time.getBlockEventDelay())
-			return false;
-		if (endTime.getGameTime() != time.getGameTime())
-			return false;
-			
-		return (mouseX > modelToView(endTime, true) - DRAGGING_AREA_SIZE);
-	}
-
-	private int modelToView(GSBlockEventTime time, boolean endTime) {
-		int gameTimeOffset = getGameTimeOffset(time);
-		if (gameTimeOffset < 0 || gameTimeOffset >= gameTickDurations.length)
-			return -1;
+	private GSResizeArea getHoveredResizeArea(int timelineIndex, GSTimelineEntry entry, int mouseX, int mouseY) {
+		Rectangle r = modelToView(timelineIndex, entry);
+		if (r == null)
+			return null;
 		
-		int x = LABEL_COLUMN_WIDTH;
-		int mtOffset = 0; 
-		if (gameTimeOffset == expandedColumnIndex) {
-			mtOffset = time.getBlockEventDelay();
-			if (endTime)
-				mtOffset++;
-		} else {
-			if (expandedColumnIndex != -1 && gameTimeOffset > expandedColumnIndex) {
-				mtOffset = gameTickDurations[expandedColumnIndex];
-				gameTimeOffset--;
-			}
-			
-			if (endTime)
-				gameTimeOffset++;
+		GSResizeArea resizeArea = null;
+		if (mouseX >= r.x && mouseX < r.x + DRAGGING_AREA_SIZE) {
+			if (expandedColumnIndex == -1 || expandedColumnIndex == entry.getStartTime().getGameTime())
+				resizeArea = GSResizeArea.HOVERING_START;
+		} else if (mouseX < r.x + r.width && mouseX >= r.x + r.width - DRAGGING_AREA_SIZE) {
+			if (expandedColumnIndex == -1 || expandedColumnIndex == entry.getEndTime().getGameTime())
+				resizeArea = GSResizeArea.HOVERING_END;
 		}
+		
+		return (mouseY >= r.y && mouseY < r.y + r.height) ? resizeArea : null;
+	}
+	
+	@Override
+	@GSCoreOverride
+	public boolean keyPressed(int key, int scancode, int mods) {
+		if (key == plannerModule.getCollapseTabKey().getGLFWKeyCode() && expandedColumnIndex != -1) {
+			expandedColumnIndex = -1;
+			return true;
+		} else if (key == plannerModule.getExpandHoveredTabKey().getGLFWKeyCode()) {
+			if (expandHoveredTab(currentMouseX, currentMouseY, false))
+				return true;
+		}
+		
+		return super.keyPressed(key, scancode, mods);
+	}
 
-		x += gameTimeOffset * GAMETIME_COLUMN_WIDTH;
-		x += mtOffset * MT_COLUMN_WIDTH;
+	private int getMultiCellCount(int timelineIndex, int gameTimeOffset) {
+		Map<Integer, Integer> multiCellCounts = timelinesMultiCellCounts.get(timelineIndex);
+		if (multiCellCounts == null)
+			return -1;
+
+		Integer count = multiCellCounts.get(gameTimeOffset);
+		return (count == null) ? -1 : count.intValue();
+	}
+	
+	private boolean isMultiCell(int timelineIndex, int gameTimeOffset) {
+		return getMultiCellCount(timelineIndex, gameTimeOffset) != -1;
+	}
+	
+	private Rectangle modelToView(int timelineIndex, GSTimelineEntry entry) {
+		int startOffset = getGameTimeOffset(entry.getStartTime());
+		int endOffset = getGameTimeOffset(entry.getEndTime());
+		if (startOffset < 0 || endOffset >= gameTickDurations.length)
+			return null;
+		
+		// Check if we are even supposed to be rendering
+		// the current entry.
+		if (startOffset == endOffset && expandedColumnIndex != startOffset && isMultiCell(timelineIndex, startOffset))
+			return null;
+			
+		Rectangle rect = new Rectangle();
+		rect.y = getEntryY(timelineIndex);
+		rect.height = ENTRY_HEIGHT;
+		
+		rect.x = getTimeViewX(timelineIndex, entry.getStartTime(), false);
+		rect.width = getTimeViewX(timelineIndex, entry.getEndTime(), true) - rect.x;
+		
+		if (rect.width < MINIMUM_ENTRY_WIDTH) {
+			rect.x -= (MINIMUM_ENTRY_WIDTH - rect.width) / 2;
+			rect.width = MINIMUM_ENTRY_WIDTH;
+		}
+		
+		if (entry.getStartTime().isEqual(GSBlockEventTime.ZERO) && entry.getType() == GSETimelineEntryType.EVENT_END) {
+			int x0 = getColumnX(0);
+			rect.width += rect.x - x0;
+			rect.x = x0;
+		}
+		
+		return rect;
+	}
+	
+	private int getTimeViewX(int timelineIndex, GSBlockEventTime time, boolean endTime) {
+		int gameTimeOffset = getGameTimeOffset(time);
+		
+		int x = getColumnX(gameTimeOffset);
+		if (gameTimeOffset == expandedColumnIndex) {
+			x += time.getBlockEventDelay() * MT_COLUMN_WIDTH;
+
+			x += MT_COLUMN_WIDTH / 2;
+		} else if (isMultiCell(timelineIndex, gameTimeOffset)) {
+			x += endTime ? MULTI_COLUMN_WIDTH : (GAMETIME_COLUMN_WIDTH - MULTI_COLUMN_WIDTH);
+		} else {
+			x += GAMETIME_COLUMN_WIDTH / 2;
+		}
 		
 		return x;
 	}
 	
+	private GSBlockEventTime viewToModel(int x, int y) {
+		int gameTimeOffset = getGametickOffsetFromView(x);
+		if (gameTimeOffset == -1)
+			return null;
+		
+		int mt = 0;
+		if (gameTimeOffset == expandedColumnIndex) {
+			mt = (x - getColumnX(gameTimeOffset)) / MT_COLUMN_WIDTH;
+		} else {
+			int timelineIndex = getTimelineIndexFromView(x, y);
+			int gameTickDuration = gameTickDurations[gameTimeOffset];
+			
+			if (timelineIndex != -1 && isMultiCell(timelineIndex, gameTimeOffset)) {
+				int columnOffset = x - getColumnX(gameTimeOffset);
+				mt = (columnOffset > GAMETIME_COLUMN_WIDTH - MULTI_COLUMN_WIDTH) ? gameTickDuration : 
+					(columnOffset < MULTI_COLUMN_WIDTH) ? 0 : gameTickDuration / 2;
+			} else {
+				mt = gameTickDuration / 2;
+			}
+		}
+		
+		if (mt < 0)
+			return null;
+
+		return new GSBlockEventTime(startTime.getGameTime() + gameTimeOffset, mt);
+	}
+	
 	private int getGametickOffsetFromView(int mouseX) {
-		mouseX -= LABEL_COLUMN_WIDTH;
-		if (mouseX < 0)
+		if (mouseX < getColumnX(0))
 			return -1;
 		
-		int gameTimeOffset = mouseX / GAMETIME_COLUMN_WIDTH;
+		int gameTimeOffset = (mouseX - getColumnX(0)) / GAMETIME_COLUMN_WIDTH;
 		if (expandedColumnIndex != -1 && gameTimeOffset >= expandedColumnIndex) {
-			mouseX -= expandedColumnIndex * GAMETIME_COLUMN_WIDTH;
 			gameTimeOffset = expandedColumnIndex;
 
-			mouseX -= gameTickDurations[expandedColumnIndex] * MT_COLUMN_WIDTH;
-			if (mouseX > 0)
-				gameTimeOffset += 1 + mouseX / GAMETIME_COLUMN_WIDTH;
+			int offset = mouseX - getColumnX(expandedColumnIndex) - getColumnWidth(expandedColumnIndex);
+			if (offset > 0)
+				gameTimeOffset += 1 + offset / GAMETIME_COLUMN_WIDTH;
 		}
 		
 		if (gameTimeOffset >= gameTickDurations.length)
@@ -555,21 +743,29 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		return gameTimeOffset;
 	}
 	
-	private GSBlockEventTime viewToModel(int x) {
-		int gameTimeOffset = getGametickOffsetFromView(x);
-		if (gameTimeOffset == -1)
-			return null;
-		
-		int mt = 0;
-		if (gameTimeOffset == expandedColumnIndex) {
-			x -= LABEL_COLUMN_WIDTH;
-			x -= expandedColumnIndex * GAMETIME_COLUMN_WIDTH;
-			mt = x / MT_COLUMN_WIDTH;
-		}
-		
-		if (mt < 0)
-			return null;
+	private int getColumnX(int gameTimeOffset) {
+		int x = LABEL_COLUMN_WIDTH + gameTimeOffset * GAMETIME_COLUMN_WIDTH;
+		if (expandedColumnIndex != -1 && gameTimeOffset > expandedColumnIndex)
+			x += gameTickDurations[expandedColumnIndex] * MT_COLUMN_WIDTH - GAMETIME_COLUMN_WIDTH;
+		return x;
+	}
+	
+	private int getColumnWidth(int gameTimeOffset) {
+		return (expandedColumnIndex != gameTimeOffset) ? GAMETIME_COLUMN_WIDTH :
+			gameTickDurations[expandedColumnIndex] * MT_COLUMN_WIDTH;
+	}
+	
+	private int getTimelineY(int timelineIndex) {
+		return COLUMN_HEADER_HEIGHT + timelineIndex * (rowHeight + ROW_SPACING);
+	}
+	
+	private int getEntryY(int timelineIndex) {
+		return getTimelineY(timelineIndex) + (rowHeight - ENTRY_HEIGHT) / 2;
+	}
+	
+	private enum GSResizeArea {
 
-		return new GSBlockEventTime(startTime.getGameTime() + gameTimeOffset, mt);
+		HOVERING_START, HOVERING_END;
+	
 	}
 }
