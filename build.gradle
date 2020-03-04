@@ -14,7 +14,7 @@ plugins {
 
 repositories {
     flatDir {
-        dirs '../g4mespeed/build/libs'
+        dirs "${project.g4mespeed_path}/build/libs"
     }
 }
 
@@ -76,8 +76,15 @@ def obfuscatedFileName = "${outputJarName}-release.jar"
 
 task obfuscateJar(type: proguard.gradle.ProGuardTask) {
 	configuration "proguard.txt"
+	
+	// Some good info here: http://www.dre.vanderbilt.edu/~schmidt/android/android-4.0/external/proguard/docs/manual/refcard.html
 
-	injars "./build/libs/${jar.archiveName}"
+	injars "${project.g4mespeed_path}/build/libs/g4mespeed-${project.g4mespeed_core_version}-mc${project.minecraft_version}.jar"
+	outjars "./build/libs/unused.jar"
+
+	applymapping "${project.g4mespeed_path}/g4mespeed-mappings-mc${project.minecraft_version}.map"
+
+	injars "./build/libs/${jar.archiveName}" 
 	outjars "./build/libs/${obfuscatedFileName}"
 	
 	libraryjars "./.gradle/loom-cache/remapped_mods/net.fabricmc.yarn.${project.yarn_mappings}.net.fabricmc.fabric-loader-${project.loader_version}.jar"

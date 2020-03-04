@@ -26,6 +26,10 @@ public class GSTimeline {
 		return true;
 	}
 	
+	public boolean removeEntry(GSTimelineEntry entry) {
+		return entries.remove(entry);
+	}
+	
 	public boolean isOverlappingEntries(GSBlockEventTime startTime, GSBlockEventTime endTime, GSTimelineEntry ignoreEntry) {
 		if (startTime.isAfter(endTime))
 			return false;

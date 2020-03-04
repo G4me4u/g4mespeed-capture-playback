@@ -24,41 +24,56 @@ import net.minecraft.util.math.BlockPos;
 public class GSTimelineTableGUI extends GSParentGUI {
 
 	private static final int LABEL_COLUMN_COLOR = 0x80000000;
+	private static final int COLUMN_HEADER_COLOR = 0x60000000;
 	private static final int COLUMN_COLOR = 0x60000000;
 	private static final int DARK_COLUMN_COLOR = 0x60202020;
-	private static final int TEXT_COLOR = 0xFFFFFFFF;
-	private static final int ROW_SPACING_COLOR = 0xFF444444;
 	private static final int ROW_HOVER_COLOR = 0x30FFFFFF;
+
+	private static final int ROW_SPACING_COLOR = 0xFF444444;
 	private static final int COLUMN_LINE_COLOR = darkenColor(ROW_HOVER_COLOR);
+
+	private static final int TEXT_COLOR = 0xFFFFFFFF;
 	
 	private static final int LABEL_COLUMN_WIDTH = 100;
-	private static final int COLUMN_HEADER_HEIGHT = 30;
-
-	private static final int DOTTED_LINE_LENGTH = 4;
-	
-	private static final int ROW_SPACING = 1;
-	private static final int ENTRY_BORDER_THICKNESS = 2;
-	
-	private static final int ROW_LABEL_PADDING = 2;
-	private static final int ENTRY_HEIGHT = 8;
-	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	private static final int GAMETIME_COLUMN_WIDTH = 30;
 	private static final int MULTI_COLUMN_WIDTH = 10;
 	private static final int MT_COLUMN_WIDTH = 20;
+	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	
-	private static final int EXTRA_GAMETICKS = 1;
-	private static final int EXTRA_MICROTICKS = 1;
+	private static final int COLUMN_HEADER_HEIGHT = 30;
+	private static final int ROW_LABEL_PADDING = 2;
+	private static final int ENTRY_HEIGHT = 8;
 	
+	/* Add timeline button constants */
+	private static final String ADD_TIMELINE_BUTTON_TEXT = "+ Add Timeline";
+	private static final int ADD_TIMELINE_BUTTON_MARGIN = 2;
+	private static final int ADD_TIMELINE_BUTTON_PADDING = 3;
+	private static final int ADD_TIMELINE_BUTTON_COLOR = 0xFF222222;
+
+	private static final double MINIMUM_DRAG_DISTANCE = 10.0;
+	
+	private static final int ROW_SPACING = 1;
+	private static final int ENTRY_BORDER_THICKNESS = 2;
+
+	private static final int DOTTED_LINE_LENGTH = 4;
+
+	/* Dragging area constants */
 	private static final int DRAGGING_AREA_SIZE = 6;
 	private static final int DRAGGING_PADDING = 2;
 	private static final int DRAGGING_AREA_COLOR = 0x40FFFFFF;
-	
+
+	/* Extra ticks that should be added to the timelines */
+	private static final int EXTRA_GAMETICKS = 1;
+	private static final int EXTRA_MICROTICKS = 1;
+
+	/* Constants related to the dragging flag */
 	private static final int NOT_DRAGGING = 0;
 	private static final int NOT_RESIZING = 1;
 	private static final int RESIZING_START = 2;
 	private static final int RESIZING_END = 3;
 	
 	private final GSTimelineTable table;
+	private final GSITimelineProvider timelineProvider;
 	private final GSPlannerModule plannerModule;
 	
 	private int[] gameTickDurations;
@@ -77,9 +92,11 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	private GSTimeline selectedTimeline;
 	private GSTimelineEntry selectedEntry;
 	private boolean toggleSelection;
+
+	private double clickedMouseX;
+	private double clickedMouseY;
 	
 	private int draggingFlag;
-	private double draggedMouseX;
 	private GSBlockEventTime draggedStartTime;
 	private GSBlockEventTime draggedEndTime;
 	private boolean draggedEntryChanged;
@@ -89,10 +106,11 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	private double currentMouseX;
 	private double currentMouseY;
 	
-	protected GSTimelineTableGUI(GSTimelineTable table, GSPlannerModule plannerModule) {
+	protected GSTimelineTableGUI(GSTimelineTable table, GSITimelineProvider timelineProvider, GSPlannerModule plannerModule) {
 		super(NarratorManager.EMPTY);
 		
 		this.table = table;
+		this.timelineProvider = timelineProvider;
 		this.plannerModule = plannerModule;
 		
 		timelinesMultiCellCounts = new HashMap<Integer, Map<Integer,Integer>>();
@@ -168,6 +186,9 @@ public class GSTimelineTableGUI extends GSParentGUI {
 
 		for (int i = 0; i < numGameTicks; i++)
 			gameTickDurations[i] += EXTRA_MICROTICKS;
+		
+		if (expandedColumnIndex >= numGameTicks)
+			expandedColumnIndex = -1;
 	}
 	
 	private void updateGameTickDuration(GSBlockEventTime time) {
@@ -191,9 +212,13 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		renderTimelines(mouseX, mouseY);
 		renderHoveredInfo(mouseX, mouseY);
 		renderHoveredEdge(mouseX, mouseY);
+	
+		renderAddTimelineButton(mouseX, mouseY);
 	}
 	
 	private void renderColumnHeaders(int mouseX, int mouseY) {
+		fill(LABEL_COLUMN_WIDTH, 0, getRowEndX(), COLUMN_HEADER_HEIGHT, COLUMN_HEADER_COLOR);
+		
 		int x0 = LABEL_COLUMN_WIDTH;
 		for (int gt = 0; gt < gameTickDurations.length; gt++) {
 			int x1 = x0;
@@ -245,6 +270,11 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		
 		fill(0, COLUMN_HEADER_HEIGHT - 1, Math.min(width, x0), COLUMN_HEADER_HEIGHT, ROW_SPACING_COLOR);
 	}
+	
+	private int getRowEndX() {
+		int endOffset = getGameTimeOffset(endTime);
+		return getColumnX(endOffset) + getColumnWidth(endOffset);
+	}
 
 	private String getColumnTitle(int gameTimeOffset) {
 		return Long.toString(startTime.getGameTime() + gameTimeOffset) + "gt";
@@ -261,8 +291,7 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	}
 	
 	private void renderTimelines(int mouseX, int mouseY) {
-		int endOffset = getGameTimeOffset(endTime);
-		int rowEnd = getColumnX(endOffset) + getColumnWidth(endOffset);
+		int rowEnd = getRowEndX();
 		
 		List<GSTimeline> timelines = table.getTimelines();
 		for (int timelineIndex = 0; timelineIndex < timelines.size(); timelineIndex++) {
@@ -391,6 +420,36 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		return -1;
 	}
 	
+	private void renderAddTimelineButton(int mouseX, int mouseY) {
+		Rectangle rect = getAddTimelineButtonBounds();
+		
+		int color = ADD_TIMELINE_BUTTON_COLOR;
+		if (rect.contains(mouseX, mouseY))
+			color = brightenColor(brightenColor(color));
+		
+		int x1 = rect.x + rect.width;
+		int y1 = rect.y + rect.height;
+		
+		fill(rect.x, rect.y, x1, y1, brightenColor(color));
+		fill(rect.x + 1, rect.y + 1, x1 - 1, y1 - 1, darkenColor(color));
+		
+		int xt = rect.x + rect.width / 2;
+		int yt = rect.y + (rect.height - font.fontHeight) / 2;
+		drawCenteredString(font, ADD_TIMELINE_BUTTON_TEXT, xt, yt, TEXT_COLOR);
+	}
+
+	private Rectangle getAddTimelineButtonBounds() {
+		int textWidth = font.getStringWidth(ADD_TIMELINE_BUTTON_TEXT);
+
+		Rectangle rect = new Rectangle();
+		rect.x = (LABEL_COLUMN_WIDTH - textWidth) / 2 - ADD_TIMELINE_BUTTON_PADDING;
+		rect.width = textWidth + ADD_TIMELINE_BUTTON_PADDING * 2;
+		rect.y = getTimelineY(table.getTimelines().size()) + ADD_TIMELINE_BUTTON_MARGIN;
+		rect.height = font.fontHeight + ADD_TIMELINE_BUTTON_PADDING * 2;
+		
+		return rect;
+	}
+	
 	@Override
 	public void mouseMovedTranslated(double mouseX, double mouseY) {
 		super.mouseMovedTranslated(mouseX, mouseY);
@@ -440,17 +499,14 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	@Override
 	public boolean mouseClickedTranslated(double mouseX, double mouseY, int button) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY >= 0.0) {
+			clickedMouseX = mouseX;
+			clickedMouseY = mouseY;
+			
 			if (mouseY < COLUMN_HEADER_HEIGHT) {
 				if (expandHoveredTab(mouseX, mouseY, true))
 					return true;
 			} else if (hoveredEntry != null) {
-				if (hoveredEntry != selectedEntry) {
-					selectedTimelineIndex = hoveredTimelineIndex;
-					selectedTimeline = hoveredTimeline;
-					selectedEntry = hoveredEntry;
-					
-					toggleSelection = false;
-				}
+				updateSelectedEntry();
 				
 				GSResizeArea resizeArea = getHoveredResizeArea(hoveredTimelineIndex, hoveredEntry, (int)mouseX, (int)mouseY);
 
@@ -463,13 +519,14 @@ public class GSTimelineTableGUI extends GSParentGUI {
 				
 				if (expandedColumnIndex == -1 || newDraggingFlag != NOT_RESIZING || hoveredEntry.getGameTimeDuration() == 0L) {
 					draggingFlag = newDraggingFlag;
-					draggedMouseX = mouseX;
 					draggedStartTime = hoveredEntry.getStartTime();
 					draggedEndTime = hoveredEntry.getEndTime();
 				}
-				
-				return true;
+			} else if (mouseX < LABEL_COLUMN_WIDTH && getAddTimelineButtonBounds().contains(mouseX, mouseY)) {
+				table.addTimeline(timelineProvider.createNewTimelineInfo());
 			}
+
+			return true;
 		} else if (button == GLFW.GLFW_MOUSE_BUTTON_2 && mouseY >= COLUMN_HEADER_HEIGHT) {
 			if (hoveredEntry != null) {
 				GSResizeArea resizeArea = getHoveredResizeArea(hoveredTimelineIndex, hoveredEntry, (int)mouseX, (int)mouseY);
@@ -477,24 +534,40 @@ public class GSTimelineTableGUI extends GSParentGUI {
 					GSETimelineEntryType newType = (resizeArea == GSResizeArea.HOVERING_START) ? 
 							GSETimelineEntryType.EVENT_END : GSETimelineEntryType.EVENT_START;
 					hoveredEntry.setType((newType == hoveredEntry.getType()) ? GSETimelineEntryType.EVENT_BOTH : newType);
+				} else if (draggingFlag == NOT_DRAGGING) {
+					hoveredTimeline.removeEntry(hoveredEntry);
+					hoveredEntry = selectedEntry = null;
+
+					unselectEntries();
+					updateGameTickTimes();
 				}
 			}
 		}
 		
 		return super.mouseClickedTranslated(mouseX, mouseY, button);
 	}
-
+	
+	private void updateSelectedEntry() {
+		if (hoveredEntry != selectedEntry) {
+			selectedTimelineIndex = hoveredTimelineIndex;
+			selectedTimeline = hoveredTimeline;
+			selectedEntry = hoveredEntry;
+			
+			toggleSelection = false;
+		}
+	}
+	
+	private void unselectEntries() {
+		selectedTimelineIndex = -1;
+		selectedTimeline = null;
+		selectedEntry = null;
+	}
+	
 	@Override
 	public boolean mouseReleasedTranslated(double mouseX, double mouseY, int button) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY > COLUMN_HEADER_HEIGHT) {
-			if ((draggingFlag == NOT_DRAGGING || !draggedEntryChanged) && toggleSelection) {
-				if (selectedEntry == hoveredEntry || hoveredEntry == null) {
-					selectedTimelineIndex = -1;
-					selectedTimeline = null;
-					selectedEntry = null;
-				}
-			}
-			
+			if (draggedEntryChanged || toggleSelection)
+				unselectEntries();
 			toggleSelection = (selectedEntry != null);
 		}
 		
@@ -507,30 +580,71 @@ public class GSTimelineTableGUI extends GSParentGUI {
 	@Override
 	public boolean mouseDraggedTranslated(double mouseX, double mouseY, int button, double dragX, double dragY) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
-			if (selectedTimeline != null && selectedEntry != null && draggingFlag != NOT_DRAGGING) {
-				boolean changed;
-				switch (draggingFlag) {
-				case NOT_RESIZING:
-					changed = moveDraggedEntry((int)(mouseX - draggedMouseX));
-					break;
-				case RESIZING_START:
-					changed = changeDraggedStart(viewToModel((int)mouseX, (int)mouseY));
-					break;
-				case RESIZING_END:
-					changed = changeDraggedEnd(viewToModel((int)mouseX, (int)mouseY));
-					break;
-				
-				default:
-					changed = false;
-					break;
-				}
+			if (selectedTimeline != null && selectedEntry != null) {
+				if (draggingFlag != NOT_DRAGGING) {
+					boolean changed;
+					switch (draggingFlag) {
+					case NOT_RESIZING:
+						changed = moveDraggedEntry((int)(mouseX - clickedMouseX));
+						break;
+					case RESIZING_START:
+						changed = changeDraggedStart(getDraggedTime(mouseX, mouseY));
+						break;
+					case RESIZING_END:
+						changed = changeDraggedEnd(getDraggedTime(mouseX, mouseY));
+						break;
 					
-				if (changed) {
-					updateGameTickTimes();
-					draggedEntryChanged = true;
+					default:
+						changed = false;
+						break;
+					}
+						
+					if (changed) {
+						updateGameTickTimes();
+						draggedEntryChanged = true;
+					}
+	
+					return true;
 				}
+			} else if (hoveredTimeline != null && hoveredEntry == null) {
+				double dx = mouseX - clickedMouseX;
+				double dy = mouseY - clickedMouseY;
 
-				return true;
+				if (dx * dx + dy * dy > MINIMUM_DRAG_DISTANCE) {
+					GSBlockEventTime t0 = getDraggedTime(clickedMouseX, clickedMouseY);
+					GSBlockEventTime t1 = getDraggedTime(mouseX, mouseY);
+				
+					if (t0 != null && t1 != null) {
+						int draggingFlag = RESIZING_END;
+						if (t0.isAfter(t1)) {
+							GSBlockEventTime tmp = t0;
+							t0 = t1;
+							t1 = tmp;
+							
+							draggingFlag = RESIZING_START;
+						}
+						
+						GSTimelineEntry entry = null;
+						if (expandedColumnIndex != -1) {
+							if (t0.getGameTime() == t1.getGameTime() && t0.getGameTime() == expandedColumnIndex)
+								entry = new GSTimelineEntry(t0, t1);
+						} else {
+							entry = new GSTimelineEntry(new GSBlockEventTime(t0.getGameTime(), 0), 
+							                            new GSBlockEventTime(t1.getGameTime(), 0));
+						}
+						
+						if (entry != null && hoveredTimeline.tryAddEntry(entry)) {
+							hoveredEntry = entry;
+							updateSelectedEntry();
+
+							this.draggingFlag = draggingFlag;
+							draggedStartTime = hoveredEntry.getStartTime();
+							draggedEndTime = hoveredEntry.getEndTime();
+							
+							updateGameTickTimes();
+						}
+					}
+				}
 			}
 		}
 		
@@ -695,6 +809,19 @@ public class GSTimelineTableGUI extends GSParentGUI {
 		}
 		
 		return x;
+	}
+	
+	private GSBlockEventTime getDraggedTime(double mouseX, double mouseY) {
+		if (expandedColumnIndex != -1) {
+			int columnOffset = (int)(mouseX - getColumnX(expandedColumnIndex));
+			if (columnOffset < 0)
+				return null;
+			
+			int mt = columnOffset / MT_COLUMN_WIDTH;
+			return new GSBlockEventTime(startTime.getGameTime() + expandedColumnIndex, mt);
+		}
+		
+		return viewToModel((int)mouseX, (int)mouseY);
 	}
 	
 	private GSBlockEventTime viewToModel(int x, int y) {

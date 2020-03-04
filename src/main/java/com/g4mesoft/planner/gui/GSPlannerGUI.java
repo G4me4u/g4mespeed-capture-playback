@@ -3,48 +3,71 @@ package com.g4mesoft.planner.gui;
 import com.g4mesoft.core.GSCoreOverride;
 import com.g4mesoft.gui.GSParentGUI;
 import com.g4mesoft.planner.module.GSPlannerModule;
-import com.g4mesoft.planner.timeline.GSBlockEventTime;
-import com.g4mesoft.planner.timeline.GSETimelineEntryType;
 import com.g4mesoft.planner.timeline.GSTimeline;
-import com.g4mesoft.planner.timeline.GSTimelineEntry;
 import com.g4mesoft.planner.timeline.GSTimelineInfo;
 import com.g4mesoft.planner.timeline.GSTimelineTable;
+import com.g4mesoft.planner.util.GSColorUtil;
 
 import net.minecraft.client.util.NarratorManager;
-import net.minecraft.util.math.BlockPos.Mutable;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 
-public class GSPlannerGUI extends GSParentGUI {
+public class GSPlannerGUI extends GSParentGUI implements GSITimelineProvider {
 
 	private static final int TOP_MARGIN = 5;
 	private static final int TABLE_TOP_MARGIN = 5;
 	
 	private static final int POSITION_GUI_HEIGHT = 16;
 	
+	/* Constants for generating a new timeline */
+	private static final String NEW_TIMELINE_NAME = "New Timeline";
+	private static final int MAX_COLOR_TRIES = 5;
+	
 	private final GSPositionGUI positionGUI;
 	private final GSTimelineTableGUI timelineTableGUI;
+	private final GSTimelineTable table;
 	
 	public GSPlannerGUI(GSPlannerModule plannerModule) {
 		super(NarratorManager.EMPTY);
 	
 		positionGUI = new GSPositionGUI();
-		
-		GSTimelineTable table = new GSTimelineTable();
-		GSTimeline t1 = table.addTimeline(new GSTimelineInfo("Piston #1", new Mutable(), 0xFF22FF));
-		GSTimeline t2 = table.addTimeline(new GSTimelineInfo("Piston #2", new Mutable(), 0x22FFFF));
-		GSTimeline t3 = table.addTimeline(new GSTimelineInfo("Piston #3", new Mutable(), 0x2222FF));
-		
-		GSTimelineEntry e1 = new GSTimelineEntry(new GSBlockEventTime(0, 0), new GSBlockEventTime(4, 1));
-		e1.setType(GSETimelineEntryType.EVENT_END);
-		t1.tryAddEntry(e1);
-		t1.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(7, 2), new GSBlockEventTime(9, 2)));
+		table = new GSTimelineTable();
+		timelineTableGUI = new GSTimelineTableGUI(table, this, plannerModule);
+	}
+	
+	@Override
+	public GSTimelineInfo createNewTimelineInfo() {
+		return new GSTimelineInfo(NEW_TIMELINE_NAME, getNewTimelinePos(), getUniqueColor(MAX_COLOR_TRIES));
+	}
+	
+	private BlockPos getNewTimelinePos() {
+		if (minecraft != null && minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK)
+			return ((BlockHitResult)minecraft.hitResult).getBlockPos();
+		return new BlockPos(0, 0, 0);
+	}
+	
+	private int getUniqueColor(int maxTries) {
+		int tries = 0;
 
-		t2.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(1, 3), new GSBlockEventTime(2, 1)));
-		t2.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(5, 2), new GSBlockEventTime(5, 8)));
-		t2.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(13, 2), new GSBlockEventTime(15, 1)));
-
-		t3.tryAddEntry(new GSTimelineEntry(new GSBlockEventTime(2, 2), new GSBlockEventTime(11, 2)));
+		int color = 0x000000;
+		while (tries < maxTries) {
+			color = (int)(Math.random() * 0xFFFFFF);
+			
+			if (isColorUnique(color))
+				break;
+		}
 		
-		timelineTableGUI = new GSTimelineTableGUI(table, plannerModule);
+		return color;
+	}
+	
+	private boolean isColorUnique(int color) {
+		for (GSTimeline timeline : table.getTimelines()) {
+			if (GSColorUtil.isRGBSimilar(timeline.getInfo().getColor(), color))
+				return false;
+		}
+		
+		return true;
 	}
 	
 	@Override
