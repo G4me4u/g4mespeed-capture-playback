@@ -1,6 +1,6 @@
 package com.g4mesoft.planner.timeline;
 
-public enum GSETimelineEntryType {
+public enum GSETrackEntryType {
 
 	EVENT_BOTH(0),
 	EVENT_START(1),
@@ -8,7 +8,7 @@ public enum GSETimelineEntryType {
 	
 	private final int index;
 	
-	private GSETimelineEntryType(int index) {
+	private GSETrackEntryType(int index) {
 		this.index = index;
 	}
 	

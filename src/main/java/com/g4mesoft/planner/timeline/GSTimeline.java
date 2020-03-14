@@ -6,63 +6,90 @@ import java.util.List;
 
 public class GSTimeline {
 
-	private final GSTimelineInfo info;
-	private final List<GSTimelineEntry> entries;
+	public static final int PROPERTY_NAME = 0;
 	
-	private boolean disabled;
+	private String name;
 	
-	public GSTimeline(GSTimelineInfo info) {
-		this.info = info;
+	private final List<GSTrack> tracks;
+	private final List<GSITimelineListener> listeners;
+	
+	public GSTimeline() {
+		tracks = new ArrayList<GSTrack>();
+		listeners = new ArrayList<GSITimelineListener>();
+	}
+	
+	public void addTrack(GSTrackInfo info) {
+		GSTrack track = new GSTrack(info, this);
+		tracks.add(track);
 		
-		entries = new ArrayList<GSTimelineEntry>();
-	}
-	
-	public boolean tryAddEntry(GSTimelineEntry entry) {
-		if (isOverlappingEntries(entry.getStartTime(), entry.getEndTime(), null))
-			return false;
-		
-		entries.add(entry);
-		
-		return true;
-	}
-	
-	public boolean removeEntry(GSTimelineEntry entry) {
-		return entries.remove(entry);
-	}
-	
-	public boolean isOverlappingEntries(GSBlockEventTime startTime, GSBlockEventTime endTime, GSTimelineEntry ignoreEntry) {
-		if (startTime.isAfter(endTime))
-			return false;
-		
-		for (GSTimelineEntry other : entries) {
-			if (other != ignoreEntry && other.isOverlapping(startTime, endTime))
-				return true;
-		}
-		return false;
-	}
-	
-	public GSTimelineEntry getEntryAt(GSBlockEventTime time, boolean preciseSearch) {
-		for (GSTimelineEntry entry : entries) {
-			if (entry.containsTimestamp(time, preciseSearch))
-				return entry;
-		}
-		
-		return null;
-	}
-	
-	public GSTimelineInfo getInfo() {
-		return info;
-	}
-	
-	public void setDisabled(boolean disabled) {
-		this.disabled = disabled;
+		dispatchTrackAdded(track);
 	}
 
-	public boolean isDisabled() {
-		return disabled;
+	public void addTimelineListener(GSITimelineListener listener) {
+		listeners.add(listener);
 	}
 
-	public List<GSTimelineEntry> getEntries() {
-		return Collections.unmodifiableList(entries);
+	public void removeTimelineListener(GSITimelineListener listener) {
+		listeners.remove(listener);
+	}
+	
+	void onTrackPropertyChanged(GSTrack track, int property) {
+		dispatchTrackPropertyChanged(track, property);
+	}
+
+	void onEntryAdded(GSTrack track, GSTrackEntry entry) {
+		dispatchEntryAdded(track, entry);
+	}
+	
+	void onEntryRemoved(GSTrack track, GSTrackEntry entry) {
+		dispatchEntryRemoved(track, entry);
+	}
+	
+	void onEntryPropertyChanged(GSTrack track, GSTrackEntry entry, int property) {
+		dispatchEntryPropertyChanged(track, entry, property);
+	}
+	
+	private void dispatchTimelinePropertyChanged(int property) {
+		for (GSITimelineListener listener : listeners)
+			listener.timelinePropertyChanged(property);
+	}
+
+	private void dispatchTrackAdded(GSTrack track) {
+		for (GSITimelineListener listener : listeners)
+			listener.trackAdded(track);
+	}
+
+	private void dispatchTrackPropertyChanged(GSTrack track, int property) {
+		for (GSITimelineListener listener : listeners)
+			listener.trackPropertyChanged(track, property);
+	}
+
+	private void dispatchEntryAdded(GSTrack track, GSTrackEntry entry) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryAdded(track, entry);
+	}
+
+	private void dispatchEntryRemoved(GSTrack track, GSTrackEntry entry) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryRemoved(track, entry);
+	}
+
+	private void dispatchEntryPropertyChanged(GSTrack track, GSTrackEntry entry, int property) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryPropertyChanged(track, entry, property);
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+		
+		dispatchTimelinePropertyChanged(PROPERTY_NAME);
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public List<GSTrack> getTracks() {
+		return Collections.unmodifiableList(tracks);
 	}
 }
