@@ -4,14 +4,13 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 import com.g4mesoft.core.GSCoreOverride;
-import com.g4mesoft.gui.GSParentGUI;
+import com.g4mesoft.gui.GSPanel;
 
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.util.NarratorManager;
 import net.minecraft.util.math.BlockPos;
 
-public class GSPositionGUI extends GSParentGUI {
+public class GSPositionGUI extends GSPanel {
 
 	private static final int LABEL_COLOR = 0xFFFFFFFF;
 	
@@ -28,15 +27,12 @@ public class GSPositionGUI extends GSParentGUI {
 	private TextFieldWidget zField;
 	
 	public GSPositionGUI() {
-		super(NarratorManager.EMPTY);
-	
 		pos = new BlockPos.Mutable();
 		
 		xField = yField = zField = null;
 	}
 	
 	@Override
-	@GSCoreOverride
 	public void tick() {
 		super.init();
 
@@ -51,7 +47,6 @@ public class GSPositionGUI extends GSParentGUI {
 	}
 	
 	@Override
-	@GSCoreOverride
 	public void renderTranslated(int mouseX, int mouseY, float partialTicks) {
 		super.renderTranslated(mouseX, mouseY, partialTicks);
 		
@@ -69,7 +64,6 @@ public class GSPositionGUI extends GSParentGUI {
 	}
 	
 	@Override
-	@GSCoreOverride
 	public void init() {
 		super.init();
 
@@ -96,9 +90,9 @@ public class GSPositionGUI extends GSParentGUI {
 		yField.setTextPredicate(predicate);
 		zField.setTextPredicate(predicate);
 		
-		addButton(xField);
-		addButton(yField);
-		addButton(zField);
+		addWidget(xField);
+		addWidget(yField);
+		addWidget(zField);
 	}
 	
 	@Override

@@ -34,8 +34,8 @@ public final class GSTrackEntry {
 		track.onEntryPropertyChanged(this, PROPERTY_TIMESPAN);
 	}
 	
-	public long getGameTimeDuration() {
-		return endTime.getGameTime() - startTime.getGameTime();
+	public long getGametickDuration() {
+		return endTime.getGametick() - startTime.getGametick();
 	}
 
 	public void setStartTime(GSBlockEventTime startTime) {
@@ -62,8 +62,8 @@ public final class GSTrackEntry {
 		if (includeBlockEventDelay)
 			return !startTime.isAfter(time) && !endTime.isBefore(time);
 		
-		return time.getGameTime() >= startTime.getGameTime() &&
-		       time.getGameTime() <= endTime.getGameTime();
+		return time.getGametick() >= startTime.getGametick() &&
+		       time.getGametick() <= endTime.getGametick();
 	}
 	
 	public GSBlockEventTime getEndTime() {
