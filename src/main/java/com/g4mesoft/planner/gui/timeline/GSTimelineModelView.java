@@ -16,7 +16,6 @@ import com.g4mesoft.planner.timeline.GSTrackEntry;
 
 public class GSTimelineModelView {
 
-	/* Extra ticks that should be added to the timeline */
 	private static final int EXTRA_MICROTICKS = 1;
 	
 	private static final int GAMETICK_COLUMN_WIDTH = 30;
@@ -89,7 +88,7 @@ public class GSTimelineModelView {
 		lookupSize = (int)(modelEndTime.getGametick() - modelStartTime.getGametick()) + 1;
 		
 		int columnsInView = (width + GAMETICK_COLUMN_WIDTH - 1) / GAMETICK_COLUMN_WIDTH;
-		numColumns = Math.max((int)modelEndTime.getGametick() + 1, columnsInView);
+		numColumns = Math.max(getColumnIndex(modelEndTime) + 1, columnsInView);
 	}
 	
 	private void updateDurationLookup() {
@@ -178,7 +177,7 @@ public class GSTimelineModelView {
 	}
 	
 	private int getLookupOffset(int columnIndex) {
-		int lookupOffset = (int)(columnIndex - modelStartTime.getGametick());
+		int lookupOffset = (int)(getColumnGametick(columnIndex) - modelStartTime.getGametick());
 		if (lookupOffset < 0 || lookupOffset >= lookupSize)
 			return -1;
 		return lookupOffset;
@@ -187,7 +186,7 @@ public class GSTimelineModelView {
 	/* ******************** MODEL TO VIEW methods ******************** */
 
 	public Rectangle modelToView(int trackIndex, GSTrackEntry entry) {
-		return modelToView(trackIndex, entry, new Rectangle());
+		return modelToView(trackIndex, entry, null);
 	}
 	
 	public Rectangle modelToView(int trackIndex, GSTrackEntry entry, Rectangle dest) {
@@ -204,7 +203,10 @@ public class GSTimelineModelView {
 			// should not render it. Return null.
 			return null;
 		}
-			
+		
+		if (dest == null)
+			dest = new Rectangle();
+		
 		dest.y = getEntryY(trackIndex);
 		dest.height = ENTRY_HEIGHT;
 		
@@ -352,8 +354,8 @@ public class GSTimelineModelView {
 		return viewToModel(x, y);
 	}
 	
-	public int getColumnGametick(int columnIndex) {
-		return columnIndex;
+	public long getColumnGametick(int columnIndex) {
+		return (long)columnIndex;
 	}
 	
 	public GSBlockEventTime getColumnTime(int columnIndex, int mt) {

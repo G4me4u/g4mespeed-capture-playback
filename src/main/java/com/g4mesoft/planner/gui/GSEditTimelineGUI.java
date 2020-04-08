@@ -69,7 +69,7 @@ public class GSEditTimelineGUI extends GSScreen implements GSITrackProvider {
 		super.init();
 
 		timelineGUI.initBounds(minecraft, 0, 0, width, height);
-		children.add(timelineGUI);
+		addPanel(timelineGUI);
 
 		setFocused(timelineGUI);
 	}
@@ -80,8 +80,6 @@ public class GSEditTimelineGUI extends GSScreen implements GSITrackProvider {
 		renderBackground();
 
 		super.render(mouseX, mouseY, partialTicks);
-
-		timelineGUI.render(mouseX, mouseY, partialTicks);
 	}
 
 	@Override

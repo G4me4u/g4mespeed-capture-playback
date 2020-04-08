@@ -3,6 +3,7 @@ package com.g4mesoft.planner.timeline;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class GSTimeline {
 
@@ -80,9 +81,11 @@ public class GSTimeline {
 	}
 	
 	public void setName(String name) {
-		this.name = name;
-		
-		dispatchTimelinePropertyChanged(PROPERTY_NAME);
+		if (!Objects.equals(name, this.name)) {
+			this.name = name;
+			
+			dispatchTimelinePropertyChanged(PROPERTY_NAME);
+		}
 	}
 	
 	public String getName() {

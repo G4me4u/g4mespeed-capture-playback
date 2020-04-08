@@ -42,7 +42,6 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 	private static final int DOTTED_LINE_LENGTH = 4;
 	private static final int DOTTED_LINE_SPACING = 3;
 
-	
 	/* Add track button constants */
 	private static final String ADD_TRACK_BUTTON_TEXT = "+ Add Track";
 	private static final int ADD_TRACK_BUTTON_MARGIN = 2;
@@ -65,17 +64,14 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 	
 	private int rowHeight;
 	private int expandedColumnIndex;
-	
+
+	private double currentMouseX;
+	private double currentMouseY;
 	private GSBlockEventTime hoveredTime;
 	private int hoveredTrackIndex;
 	private GSTrack hoveredTrack;
 	private GSTrackEntry hoveredEntry;
 	
-	private int selectedTrackIndex;
-	private GSTrack selectedTrack;
-	private GSTrackEntry selectedEntry;
-	private boolean toggleSelection;
-
 	private double clickedMouseX;
 	private double clickedMouseY;
 	private GSBlockEventTime clickedMouseTime;
@@ -84,9 +80,11 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 	private GSBlockEventTime draggedStartTime;
 	private GSBlockEventTime draggedEndTime;
 	private boolean draggedEntryChanged;
-	
-	private double currentMouseX;
-	private double currentMouseY;
+
+	private int selectedTrackIndex;
+	private GSTrack selectedTrack;
+	private GSTrackEntry selectedEntry;
+	private boolean toggleSelection;
 	
 	private boolean editable;
 	
@@ -100,8 +98,6 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 		
 		expandedColumnIndex = -1;
 		draggingType = GSDraggingType.NOT_DRAGGING;
-		
-		timeline.addTimelineListener(this);
 	}
 	
 	@Override
@@ -111,6 +107,20 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 		rowHeight = ROW_LABEL_PADDING * 2 + font.fontHeight;
 
 		initModelView();
+	}
+	
+	@Override
+	protected void onAdded() {
+		super.onAdded();
+		
+		timeline.addTimelineListener(this);
+	}
+
+	@Override
+	protected void onRemoved() {
+		super.onRemoved();
+
+		timeline.removeTimelineListener(this);
 	}
 	
 	private void initModelView() {
@@ -555,7 +565,7 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 			}
 			
 			if (expandedColumnIndex != -1) {
-				if (t0.getGametick() != t1.getGametick() || t0.getGametick() != expandedColumnIndex)
+				if (t0.getGametick() != t1.getGametick() || modelView.getColumnIndex(t0) != expandedColumnIndex)
 					t0 = t1 = null;
 			} else {
 				t0 = new GSBlockEventTime(t0.getGametick(), 0);
@@ -571,6 +581,7 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 					this.draggingType = draggingType;
 					draggedStartTime = hoveredEntry.getStartTime();
 					draggedEndTime = hoveredEntry.getEndTime();
+					draggedEntryChanged = true;
 				}
 			}
 		}
@@ -593,7 +604,7 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 			endTime = endTime.offsetCopy(deltaGameticks, 0);
 		}
 		
-		if (startTime.getGametick() >= 0 && startTime.getMicrotick() >= 0) {
+		if (startTime.getGametick() >= modelView.getColumnGametick(0) && startTime.getMicrotick() >= 0) {
 			if (selectedEntry.getStartTime().isEqual(startTime))
 				return false;
 			
@@ -650,10 +661,12 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 		
 		GSResizeArea resizeArea = null;
 		if (mouseX >= r.x && mouseX < r.x + DRAGGING_AREA_SIZE) {
-			if (expandedColumnIndex == -1 || expandedColumnIndex == entry.getStartTime().getGametick())
+			int columnIndex = modelView.getColumnIndex(entry.getStartTime());
+			if (expandedColumnIndex == -1 || expandedColumnIndex == columnIndex)
 				resizeArea = GSResizeArea.HOVERING_START;
 		} else if (mouseX < r.x + r.width && mouseX >= r.x + r.width - DRAGGING_AREA_SIZE) {
-			if (expandedColumnIndex == -1 || expandedColumnIndex == entry.getEndTime().getGametick())
+			int columnIndex = modelView.getColumnIndex(entry.getEndTime());
+			if (expandedColumnIndex == -1 || expandedColumnIndex == columnIndex)
 				resizeArea = GSResizeArea.HOVERING_END;
 		}
 		

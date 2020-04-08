@@ -78,9 +78,12 @@ public class GSTrack {
 	public void setInfo(GSTrackInfo info) {
 		if (info == null)
 			throw new NullPointerException("Info must not be null!");
-		this.info = info;
 		
-		timeline.onTrackPropertyChanged(this, PROPERTY_INFO);
+		if (!this.info.equals(info)) {
+			this.info = info;
+			
+			timeline.onTrackPropertyChanged(this, PROPERTY_INFO);
+		}
 	}
 	
 	public GSTrackInfo getInfo() {
@@ -88,9 +91,11 @@ public class GSTrack {
 	}
 	
 	public void setDisabled(boolean disabled) {
-		this.disabled = disabled;
-		
-		timeline.onTrackPropertyChanged(this, PROPERTY_DISABLED);
+		if (this.disabled != disabled) {
+			this.disabled = disabled;
+			
+			timeline.onTrackPropertyChanged(this, PROPERTY_DISABLED);
+		}
 	}
 
 	public boolean isDisabled() {

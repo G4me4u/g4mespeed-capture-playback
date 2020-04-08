@@ -29,7 +29,7 @@ public class GSPlannerGUI extends GSPanel {
 		addPanel(positionGUI);
 		y += POSITION_GUI_HEIGHT + 5;
 
-		addWidget(new ButtonWidget(width / 2 - 45, y, 90, 16, "Edit timeline", (button) -> {
+		addWidget(new ButtonWidget(width / 2 - 45, y, 90, 20, "Edit timeline", (button) -> {
 			client.openScreen(new GSEditTimelineGUI(plannerModule.getActiveTimeline(), plannerModule));
 		}));
 	}
