@@ -1,7 +1,11 @@
 package com.g4mesoft.captureplayback.timeline;
 
+import java.io.IOException;
 import java.util.Objects;
 
+import com.g4mesoft.util.GSBufferUtil;
+
+import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 public class GSTrackInfo {
@@ -15,7 +19,7 @@ public class GSTrackInfo {
 		this.pos = pos.toImmutable();
 		this.color = color;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
@@ -43,5 +47,19 @@ public class GSTrackInfo {
 		if (other instanceof GSTrackInfo)
 			return equals((GSTrackInfo)other);
 		return false;
+	}
+	
+	public static GSTrackInfo read(PacketByteBuf buf) throws IOException {
+		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		BlockPos pos = buf.readBlockPos();
+		int color = buf.readInt();
+		
+		return new GSTrackInfo(name, pos, color);
+	}
+
+	public static void write(PacketByteBuf buf, GSTrackInfo info) throws IOException {
+		buf.writeString(info.name);
+		buf.writeBlockPos(info.pos);
+		buf.writeInt(info.color);
 	}
 }

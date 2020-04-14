@@ -1,5 +1,9 @@
 package com.g4mesoft.captureplayback.timeline;
 
+import java.io.IOException;
+
+import net.minecraft.util.PacketByteBuf;
+
 public class GSBlockEventTime {
 
 	public static final GSBlockEventTime ZERO = new GSBlockEventTime(0L, 0);
@@ -12,7 +16,7 @@ public class GSBlockEventTime {
 		this.gametick = gametick;
 		this.microtick = microtick;
 	}
-
+	
 	public GSBlockEventTime offsetCopy(long gtOffset, int mtOffset) {
 		return new GSBlockEventTime(gametick + gtOffset, microtick + mtOffset);
 	}
@@ -46,5 +50,16 @@ public class GSBlockEventTime {
 		if (other instanceof GSBlockEventTime)
 			return isEqual((GSBlockEventTime)other);
 		return false;
+	}
+	
+	public static GSBlockEventTime read(PacketByteBuf buf) throws IOException {
+		long gametick = buf.readLong();
+		int microtick = buf.readInt();
+		return new GSBlockEventTime(gametick, microtick);
+	}
+
+	public static void write(PacketByteBuf buf, GSBlockEventTime time) throws IOException {
+		buf.writeLong(time.gametick);
+		buf.writeInt(time.microtick);
 	}
 }
