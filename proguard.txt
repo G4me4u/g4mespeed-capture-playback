@@ -16,9 +16,9 @@
 -dontwarn com.google.**
 
 # Keep entry class
--keep public class com.g4mesoft.planner.G4mespeedPlannerMod { *; }
+-keepnames class com.g4mesoft.captureplayback.G4mespeedCapturePlaybackMod { }
 
--keepnames class com.g4mesoft.planner.mixin.**
+-keepnames class com.g4mesoft.captureplayback.mixin.**
 
 # Keep g4mespeed entry class for multi obfuscation
 -keep public class com.g4mesoft.G4mespeedMod { *; }
@@ -36,7 +36,7 @@
 	@com.g4mesoft.core.GSCoreOverride *;
 }
 
--keepclassmembernames class com.g4mesoft.planner.mixin.** {
+-keepclassmembernames class com.g4mesoft.captureplayback.mixin.** {
 	private <fields>;
 }
 
@@ -45,7 +45,7 @@
 # Allow certain changes to source code.
 -optimizationpasses 3
 -overloadaggressively
--repackageclasses 'planner'
+-repackageclasses 'captureplayback'
 -allowaccessmodification
 
 -dontshrink

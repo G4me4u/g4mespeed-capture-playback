@@ -1,0 +1,16 @@
+# Translation version 0
+:0
+
+############ GUI Elements ############
+
+gui.tab.capture-playback=Capture & Playback
+
+############ Hotkeys ############
+
+hotkey.capture-playback.title=Capture & Playback
+hotkey.capture-playback.collapseTab=Collapse Expanded Tab
+hotkey.capture-playback.expandedHoveredTab=Expand Hovered Tab
+
+############ Timeline ############
+
+timeline.track.defaultname=New Track

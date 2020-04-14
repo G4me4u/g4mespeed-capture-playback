@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "g4mespeed-planner",
+  "id": "g4mespeed-capture-playback",
   "version": "${version}",
 
-  "name": "G4mespeed Planner",
+  "name": "G4mespeed Capture & Playback",
   "description": "Sexy piston layout planner for the G4mespeed mod by G4me4u",
   "authors": [
     "G4me4u"
@@ -13,16 +13,16 @@
   },
 
   "license": "CC-BY-ND-4.0",
-  "icon": "assets/g4mespeed/planner/icon.png",
+  "icon": "assets/g4mespeed/captureplayback/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.g4mesoft.planner.G4mespeedPlannerMod"
+      "com.g4mesoft.captureplayback.G4mespeedCapturePlaybackMod"
     ]
   },
   "mixins": [
-    "g4mespeed.planner.mixins.json"
+    "g4mespeed.capture-playback.mixins.json"
   ],
 
   "depends": {
