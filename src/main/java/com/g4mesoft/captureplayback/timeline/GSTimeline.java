@@ -1,31 +1,53 @@
 package com.g4mesoft.captureplayback.timeline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+
+import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 
 public class GSTimeline {
 
-	public static final int PROPERTY_NAME = 0;
-	
 	private String name;
 	
-	private final List<GSTrack> tracks;
+	private final Map<UUID, GSTrack> tracks;
 	private final List<GSITimelineListener> listeners;
 	
 	public GSTimeline() {
-		tracks = new ArrayList<GSTrack>();
+		tracks = new LinkedHashMap<UUID, GSTrack>();
 		listeners = new ArrayList<GSITimelineListener>();
 	}
-	
+
 	public void addTrack(GSTrackInfo info) {
-		GSTrack track = new GSTrack(info, this);
-		tracks.add(track);
+		addTrack(GSUUIDUtil.randomUnique(this::hasTrackUUID), info);
+	}
+	
+	public void addTrack(UUID trackUUID, GSTrackInfo info) {
+		if (hasTrackUUID(trackUUID))
+			throw new IllegalStateException("Duplicate track UUID");
+		
+		GSTrack track = new GSTrack(trackUUID, this, info);
+		tracks.put(trackUUID, track);
 		
 		dispatchTrackAdded(track);
 	}
-
+	
+	public boolean removeTrack(UUID trackUUID) {
+		GSTrack track = tracks.remove(trackUUID);
+		if (track != null) {
+			dispatchTrackRemoved(track);
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public void addTimelineListener(GSITimelineListener listener) {
 		listeners.add(listener);
 	}
@@ -34,25 +56,39 @@ public class GSTimeline {
 		listeners.remove(listener);
 	}
 	
-	void onTrackPropertyChanged(GSTrack track, int property) {
-		dispatchTrackPropertyChanged(track, property);
+	void onTrackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
+		for (GSITimelineListener listener : listeners)
+			listener.trackInfoChanged(track, oldInfo);
 	}
 
-	void onEntryAdded(GSTrack track, GSTrackEntry entry) {
-		dispatchEntryAdded(track, entry);
-	}
-	
-	void onEntryRemoved(GSTrack track, GSTrackEntry entry) {
-		dispatchEntryRemoved(track, entry);
-	}
-	
-	void onEntryPropertyChanged(GSTrack track, GSTrackEntry entry, int property) {
-		dispatchEntryPropertyChanged(track, entry, property);
-	}
-	
-	private void dispatchTimelinePropertyChanged(int property) {
+	void onTrackDisabledChanged(GSTrack track, boolean oldDisabled) {
 		for (GSITimelineListener listener : listeners)
-			listener.timelinePropertyChanged(property);
+			listener.trackDisabledChanged(track, oldDisabled);
+	}
+
+	void onEntryAdded(GSTrackEntry entry) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryAdded(entry);
+	}
+	
+	void onEntryRemoved(GSTrackEntry entry) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryRemoved(entry);
+	}
+	
+	void onEntryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryTimeChanged(entry, oldStart, oldEnd);
+	}
+	
+	void onEntryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
+		for (GSITimelineListener listener : listeners)
+			listener.entryTypeChanged(entry, oldType);
+	}
+	
+	private void dispatchTimelineNameChanged(String oldName) {
+		for (GSITimelineListener listener : listeners)
+			listener.timelineNameChanged(oldName);
 	}
 
 	private void dispatchTrackAdded(GSTrack track) {
@@ -60,39 +96,41 @@ public class GSTimeline {
 			listener.trackAdded(track);
 	}
 
-	private void dispatchTrackPropertyChanged(GSTrack track, int property) {
+	private void dispatchTrackRemoved(GSTrack track) {
 		for (GSITimelineListener listener : listeners)
-			listener.trackPropertyChanged(track, property);
+			listener.trackRemoved(track);
 	}
 
-	private void dispatchEntryAdded(GSTrack track, GSTrackEntry entry) {
-		for (GSITimelineListener listener : listeners)
-			listener.entryAdded(track, entry);
-	}
-
-	private void dispatchEntryRemoved(GSTrack track, GSTrackEntry entry) {
-		for (GSITimelineListener listener : listeners)
-			listener.entryRemoved(track, entry);
-	}
-
-	private void dispatchEntryPropertyChanged(GSTrack track, GSTrackEntry entry, int property) {
-		for (GSITimelineListener listener : listeners)
-			listener.entryPropertyChanged(track, entry, property);
-	}
-	
 	public void setName(String name) {
-		if (!Objects.equals(name, this.name)) {
+		String oldName = this.name;
+		if (!Objects.equals(name, oldName)) {
 			this.name = name;
 			
-			dispatchTimelinePropertyChanged(PROPERTY_NAME);
+			dispatchTimelineNameChanged(oldName);
 		}
 	}
 	
 	public String getName() {
 		return name;
 	}
+
+	public GSTrack getTrack(UUID trackUUID) {
+		return tracks.get(trackUUID);
+	}
 	
-	public List<GSTrack> getTracks() {
-		return Collections.unmodifiableList(tracks);
+	public boolean hasTrackUUID(UUID trackUUID) {
+		return tracks.containsKey(trackUUID);
+	}
+	
+	public Set<Map.Entry<UUID, GSTrack>> getTrackEntries() {
+		return Collections.unmodifiableSet(tracks.entrySet());
+	}
+
+	public Set<UUID> getTrackUUIDs() {
+		return Collections.unmodifiableSet(tracks.keySet());
+	}
+	
+	public Collection<GSTrack> getTracks() {
+		return Collections.unmodifiableCollection(tracks.values());
 	}
 }

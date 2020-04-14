@@ -1,30 +1,30 @@
 package com.g4mesoft.captureplayback.timeline;
 
+import java.util.UUID;
+
 public final class GSTrackEntry {
 
-	public static final int PROPERTY_TIMESPAN = 0;
-	public static final int PROPERTY_TYPE     = 1;
-	public static final int PROPERTY_DISABLED = 2;
-	
+	private final UUID entryUUID;
 	private final GSTrack track;
 	
 	private GSBlockEventTime startTime;
 	private GSBlockEventTime endTime;
 	
 	private GSETrackEntryType type;
-	private boolean disabled;
 
-	GSTrackEntry(GSTrack track, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	GSTrackEntry(UUID entryUUID, GSTrack track, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+		if (entryUUID == null)
+			throw new NullPointerException("entryUUID is null");
 		if (track == null)
 			throw new NullPointerException("track is null");
 		
+		this.entryUUID = entryUUID;
 		this.track = track;
 		
 		this.startTime = startTime;
 		this.endTime = endTime;
 		
 		type = GSETrackEntryType.EVENT_BOTH;
-		disabled = false;
 
 		validateTimespan(startTime, endTime);
 	}
@@ -37,13 +37,15 @@ public final class GSTrackEntry {
 	}
 	
 	public void setTimespan(GSBlockEventTime startTime, GSBlockEventTime endTime) {
-		if (!this.startTime.isEqual(startTime) || !this.endTime.isEqual(endTime)) {
+		GSBlockEventTime oldStartTime = this.startTime;
+		GSBlockEventTime oldEndTime = this.endTime;
+		if (!oldStartTime.isEqual(startTime) || !oldEndTime.isEqual(endTime)) {
 			validateTimespan(startTime, endTime);
 
 			this.startTime = startTime;
 			this.endTime = endTime;
 			
-			track.onEntryPropertyChanged(this, PROPERTY_TIMESPAN);
+			track.onEntryTimeChanged(this, oldStartTime, oldEndTime);
 		}
 	}
 	
@@ -87,10 +89,11 @@ public final class GSTrackEntry {
 		if (type == null)
 			throw new NullPointerException();
 		
-		if (type != this.type) {
+		GSETrackEntryType oldType = this.type;
+		if (type != oldType) {
 			this.type = type;
 			
-			track.onEntryPropertyChanged(this, PROPERTY_TYPE);
+			track.onEntryTypeChanged(this, oldType);
 		}
 	}
 	
@@ -98,15 +101,11 @@ public final class GSTrackEntry {
 		return type;
 	}
 	
-	public void setDisabled(boolean disabled) {
-		if (disabled != this.disabled) {
-			this.disabled = disabled;
-			
-			track.onEntryPropertyChanged(this, PROPERTY_DISABLED);
-		}
+	public UUID getEntryUUID() {
+		return entryUUID;
 	}
 	
-	public boolean isDisabled() {
-		return disabled;
+	public GSTrack getTrack() {
+		return track;
 	}
 }

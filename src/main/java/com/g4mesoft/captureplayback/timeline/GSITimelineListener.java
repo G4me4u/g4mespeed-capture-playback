@@ -2,16 +2,30 @@ package com.g4mesoft.captureplayback.timeline;
 
 public interface GSITimelineListener {
 
-	public void timelinePropertyChanged(int property);
+	default public void timelineNameChanged(String oldName) {
+	}
 	
-	public void trackAdded(GSTrack track);
+	default public void trackAdded(GSTrack track) {
+	}
 
-	public void trackPropertyChanged(GSTrack track, int property);
-
-	public void entryAdded(GSTrack track, GSTrackEntry entry);
-
-	public void entryRemoved(GSTrack track, GSTrackEntry entry);
-
-	public void entryPropertyChanged(GSTrack track, GSTrackEntry entry, int property);
+	default public void trackRemoved(GSTrack track) {
+	}
 	
+	default public void trackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
+	}
+
+	default public void trackDisabledChanged(GSTrack track, boolean oldDisabled) {
+	}
+
+	default public void entryAdded(GSTrackEntry entry) {
+	}
+
+	default public void entryRemoved(GSTrackEntry entry) {
+	}
+
+	default public void entryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+	}
+
+	default public void entryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
+	}
 }
