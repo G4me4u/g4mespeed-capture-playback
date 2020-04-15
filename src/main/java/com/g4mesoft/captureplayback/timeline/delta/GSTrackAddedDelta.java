@@ -26,6 +26,7 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 	public void unapplyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
 		GSTrack track = getTrack(timeline);
 		checkTrackInfo(track, info);
+		checkTrackEntryCount(track, 0);
 		timeline.removeTrack(trackUUID);
 	}
 

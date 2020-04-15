@@ -4,6 +4,8 @@ import java.util.UUID;
 
 public final class GSTrackEntry {
 
+	public static final GSETrackEntryType DEFAULT_ENTRY_TYPE = GSETrackEntryType.EVENT_BOTH;
+	
 	private final UUID entryUUID;
 	private final GSTrack track;
 	
@@ -24,7 +26,7 @@ public final class GSTrackEntry {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		
-		type = GSETrackEntryType.EVENT_BOTH;
+		type = DEFAULT_ENTRY_TYPE;
 
 		validateTimespan(startTime, endTime);
 	}

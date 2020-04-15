@@ -85,7 +85,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	@Override
 	public void entryRemoved(GSTrackEntry entry) {
 		dispatchTimelineDeltaEvent(new GSEntryRemovedDelta(entry.getTrack().getTrackUUID(), 
-				entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime()));
+				entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), entry.getType()));
 	}
 
 	@Override

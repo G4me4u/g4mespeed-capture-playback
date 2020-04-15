@@ -9,6 +9,9 @@ public class GSTrackRemovedDelta extends GSTrackAddedDelta {
 
 	public GSTrackRemovedDelta(UUID trackUUID, GSTrackInfo info) {
 		super(trackUUID, info);
+		
+		// TODO: store more information. For example we need information about
+		//       all the entries that are part of the track when it was removed.
 	}
 	
 	@Override

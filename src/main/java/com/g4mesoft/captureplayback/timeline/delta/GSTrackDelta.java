@@ -37,6 +37,11 @@ public abstract class GSTrackDelta implements GSITimelineDelta {
 			throw new GSTimelineDeltaException("Track does not have the expected disabled state");
 	}
 	
+	protected void checkTrackEntryCount(GSTrack track, int expectedCount) throws GSTimelineDeltaException {
+		if (track.getEntries().size() != expectedCount)
+			throw new GSTimelineDeltaException("Track does not have the expected entry count");
+	}
+	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		trackUUID = buf.readUuid();
