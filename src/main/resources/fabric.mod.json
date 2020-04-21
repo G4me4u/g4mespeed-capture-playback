@@ -18,7 +18,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.g4mesoft.captureplayback.G4mespeedCapturePlaybackMod"
+      "com.g4mesoft.captureplayback.CapturePlaybackMod"
     ]
   },
   "mixins": [
@@ -27,6 +27,6 @@
 
   "depends": {
   	"minecraft": "1.14.x",
-  	"g4mespeed": "*"
+  	"g4mespeed": ">=1.1.0"
   }
 }

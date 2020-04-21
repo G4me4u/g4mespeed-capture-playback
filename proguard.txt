@@ -16,7 +16,7 @@
 -dontwarn com.google.**
 
 # Keep entry class
--keepnames class com.g4mesoft.captureplayback.G4mespeedCapturePlaybackMod { }
+-keepnames class com.g4mesoft.captureplayback.CapturePlaybackMod { }
 
 -keepnames class com.g4mesoft.captureplayback.mixin.**
 

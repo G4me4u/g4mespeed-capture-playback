@@ -18,6 +18,11 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 
 	public GSEntryAddedDelta() {
 	}
+
+	public GSEntryAddedDelta(GSTrackEntry entry) {
+		this(entry.getOwnerTrack().getTrackUUID(), entry.getEntryUUID(),
+				entry.getStartTime(), entry.getEndTime());
+	}
 	
 	public GSEntryAddedDelta(UUID trackUUID, UUID entryUUID, GSBlockEventTime startTime, GSBlockEventTime endTime) {
 		super(trackUUID, entryUUID);
@@ -31,7 +36,7 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 		GSTrackEntry entry = getEntry(timeline);
 		checkEntryTimespan(entry, startTime, endTime);
 		checkEntryType(entry, getExpectedType());
-		entry.getTrack().removeEntry(entryUUID);
+		entry.getOwnerTrack().removeEntry(entryUUID);
 	}
 
 	@Override

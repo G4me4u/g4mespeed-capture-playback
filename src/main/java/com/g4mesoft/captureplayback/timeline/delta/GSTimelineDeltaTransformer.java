@@ -16,6 +16,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	private final List<GSITimelineDeltaListener> listeners;
 	
 	private GSTimeline timeline;
+	private boolean disabled;
 	
 	public GSTimelineDeltaTransformer() {
 		listeners = new ArrayList<GSITimelineDeltaListener>();
@@ -51,53 +52,66 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 		this.timeline = null;
 	}
 	
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+	}
+	
 	@Override
 	public void timelineNameChanged(String oldName) {
-		dispatchTimelineDeltaEvent(new GSTimelineNameDelta(timeline.getName(), oldName));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSTimelineNameDelta(timeline.getName(), oldName));
 	}
 	
 	@Override
 	public void trackAdded(GSTrack track) {
-		dispatchTimelineDeltaEvent(new GSTrackAddedDelta(track.getTrackUUID(), track.getInfo()));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSTrackAddedDelta(track));
 	}
 
 	@Override
 	public void trackRemoved(GSTrack track) {
-		dispatchTimelineDeltaEvent(new GSTrackRemovedDelta(track.getTrackUUID(), track.getInfo()));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSTrackRemovedDelta(track));
 	}
 	
 	@Override
 	public void trackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
-		dispatchTimelineDeltaEvent(new GSTrackInfoDelta(track.getTrackUUID(), track.getInfo(), oldInfo));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSTrackInfoDelta(track.getTrackUUID(), track.getInfo(), oldInfo));
 	}
 
 	@Override
 	public void trackDisabledChanged(GSTrack track, boolean oldDisabled) {
-		dispatchTimelineDeltaEvent(new GSTrackDisabledDelta(track.getTrackUUID(), track.isDisabled(), oldDisabled));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSTrackDisabledDelta(track.getTrackUUID(), track.isDisabled(), oldDisabled));
 	}
 
 	@Override
 	public void entryAdded(GSTrackEntry entry) {
-		dispatchTimelineDeltaEvent(new GSEntryAddedDelta(entry.getTrack().getTrackUUID(), 
-				entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime()));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSEntryAddedDelta(entry));
 	}
 
 	@Override
 	public void entryRemoved(GSTrackEntry entry) {
-		dispatchTimelineDeltaEvent(new GSEntryRemovedDelta(entry.getTrack().getTrackUUID(), 
-				entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), entry.getType()));
+		if (!disabled)
+			dispatchTimelineDeltaEvent(new GSEntryRemovedDelta(entry));
 	}
 
 	@Override
 	public void entryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
-		dispatchTimelineDeltaEvent(new GSEntryTimeDelta(entry.getTrack().getTrackUUID(),
-				entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), oldStart, oldEnd));
+		if (!disabled) {
+			dispatchTimelineDeltaEvent(new GSEntryTimeDelta(entry.getOwnerTrack().getTrackUUID(),
+					entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), oldStart, oldEnd));
+		}
 	}
 
 	@Override
 	public void entryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
-		dispatchTimelineDeltaEvent(new GSEntryTypeDelta(entry.getTrack().getTrackUUID(),
-				entry.getEntryUUID(), entry.getType(), oldType));
+		if (!disabled) {
+			dispatchTimelineDeltaEvent(new GSEntryTypeDelta(entry.getOwnerTrack().getTrackUUID(),
+					entry.getEntryUUID(), entry.getType(), oldType));
+		}
 	}
 	
 	private void dispatchTimelineDeltaEvent(GSITimelineDelta delta) {

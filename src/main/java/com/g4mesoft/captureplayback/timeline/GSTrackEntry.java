@@ -1,40 +1,63 @@
 package com.g4mesoft.captureplayback.timeline;
 
+import java.io.IOException;
 import java.util.UUID;
+
+import net.minecraft.util.PacketByteBuf;
 
 public final class GSTrackEntry {
 
 	public static final GSETrackEntryType DEFAULT_ENTRY_TYPE = GSETrackEntryType.EVENT_BOTH;
+	public static final GSBlockEventTime DEFAULT_TIME = new GSBlockEventTime(0L, 0);
 	
 	private final UUID entryUUID;
-	private final GSTrack track;
 	
 	private GSBlockEventTime startTime;
 	private GSBlockEventTime endTime;
 	
 	private GSETrackEntryType type;
 
-	GSTrackEntry(UUID entryUUID, GSTrack track, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	private GSTrack owner;
+
+	GSTrackEntry(UUID entryUUID) {
+		this(entryUUID, DEFAULT_TIME, DEFAULT_TIME);
+	}
+
+	GSTrackEntry(UUID entryUUID, GSBlockEventTime startTime, GSBlockEventTime endTime) {
 		if (entryUUID == null)
 			throw new NullPointerException("entryUUID is null");
-		if (track == null)
-			throw new NullPointerException("track is null");
 		
 		this.entryUUID = entryUUID;
-		this.track = track;
 		
 		this.startTime = startTime;
 		this.endTime = endTime;
 		
 		type = DEFAULT_ENTRY_TYPE;
 
+		owner = null;
+		
 		validateTimespan(startTime, endTime);
+	}
+	
+	public void setOwnerTrack(GSTrack owner) {
+		if (this.owner != null)
+			throw new IllegalStateException("Entry already has an owner");
+		this.owner = owner;
+	}
+	
+	public GSTrack getOwnerTrack() {
+		return owner;
+	}
+	
+	public void set(GSTrackEntry other) {
+		setTimespan(other.getStartTime(), other.getEndTime());
+		setType(other.getType());
 	}
 	
 	private void validateTimespan(GSBlockEventTime startTime, GSBlockEventTime endTime) {
 		if (startTime.isAfter(endTime))
 			throw new IllegalArgumentException("Start time is after end time!");
-		if (track.isOverlappingEntries(startTime, endTime, this))
+		if (owner != null && owner.isOverlappingEntries(startTime, endTime, this))
 			throw new IllegalArgumentException("Timespan is overlapping other track entries!");
 	}
 	
@@ -47,7 +70,8 @@ public final class GSTrackEntry {
 			this.startTime = startTime;
 			this.endTime = endTime;
 			
-			track.onEntryTimeChanged(this, oldStartTime, oldEndTime);
+			if (owner != null)
+				owner.onEntryTimeChanged(this, oldStartTime, oldEndTime);
 		}
 	}
 	
@@ -95,7 +119,8 @@ public final class GSTrackEntry {
 		if (type != oldType) {
 			this.type = type;
 			
-			track.onEntryTypeChanged(this, oldType);
+			if (owner != null)
+				owner.onEntryTypeChanged(this, oldType);
 		}
 	}
 	
@@ -106,8 +131,28 @@ public final class GSTrackEntry {
 	public UUID getEntryUUID() {
 		return entryUUID;
 	}
-	
-	public GSTrack getTrack() {
-		return track;
+
+	public static GSTrackEntry read(PacketByteBuf buf) throws IOException {
+		GSTrackEntry entry = new GSTrackEntry(buf.readUuid());
+
+		GSBlockEventTime startTime = GSBlockEventTime.read(buf);
+		GSBlockEventTime endTime = GSBlockEventTime.read(buf);
+		entry.setTimespan(startTime, endTime);
+		
+		GSETrackEntryType type = GSETrackEntryType.fromIndex(buf.readInt());
+		if (type == null)
+			throw new IOException("Invalid entry type");
+		entry.setType(type);
+		
+		return entry;
+	}
+
+	public static void write(PacketByteBuf buf, GSTrackEntry entry) throws IOException {
+		buf.writeUuid(entry.getEntryUUID());
+		
+		GSBlockEventTime.write(buf, entry.getStartTime());
+		GSBlockEventTime.write(buf, entry.getEndTime());
+
+		buf.writeInt(entry.getType().getIndex());
 	}
 }

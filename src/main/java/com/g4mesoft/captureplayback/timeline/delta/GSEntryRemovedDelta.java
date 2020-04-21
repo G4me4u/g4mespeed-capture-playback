@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
+import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
 import net.minecraft.util.PacketByteBuf;
 
@@ -15,15 +16,20 @@ public class GSEntryRemovedDelta extends GSEntryAddedDelta {
 	
 	public GSEntryRemovedDelta() {
 	}
+
+	public GSEntryRemovedDelta(GSTrackEntry entry) {
+		this(entry.getOwnerTrack().getTrackUUID(), entry.getEntryUUID(),
+				entry.getStartTime(), entry.getEndTime(), entry.getType());
+	}
 	
-	public GSEntryRemovedDelta(UUID trackUUID, UUID entryUUID, GSBlockEventTime startTime, 
+	public GSEntryRemovedDelta(UUID trackUUID, UUID entryUUID, GSBlockEventTime startTime,
 			GSBlockEventTime endTime, GSETrackEntryType type) {
 		
 		super(trackUUID, entryUUID, startTime, endTime);
 		
 		this.type = type;
 	}
-	
+
 	@Override
 	public void unapplyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
 		super.applyDelta(timeline);

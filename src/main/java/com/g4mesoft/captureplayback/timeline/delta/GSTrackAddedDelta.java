@@ -15,6 +15,10 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 
 	public GSTrackAddedDelta() {
 	}
+
+	public GSTrackAddedDelta(GSTrack track) {
+		this(track.getTrackUUID(), track.getInfo());
+	}
 	
 	public GSTrackAddedDelta(UUID trackUUID, GSTrackInfo info) {
 		super(trackUUID);
@@ -26,7 +30,8 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 	public void unapplyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
 		GSTrack track = getTrack(timeline);
 		checkTrackInfo(track, info);
-		checkTrackEntryCount(track, 0);
+		checkTrackDisabled(track, getExpectedDisabled());
+		checkTrackEntryCount(track, getExpectedEntryCount());
 		timeline.removeTrack(trackUUID);
 	}
 
@@ -35,7 +40,15 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 		if (timeline.hasTrackUUID(trackUUID))
 			throw new GSTimelineDeltaException("Track already exists");
 		
-		timeline.addTrack(trackUUID, info);
+		timeline.addTrack(trackUUID, info).setDisabled(getExpectedDisabled());
+	}
+	
+	protected boolean getExpectedDisabled() {
+		return GSTrack.DEFAULT_DISABLED;
+	}
+	
+	protected int getExpectedEntryCount() {
+		return 0;
 	}
 	
 	@Override
