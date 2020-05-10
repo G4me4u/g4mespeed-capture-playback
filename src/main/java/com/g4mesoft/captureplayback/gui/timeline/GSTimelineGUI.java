@@ -133,7 +133,9 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 	private void initModelView() {
 		modelView.updateModelView();
 
-		timelineViewport.setMinimumContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
+		int minWidth = modelView.getMinimumWidth();
+		int minHeight = modelView.getMinimumHeight() + ADD_TRACK_BUTTON_MARGIN + getAddTrackButtonBounds().height;
+		timelineViewport.setMinimumContentSize(minWidth, minHeight);
 	
 		// Ensure that we are not expanding an invalid column.
 		if (expandedColumnIndex >= modelView.getNumColumns())

@@ -358,7 +358,7 @@ public class GSTimelineModelView {
 	}
 	
 	public UUID getTrackUUIDFromView(int y) {
-		if (y >= viewport.getY() && y < viewport.getY() + viewport.getHeight()) {
+		if (y >= 0 && y < viewport.getHeight()) {
 			int trackIndex = (y - viewport.getY()) / (timelineGUI.getRowHeight() + ROW_SPACING);
 			if (trackIndexToUUID.containsKey(trackIndex))
 				return trackIndexToUUID.get(trackIndex);
