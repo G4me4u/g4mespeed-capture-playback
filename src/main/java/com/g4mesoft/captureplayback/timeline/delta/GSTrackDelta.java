@@ -42,6 +42,23 @@ public abstract class GSTrackDelta implements GSITimelineDelta {
 			throw new GSTimelineDeltaException("Track does not have the expected entry count");
 	}
 	
+	protected void removeTrack(GSTimeline timeline, GSTrackInfo info, boolean expectedDisabled, 
+			int expectedEntryCount) throws GSTimelineDeltaException {
+		
+		GSTrack track = getTrack(timeline);
+		checkTrackInfo(track, info);
+		checkTrackDisabled(track, expectedDisabled);
+		checkTrackEntryCount(track, expectedEntryCount);
+		timeline.removeTrack(trackUUID);
+	}
+	
+	protected GSTrack addTrack(GSTimeline timeline, GSTrackInfo info) throws GSTimelineDeltaException {
+		if (timeline.hasTrackUUID(trackUUID))
+			throw new GSTimelineDeltaException("Track already exists");
+		
+		return timeline.addTrack(trackUUID, info);
+	}
+	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		trackUUID = buf.readUuid();

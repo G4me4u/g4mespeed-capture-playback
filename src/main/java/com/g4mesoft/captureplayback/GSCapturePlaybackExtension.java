@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback;
 
+import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.module.GSTimelineDeltaPacket;
@@ -74,7 +75,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	}
 
 	@Override
-	public byte getUniqueId() {
+	public GSExtensionUID getUniqueId() {
 		return CapturePlaybackMod.EXTENSION_UID;
 	}
 

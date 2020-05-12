@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.g4mesoft.G4mespeedMod;
+import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.core.GSCoreOverride;
 
 import net.fabricmc.api.ModInitializer;
@@ -11,7 +12,9 @@ import net.fabricmc.api.ModInitializer;
 public class CapturePlaybackMod implements ModInitializer {
 
 	public static final String MOD_NAME = "G4mespeed Capture & Playback";
-	public static final byte EXTENSION_UID = 0x04;
+	
+	/* CAPL in HEX */
+	public static final GSExtensionUID EXTENSION_UID = new GSExtensionUID(0x4341504c);
 	
 	public static final Logger GSP_LOGGER = LogManager.getLogger(MOD_NAME);
 

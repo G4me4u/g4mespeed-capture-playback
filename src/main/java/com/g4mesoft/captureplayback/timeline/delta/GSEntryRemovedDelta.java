@@ -10,8 +10,10 @@ import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
 import net.minecraft.util.PacketByteBuf;
 
-public class GSEntryRemovedDelta extends GSEntryAddedDelta {
+public class GSEntryRemovedDelta extends GSEntryDelta {
 
+	private GSBlockEventTime startTime;
+	private GSBlockEventTime endTime;
 	private GSETrackEntryType type;
 	
 	public GSEntryRemovedDelta() {
@@ -25,29 +27,31 @@ public class GSEntryRemovedDelta extends GSEntryAddedDelta {
 	public GSEntryRemovedDelta(UUID trackUUID, UUID entryUUID, GSBlockEventTime startTime,
 			GSBlockEventTime endTime, GSETrackEntryType type) {
 		
-		super(trackUUID, entryUUID, startTime, endTime);
+		super(trackUUID, entryUUID);
 		
+		this.startTime = startTime;
+		this.endTime = endTime;
 		this.type = type;
 	}
 
 	@Override
 	public void unapplyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
-		super.applyDelta(timeline);
+		GSTrackEntry entry = addEntry(timeline, entryUUID, startTime, endTime);
+		
+		entry.setType(type);
 	}
 
 	@Override
 	public void applyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
-		super.unapplyDelta(timeline);
-	}
-	
-	@Override
-	protected GSETrackEntryType getExpectedType() {
-		return type;
+		removeEntry(timeline, entryUUID, startTime, endTime, type);
 	}
 	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		super.read(buf);
+		
+		startTime = GSBlockEventTime.read(buf);
+		endTime = GSBlockEventTime.read(buf);
 		
 		type = GSETrackEntryType.fromIndex(buf.readInt());
 		if (type == null)
@@ -58,6 +62,9 @@ public class GSEntryRemovedDelta extends GSEntryAddedDelta {
 	public void write(PacketByteBuf buf) throws IOException {
 		super.write(buf);
 
+		GSBlockEventTime.write(buf, startTime);
+		GSBlockEventTime.write(buf, endTime);
+		
 		buf.writeInt(type.getIndex());
 	}
 }

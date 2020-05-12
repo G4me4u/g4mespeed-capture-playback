@@ -48,6 +48,29 @@ public abstract class GSEntryDelta extends GSTrackDelta {
 			throw new GSTimelineDeltaException("Entry does not have the expected type");
 	}
 	
+	protected void removeEntry(GSTimeline timeline, UUID entryUUID, GSBlockEventTime startTime, 
+			GSBlockEventTime endTime, GSETrackEntryType expectedType) throws GSTimelineDeltaException {
+
+		GSTrackEntry entry = getEntry(timeline);
+		checkEntryTimespan(entry, startTime, endTime);
+		checkEntryType(entry, expectedType);
+		entry.getOwnerTrack().removeEntry(entryUUID);
+	}
+	
+	protected GSTrackEntry addEntry(GSTimeline timeline, UUID entryUUID, GSBlockEventTime startTime,
+			GSBlockEventTime endTime) throws GSTimelineDeltaException {
+		
+		GSTrack track = getTrack(timeline);
+		if (track.hasEntryUUID(entryUUID))
+			throw new GSTimelineDeltaException("Entry already exists");
+
+		GSTrackEntry entry = track.tryAddEntry(entryUUID, startTime, endTime);
+		if (entry == null)
+			throw new GSTimelineDeltaException("Unable to add entry");
+		
+		return entry;
+	}
+	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		super.read(buf);

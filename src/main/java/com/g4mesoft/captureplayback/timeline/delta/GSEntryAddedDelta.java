@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
-import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
-import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
 import net.minecraft.util.PacketByteBuf;
@@ -33,27 +31,12 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 	
 	@Override
 	public void unapplyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
-		GSTrackEntry entry = getEntry(timeline);
-		checkEntryTimespan(entry, startTime, endTime);
-		checkEntryType(entry, getExpectedType());
-		entry.getOwnerTrack().removeEntry(entryUUID);
+		removeEntry(timeline, entryUUID, startTime, endTime, GSTrackEntry.DEFAULT_ENTRY_TYPE);
 	}
 
 	@Override
 	public void applyDelta(GSTimeline timeline) throws GSTimelineDeltaException {
-		GSTrack track = getTrack(timeline);
-		if (track.hasEntryUUID(entryUUID))
-			throw new GSTimelineDeltaException("Entry already exists");
-
-		GSTrackEntry entry = track.tryAddEntry(entryUUID, startTime, endTime);
-		if (entry == null)
-			throw new GSTimelineDeltaException("Unable to add entry");
-		
-		entry.setType(getExpectedType());
-	}
-	
-	protected GSETrackEntryType getExpectedType() {
-		return GSTrackEntry.DEFAULT_ENTRY_TYPE;
+		addEntry(timeline, entryUUID, startTime, endTime);
 	}
 	
 	@Override

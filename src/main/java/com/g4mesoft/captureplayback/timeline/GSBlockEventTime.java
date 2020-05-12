@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import net.minecraft.util.PacketByteBuf;
 
-public class GSBlockEventTime {
+public final class GSBlockEventTime {
 
 	public static final GSBlockEventTime ZERO = new GSBlockEventTime(0L, 0);
 	public static final GSBlockEventTime INFINITY = new GSBlockEventTime(Long.MAX_VALUE, Integer.MAX_VALUE);
