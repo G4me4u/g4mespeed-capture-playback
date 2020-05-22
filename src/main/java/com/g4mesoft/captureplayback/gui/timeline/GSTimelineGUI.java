@@ -21,6 +21,7 @@ import com.g4mesoft.core.GSCoreOverride;
 import com.g4mesoft.gui.GSClipRect;
 import com.g4mesoft.gui.GSPanel;
 
+import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.util.math.BlockPos;
 
@@ -164,14 +165,15 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 	private void renderColumnHeaders(int mouseX, int mouseY) {
 		fill(LABEL_COLUMN_WIDTH, 0, width, COLUMN_HEADER_HEIGHT, COLUMN_HEADER_COLOR);
 		
-		GSIBufferBuilderAccess buffer = (GSIBufferBuilderAccess)Tessellator.getInstance().getBuffer();
-		GSClipRect oldClip = buffer.getClip();
-		buffer.setClip(LABEL_COLUMN_WIDTH, 0.0f, width, height);
+		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+		GSClipRect oldClip = ((GSIBufferBuilderAccess)buffer).getClip();
+		((GSIBufferBuilderAccess)buffer).setClip(LABEL_COLUMN_WIDTH, 0.0f, width, height);
 		
-		int x0 = timelineViewport.getX();
+		int columnStart = Math.max(0, modelView.getColumnIndexFromView(LABEL_COLUMN_WIDTH));
+		int columnEnd = modelView.getColumnIndexFromView(LABEL_COLUMN_WIDTH + timelineViewport.getWidth() - 1);
 
-		int numColumns = modelView.getNumColumns();
-		for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
+		int x0 = modelView.getColumnX(columnStart);
+		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
 			int x1 = x0 + modelView.getColumnWidth(columnIndex);
 
 			int y;
@@ -195,12 +197,12 @@ public class GSTimelineGUI extends GSPanel implements GSITimelineListener {
 			x0 = x1;
 		}
 
-		if (expandedColumnIndex != -1)
+		if (expandedColumnIndex >= columnStart && expandedColumnIndex <= columnEnd)
 			renderExpandedColumnHeader(expandedColumnIndex);
 		
 		fill(0, COLUMN_HEADER_HEIGHT - 1, Math.min(width, x0), COLUMN_HEADER_HEIGHT, ROW_SPACING_COLOR);
 	
-		buffer.setClip(oldClip);
+		((GSIBufferBuilderAccess)buffer).setClip(oldClip);
 	}
 	
 	private void renderExpandedColumnHeader(int expandedColumnIndex) {

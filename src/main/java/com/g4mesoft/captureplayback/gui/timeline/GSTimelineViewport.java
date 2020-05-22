@@ -1,16 +1,20 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
 import com.g4mesoft.access.GSIBufferBuilderAccess;
+import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
 import com.g4mesoft.gui.GSIScrollListener;
 import com.g4mesoft.gui.GSIScrollableViewport;
 import com.g4mesoft.gui.GSScrollBar;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 
 public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListener {
 
+	private static final int CORNER_SQUARE_COLOR = 0xFF000000;
+	
 	private final GSScrollBar verticalScrollBar;
 	private final GSScrollBar horizontalScrollBar;
 	
@@ -25,24 +29,27 @@ public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListe
 	private int minContentHeight;
 	
 	public GSTimelineViewport() {
-		verticalScrollBar = new GSScrollBar(true, this, null);
-		horizontalScrollBar = new GSScrollBar(false, this, this);
-		
-		verticalScrollBar.setDarkMode(true);
-		horizontalScrollBar.setDarkMode(true);
+		verticalScrollBar = new GSDarkScrollBar(true, this, null);
+		horizontalScrollBar = new GSDarkScrollBar(false, this, this);
 	}
 	
 	public void render(int mouseX, int mouseY, float partialTicks) {
 		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-		GSIBufferBuilderAccess bufferAccess = (GSIBufferBuilderAccess)buffer;
-		double oldOffsetX = bufferAccess.getOffsetX();
-		double oldOffsetY = bufferAccess.getOffsetY();
-		double oldOffsetZ = bufferAccess.getOffsetZ();
+		double oldOffsetX = ((GSIBufferBuilderAccess)buffer).getOffsetX();
+		double oldOffsetY = ((GSIBufferBuilderAccess)buffer).getOffsetY();
+		double oldOffsetZ = ((GSIBufferBuilderAccess)buffer).getOffsetZ();
 		
 		buffer.setOffset(oldOffsetX + x, oldOffsetY + y, oldOffsetZ);
-		verticalScrollBar.render(mouseX - x, mouseY - y, partialTicks);
+		
+		if (verticalScrollBar.isEnabled())
+			verticalScrollBar.render(mouseX - x, mouseY - y, partialTicks);
 		horizontalScrollBar.render(mouseX - x, mouseY - y, partialTicks);
+
 		buffer.setOffset(oldOffsetX, oldOffsetY, oldOffsetZ);
+
+		int cx = x + width - GSScrollBar.SCROLL_BAR_WIDTH;
+		int cy = y + height - GSScrollBar.SCROLL_BAR_WIDTH;
+		DrawableHelper.fill(cx, cy, x + width, y + height, CORNER_SQUARE_COLOR);
 	}
 	
 	public void setBounds(MinecraftClient client, int x, int y, int width, int height) {
@@ -59,20 +66,20 @@ public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListe
 	
 	public void setMinimumContentSize(int minContentWidth, int minContentHeight) {
 		this.minContentWidth = Math.max(width, minContentWidth);
-		this.minContentHeight = minContentHeight;
+		this.minContentHeight = minContentHeight + GSScrollBar.SCROLL_BAR_WIDTH;
 
 		if (this.minContentWidth > contentWidth)
 			contentWidth = this.minContentWidth;
-		contentHeight = Math.max(height, minContentHeight);
+		contentHeight = Math.max(height, this.minContentHeight);
 		
-		verticalScrollBar.setEnabled(minContentHeight >= height);
+		verticalScrollBar.setEnabled(this.minContentHeight >= height);
 	}
 	
-	public int getX() {
+	public int getXOffset() {
 		return x - (int)horizontalScrollBar.getScrollOffset();
 	}
 
-	public int getY() {
+	public int getYOffset() {
 		return y - (int)verticalScrollBar.getScrollOffset();
 	}
 	
@@ -106,12 +113,13 @@ public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListe
 	}
 
 	public void mouseScrolled(double mouseX, double mouseY, double scroll) {
-		verticalScrollBar.mouseScrolled(mouseX - x, mouseY - y, scroll);
+		if (verticalScrollBar.isEnabled())
+			verticalScrollBar.mouseScrolled(mouseX - x, mouseY - y, scroll);
 		horizontalScrollBar.mouseScrolled(mouseX - x, mouseY - y, scroll);
 	}
 
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		if (verticalScrollBar.mouseClicked(mouseX - x, mouseY - y, button))
+		if (verticalScrollBar.isEnabled() && verticalScrollBar.mouseClicked(mouseX - x, mouseY - y, button))
 			return true;
 		if (horizontalScrollBar.mouseClicked(mouseX - x, mouseY - y, button))
 			return true;
@@ -119,7 +127,7 @@ public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListe
 	}
 
 	public boolean mouseReleased(double mouseX, double mouseY, int button) {
-		if (verticalScrollBar.mouseReleased(mouseX - x, mouseY - y, button))
+		if (verticalScrollBar.isEnabled() && verticalScrollBar.mouseReleased(mouseX - x, mouseY - y, button))
 			return true;
 		if (horizontalScrollBar.mouseReleased(mouseX - x, mouseY - y, button))
 			return true;
@@ -127,7 +135,7 @@ public class GSTimelineViewport implements GSIScrollableViewport, GSIScrollListe
 	}
 
 	public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (verticalScrollBar.mouseDragged(mouseX - x, mouseY - y, button, dragX, dragY))
+		if (verticalScrollBar.isEnabled() && verticalScrollBar.mouseDragged(mouseX - x, mouseY - y, button, dragX, dragY))
 			return true;
 		if (horizontalScrollBar.mouseDragged(mouseX - x, mouseY - y, button, dragX, dragY))
 			return true;

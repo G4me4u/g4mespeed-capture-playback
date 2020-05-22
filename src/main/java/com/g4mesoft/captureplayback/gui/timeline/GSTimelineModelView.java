@@ -252,7 +252,7 @@ public class GSTimelineModelView {
 	}
 	
 	public int getColumnX(int columnIndex) {
-		int cx = viewport.getX() + columnIndex * GAMETICK_COLUMN_WIDTH;
+		int cx = viewport.getXOffset() + columnIndex * GAMETICK_COLUMN_WIDTH;
 		if (timelineGUI.getExpandedColumnIndex() != -1 && columnIndex > timelineGUI.getExpandedColumnIndex())
 			cx += getColumnDuration(timelineGUI.getExpandedColumnIndex()) * MT_COLUMN_WIDTH - GAMETICK_COLUMN_WIDTH;
 		return cx;
@@ -273,7 +273,7 @@ public class GSTimelineModelView {
 	}
 	
 	public int getTrackEndY() {
-		return viewport.getY() + trackIndexToUUID.size() * (timelineGUI.getRowHeight() + ROW_SPACING);
+		return viewport.getYOffset() + trackIndexToUUID.size() * (timelineGUI.getRowHeight() + ROW_SPACING);
 	}
 	
 	public int getTrackY(UUID trackUUID) {
@@ -281,7 +281,7 @@ public class GSTimelineModelView {
 		if (trackIndex == null)
 			return -1;
 		
-		return viewport.getY() + trackIndex.intValue() * (timelineGUI.getRowHeight() + ROW_SPACING);
+		return viewport.getYOffset() + trackIndex.intValue() * (timelineGUI.getRowHeight() + ROW_SPACING);
 	}
 	
 	public int getEntryY(UUID trackUUID) {
@@ -297,8 +297,10 @@ public class GSTimelineModelView {
 	}
 	
 	public int getMinimumWidth() {
-		int lastColumnIndex = minimumNumColumns - 1;
-		return getColumnX(lastColumnIndex) + getColumnWidth(lastColumnIndex);
+		int minimumWidth = minimumNumColumns * GAMETICK_COLUMN_WIDTH;
+		if (timelineGUI.getExpandedColumnIndex() != -1 && timelineGUI.getExpandedColumnIndex() < minimumNumColumns)
+			minimumWidth += getColumnWidth(timelineGUI.getExpandedColumnIndex()) - GAMETICK_COLUMN_WIDTH;
+		return minimumWidth;
 	}
 
 	public int getMinimumHeight() {
@@ -335,11 +337,11 @@ public class GSTimelineModelView {
 		return getColumnTime(columnIndex, mt);
 	}
 	
-	private int getColumnIndexFromView(int x) {
-		if (x < viewport.getX())
+	public int getColumnIndexFromView(int x) {
+		if (x < viewport.getXOffset())
 			return -1;
 		
-		int columnIndex = (x - viewport.getX()) / GAMETICK_COLUMN_WIDTH;
+		int columnIndex = (x - viewport.getXOffset()) / GAMETICK_COLUMN_WIDTH;
 		if (timelineGUI.getExpandedColumnIndex() != -1 && columnIndex >= timelineGUI.getExpandedColumnIndex()) {
 			columnIndex = timelineGUI.getExpandedColumnIndex();
 
@@ -359,7 +361,7 @@ public class GSTimelineModelView {
 	
 	public UUID getTrackUUIDFromView(int y) {
 		if (y >= 0 && y < viewport.getHeight()) {
-			int trackIndex = (y - viewport.getY()) / (timelineGUI.getRowHeight() + ROW_SPACING);
+			int trackIndex = (y - viewport.getYOffset()) / (timelineGUI.getRowHeight() + ROW_SPACING);
 			if (trackIndexToUUID.containsKey(trackIndex))
 				return trackIndexToUUID.get(trackIndex);
 		}

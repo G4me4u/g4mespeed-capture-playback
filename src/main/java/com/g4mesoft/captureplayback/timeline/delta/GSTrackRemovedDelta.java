@@ -2,7 +2,6 @@ package com.g4mesoft.captureplayback.timeline.delta;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
