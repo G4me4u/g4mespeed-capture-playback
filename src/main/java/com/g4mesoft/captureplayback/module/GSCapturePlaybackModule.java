@@ -80,9 +80,9 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	
 	public void onTimelineReceived(GSTimeline timeline) {
 		manager.runOnClient(managerClient -> {
-			transformer.setDisabled(true);
+			transformer.setEnabled(false);
 			activeTimeline.set(timeline);
-			transformer.setDisabled(false);
+			transformer.setEnabled(true);
 		});
 	}
 	
@@ -95,7 +95,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 
 	public void onClientDeltaReceived(GSITimelineDelta delta, ServerPlayerEntity player) {
 		manager.runOnServer(managerServer -> {
-			transformer.setDisabled(true);
+			transformer.setEnabled(false);
 			try {
 				delta.applyDelta(activeTimeline);
 				
@@ -103,20 +103,20 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			} catch (GSTimelineDeltaException e) {
 				managerServer.sendPacket(new GSTimelinePacket(activeTimeline), player);	
 			}
-			transformer.setDisabled(false);
+			transformer.setEnabled(true);
 		});
 	}
 
 	@Environment(EnvType.CLIENT)
 	public void onServerDeltaReceived(GSITimelineDelta delta) {
 		manager.runOnClient(managerClient -> {
-			transformer.setDisabled(true);
+			transformer.setEnabled(false);
 			try {
 				delta.applyDelta(activeTimeline);
 			} catch (GSTimelineDeltaException e) {
 				// TODO: handle this exception somehow
 			}
-			transformer.setDisabled(false);
+			transformer.setEnabled(true);
 		});
 	}
 

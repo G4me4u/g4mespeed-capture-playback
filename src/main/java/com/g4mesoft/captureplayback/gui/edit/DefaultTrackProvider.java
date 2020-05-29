@@ -36,7 +36,7 @@ public class DefaultTrackProvider implements GSITrackProvider {
 		int tries = 0;
 
 		int color = 0x000000;
-		while (tries < maxTries) {
+		while (tries++ < maxTries) {
 			color = (int) (Math.random() * 0xFFFFFF);
 
 			if (isColorUnique(timeline, color))

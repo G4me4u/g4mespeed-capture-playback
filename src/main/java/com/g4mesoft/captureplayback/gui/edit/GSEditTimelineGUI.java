@@ -14,7 +14,7 @@ public class GSEditTimelineGUI extends GSScreen {
 	public GSEditTimelineGUI(GSTimeline timeline, GSCapturePlaybackModule module) {
 		this.timeline = timeline;
 		
-		timelineGUI = new GSTimelineGUI(timeline, new DefaultTrackProvider(), module);
+		timelineGUI = new GSTimelineGUI(timeline, new DefaultTrackProvider());
 		timelineGUI.setEditable(true);
 	}
 
@@ -35,12 +35,6 @@ public class GSEditTimelineGUI extends GSScreen {
 		renderBackground();
 
 		super.render(mouseX, mouseY, partialTicks);
-	}
-
-	@Override
-	@GSCoreOverride
-	public void mouseMoved(double mouseX, double mouseY) {
-		timelineGUI.mouseMoved(mouseX, mouseY);
 	}
 
 	@Override

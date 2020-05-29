@@ -4,13 +4,13 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 import com.g4mesoft.core.GSCoreOverride;
-import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.GSParentPanel;
 
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.util.math.BlockPos;
 
-public class GSPositionGUI extends GSPanel {
+public class GSPositionGUI extends GSParentPanel {
 
 	private static final int LABEL_COLOR = 0xFFFFFFFF;
 	

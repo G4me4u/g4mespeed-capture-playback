@@ -1,10 +1,12 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,10 +15,12 @@ import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.util.GSMathUtils;
 
 public class GSTimelineModelView {
 
-	private static final int EXTRA_MICROTICKS = 1;
+	private static final int MINIMUM_MICROTICKS = 2;
+	private static final int EXTRA_MICROTICKS = 0;
 	
 	private static final int GAMETICK_COLUMN_WIDTH = 30;
 	private static final int MULTI_COLUMN_INSETS = 10;
@@ -24,11 +28,12 @@ public class GSTimelineModelView {
 	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	
 	private static final int ENTRY_HEIGHT = 8;
-	private static final int ROW_SPACING = 1;
+	private static final int DEFAULT_TRACK_SPACING = 1;
+	
+	private static final int MINIMUM_TRACK_HEIGHT = ENTRY_HEIGHT;
 	
 	private final GSTimeline model;
-	private final GSTimelineGUI timelineGUI;
-	private final GSTimelineViewport viewport;
+	private final GSExpandedColumnModel expandedColumnModel;
 	
 	private int minimumNumColumns;
 	
@@ -41,10 +46,16 @@ public class GSTimelineModelView {
 	private final Map<Integer, UUID> trackIndexToUUID;
 	private final Map<UUID, Map<Integer, Integer>> multiCellLookup;
 	
-	public GSTimelineModelView(GSTimeline model, GSTimelineGUI timelineGUI, GSTimelineViewport viewport) {
+	private int xOffset;
+	private int yOffset;
+	private int trackHeight;
+	private int trackSpacing;
+
+	private final List<GSITimelineModelViewListener> listenters;
+	
+	public GSTimelineModelView(GSTimeline model, GSExpandedColumnModel expandedColumnModel) {
 		this.model = model;
-		this.timelineGUI = timelineGUI;
-		this.viewport = viewport;
+		this.expandedColumnModel = expandedColumnModel;
 		
 		modelStartTime = modelEndTime = GSBlockEventTime.ZERO;
 		
@@ -53,6 +64,11 @@ public class GSTimelineModelView {
 		trackUUIDtoIndex = new HashMap<UUID, Integer>();
 		trackIndexToUUID = new HashMap<Integer, UUID>();
 		multiCellLookup = new HashMap<UUID, Map<Integer,Integer>>();
+		
+		trackHeight = MINIMUM_TRACK_HEIGHT;
+		trackSpacing = DEFAULT_TRACK_SPACING;
+	
+		listenters = new ArrayList<GSITimelineModelViewListener>();
 	}
 	
 	/* ******************** MODEL-VIEW initialization ******************** */
@@ -150,9 +166,10 @@ public class GSTimelineModelView {
 	
 	public int getColumnDuration(int columnIndex) {
 		int lookupOffset = getLookupOffset(columnIndex);
-		if (lookupOffset == -1)
-			return 1 + EXTRA_MICROTICKS;
-		return durationLookup[lookupOffset] + EXTRA_MICROTICKS;
+		int duration = MINIMUM_MICROTICKS;
+		if (lookupOffset != -1 && durationLookup[lookupOffset] > duration)
+			duration = durationLookup[lookupOffset];
+		return duration + EXTRA_MICROTICKS;
 	}
 	
 	public int getMultiCellCount(UUID trackUUID, int columnIndex) {
@@ -190,6 +207,10 @@ public class GSTimelineModelView {
 		return lookupOffset;
 	}
 	
+	private int getColumnIndexFromLookup(int lookupOffset) {
+		return getColumnIndex(lookupOffset + modelStartTime.getGametick());
+	}
+	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
 	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry) {
@@ -199,12 +220,13 @@ public class GSTimelineModelView {
 	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry, Rectangle dest) {
 		int startColumnIndex = getColumnIndex(entry.getStartTime());
 		int endColumnIndex = getColumnIndex(entry.getEndTime());
-		if (startColumnIndex < 0 || endColumnIndex >= getNumColumns())
+
+		// This should rarely or never happen
+		if (startColumnIndex < 0)
 			return null;
 		
-		if (startColumnIndex != timelineGUI.getExpandedColumnIndex() && 
-				startColumnIndex == endColumnIndex && isMultiCell(trackUUID, startColumnIndex)) {
-
+		boolean expanded = expandedColumnModel.isColumnExpanded(startColumnIndex);
+		if (!expanded && startColumnIndex == endColumnIndex && isMultiCell(trackUUID, startColumnIndex)) {
 			// The entry exists only in a single column and it is not
 			// expanded. Since the column is also a multi-column we
 			// should not render it. Return null.
@@ -238,10 +260,8 @@ public class GSTimelineModelView {
 		int columnIndex = getColumnIndex(time);
 		
 		int x = getColumnX(columnIndex);
-		if (columnIndex == timelineGUI.getExpandedColumnIndex()) {
-			x += time.getMicrotick() * MT_COLUMN_WIDTH;
-
-			x += MT_COLUMN_WIDTH / 2;
+		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
+			x += time.getMicrotick() * MT_COLUMN_WIDTH + MT_COLUMN_WIDTH / 2;
 		} else if (isMultiCell(trackUUID, columnIndex)) {
 			x += endTime ? MULTI_COLUMN_INSETS : (GAMETICK_COLUMN_WIDTH - MULTI_COLUMN_INSETS);
 		} else {
@@ -252,15 +272,32 @@ public class GSTimelineModelView {
 	}
 	
 	public int getColumnX(int columnIndex) {
-		int cx = viewport.getXOffset() + columnIndex * GAMETICK_COLUMN_WIDTH;
-		if (timelineGUI.getExpandedColumnIndex() != -1 && columnIndex > timelineGUI.getExpandedColumnIndex())
-			cx += getColumnDuration(timelineGUI.getExpandedColumnIndex()) * MT_COLUMN_WIDTH - GAMETICK_COLUMN_WIDTH;
-		return cx;
+		return xOffset + getColumnOffset(columnIndex);
+	}
+	
+	private int getColumnOffset(int columnIndex) {
+		if (expandedColumnModel.hasExpandedColumn() && columnIndex >= expandedColumnModel.getMinColumnIndex()) {
+			int minIndex = expandedColumnModel.getMinColumnIndex();
+			int maxIndex = expandedColumnModel.getMaxColumnIndex();
+
+			int columnOffset = minIndex * GAMETICK_COLUMN_WIDTH;
+			for (int i = minIndex; i <= maxIndex && i < columnIndex; i++)
+				columnOffset += getColumnDuration(i) * MT_COLUMN_WIDTH;
+			
+			// We should not include the columnIndex itself.
+			int numTrailingColumns = columnIndex - maxIndex - 1;
+			if (numTrailingColumns > 0)
+				columnOffset += numTrailingColumns * GAMETICK_COLUMN_WIDTH;
+			
+			return columnOffset;
+		}
+		
+		return columnIndex * GAMETICK_COLUMN_WIDTH;
 	}
 	
 	public int getColumnWidth(int columnIndex) {
-		if (timelineGUI.getExpandedColumnIndex() == columnIndex) 
-			return getColumnDuration(timelineGUI.getExpandedColumnIndex()) * MT_COLUMN_WIDTH;
+		if (expandedColumnModel.isColumnExpanded(columnIndex)) 
+			return getColumnDuration(columnIndex) * MT_COLUMN_WIDTH;
 		return GAMETICK_COLUMN_WIDTH;
 	}
 
@@ -273,7 +310,7 @@ public class GSTimelineModelView {
 	}
 	
 	public int getTrackEndY() {
-		return viewport.getYOffset() + trackIndexToUUID.size() * (timelineGUI.getRowHeight() + ROW_SPACING);
+		return yOffset + trackIndexToUUID.size() * (trackHeight + trackSpacing);
 	}
 	
 	public int getTrackY(UUID trackUUID) {
@@ -281,11 +318,11 @@ public class GSTimelineModelView {
 		if (trackIndex == null)
 			return -1;
 		
-		return viewport.getYOffset() + trackIndex.intValue() * (timelineGUI.getRowHeight() + ROW_SPACING);
+		return yOffset + trackIndex.intValue() * (trackHeight + trackSpacing);
 	}
 	
 	public int getEntryY(UUID trackUUID) {
-		return getTrackY(trackUUID) + (timelineGUI.getRowHeight() - ENTRY_HEIGHT) / 2;
+		return getTrackY(trackUUID) + (trackHeight - ENTRY_HEIGHT) / 2;
 	}
 
 	public int getColumnIndex(GSBlockEventTime time) {
@@ -297,14 +334,11 @@ public class GSTimelineModelView {
 	}
 	
 	public int getMinimumWidth() {
-		int minimumWidth = minimumNumColumns * GAMETICK_COLUMN_WIDTH;
-		if (timelineGUI.getExpandedColumnIndex() != -1 && timelineGUI.getExpandedColumnIndex() < minimumNumColumns)
-			minimumWidth += getColumnWidth(timelineGUI.getExpandedColumnIndex()) - GAMETICK_COLUMN_WIDTH;
-		return minimumWidth;
+		return getColumnOffset(minimumNumColumns);
 	}
 
 	public int getMinimumHeight() {
-		return trackIndexToUUID.size() * (timelineGUI.getRowHeight() + ROW_SPACING);
+		return trackIndexToUUID.size() * (trackHeight + trackSpacing);
 	}
 	
 	/* ******************** VIEW TO MODEL methods ******************** */
@@ -315,7 +349,7 @@ public class GSTimelineModelView {
 			return null;
 		
 		int mt = 0;
-		if (columnIndex == timelineGUI.getExpandedColumnIndex()) {
+		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
 			int columnX = getColumnX(columnIndex);
 			if (x < columnX)
 				return null;
@@ -338,43 +372,45 @@ public class GSTimelineModelView {
 	}
 	
 	public int getColumnIndexFromView(int x) {
-		if (x < viewport.getXOffset())
+		if (x < xOffset)
 			return -1;
 		
-		int columnIndex = (x - viewport.getXOffset()) / GAMETICK_COLUMN_WIDTH;
-		if (timelineGUI.getExpandedColumnIndex() != -1 && columnIndex >= timelineGUI.getExpandedColumnIndex()) {
-			columnIndex = timelineGUI.getExpandedColumnIndex();
+		int columnIndex = (x - xOffset) / GAMETICK_COLUMN_WIDTH;
+		if (expandedColumnModel.hasExpandedColumn() && columnIndex >= expandedColumnModel.getMinColumnIndex()) {
+			columnIndex = expandedColumnModel.getMinColumnIndex();
+			int maxIndex = expandedColumnModel.getMaxColumnIndex();
 
-			int offset = x;
-			offset -= getColumnX(timelineGUI.getExpandedColumnIndex());
-			offset -= getColumnWidth(timelineGUI.getExpandedColumnIndex());
+			int offset = x - getColumnX(columnIndex);
+			for ( ; columnIndex <= maxIndex; columnIndex++) {
+				offset -= getColumnWidth(columnIndex);
+				if (offset < 0)
+					return columnIndex;
+			}
 			
-			if (offset > 0)
-				columnIndex += 1 + offset / GAMETICK_COLUMN_WIDTH;
+			return columnIndex + offset / GAMETICK_COLUMN_WIDTH;
 		}
-		
-		if (columnIndex >= getNumColumns())
-			return -1;
 		
 		return columnIndex;
 	}
 	
 	public UUID getTrackUUIDFromView(int y) {
-		if (y >= 0 && y < viewport.getHeight()) {
-			int trackIndex = (y - viewport.getYOffset()) / (timelineGUI.getRowHeight() + ROW_SPACING);
-			if (trackIndexToUUID.containsKey(trackIndex))
-				return trackIndexToUUID.get(trackIndex);
-		}
+		if (y < yOffset)
+			return null;
 		
-		return null;
+		int trackIndex = (y - yOffset) / (trackHeight + trackSpacing);
+		return trackIndexToUUID.get(Integer.valueOf(trackIndex));
 	}
 	
 	public GSBlockEventTime getDraggedTime(int x, int y) {
-		if (timelineGUI.getExpandedColumnIndex() != -1) {
-			int columnOffset = x - getColumnX(timelineGUI.getExpandedColumnIndex());
+		if (expandedColumnModel.isSingleExpandedColumn()) {
+			int minIndex = expandedColumnModel.getMinColumnIndex();
+			int maxIndex = expandedColumnModel.getMaxColumnIndex();
+			int columnIndex = GSMathUtils.clamp(getColumnIndexFromView(x), minIndex, maxIndex);
+			
+			int columnOffset = x - getColumnX(columnIndex);
 			if (columnOffset < 0)
 				return null;
-			return getColumnTime(timelineGUI.getExpandedColumnIndex(), columnOffset / MT_COLUMN_WIDTH);
+			return getColumnTime(columnIndex, columnOffset / MT_COLUMN_WIDTH);
 		}
 		
 		return viewToModel(x, y);
@@ -388,12 +424,73 @@ public class GSTimelineModelView {
 		return new GSBlockEventTime(getColumnGametick(columnIndex), mt);
 	}
 	
-	public int getNumColumns() {
-		int numColumns = (viewport.getContentWidth() + GAMETICK_COLUMN_WIDTH - 1) / GAMETICK_COLUMN_WIDTH;
-		return (numColumns > minimumNumColumns) ? numColumns : minimumNumColumns;
+	/* ******************** GETTER & SETTER methods ******************** */
+	
+	public int getTrackHeight() {
+		return trackHeight;
+	}
+
+	public void setTrackHeight(int trackHeight) {
+		if (trackHeight < MINIMUM_TRACK_HEIGHT)
+			trackHeight = MINIMUM_TRACK_HEIGHT;
+		
+		if (trackHeight != this.trackHeight) {
+			this.trackHeight = trackHeight;
+			dispatchModelViewChangedEvent();
+		}
 	}
 	
-	private static class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {
+	public int getTrackSpacing() {
+		return trackSpacing;
+	}
+
+	public void setTrackSpacing(int trackSpacing) {
+		if (trackSpacing < 0)
+			trackSpacing = 0;
+		
+		if (trackSpacing != this.trackSpacing) {
+			this.trackSpacing = trackSpacing;
+			dispatchModelViewChangedEvent();
+		}
+	}
+	
+	public int getXOffset() {
+		return xOffset;
+	}
+
+	public void setXOffset(int xOffset) {
+		if (xOffset != this.xOffset) {
+			this.xOffset = xOffset;
+			dispatchModelViewChangedEvent();
+		}
+	}
+
+	public int getYOffset() {
+		return yOffset;
+	}
+
+	public void setYOffset(int yOffset) {
+		if (yOffset != this.yOffset) {
+			this.yOffset = yOffset;
+			dispatchModelViewChangedEvent();
+		}
+	}
+	
+	/* ******************** LISTENER & EVENT methods ******************** */
+	
+	public void addModelViewListener(GSITimelineModelViewListener listenter) {
+		listenters.add(listenter);
+	}
+
+	public void removeModelViewListener(GSITimelineModelViewListener listenter) {
+		listenters.remove(listenter);
+	}
+	
+	private void dispatchModelViewChangedEvent() {
+		listenters.forEach(GSITimelineModelViewListener::modelViewChanged);
+	}
+	
+	private class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {
 
 		private final Iterator<Map.Entry<Integer, Integer>> countEntryIterator;
 		private final GSMultiCellInfo multiCellInfo;
@@ -414,7 +511,7 @@ public class GSTimelineModelView {
 				throw new IllegalStateException("Iterator has no next element.");
 			
 			Map.Entry<Integer, Integer> info = countEntryIterator.next();
-			multiCellInfo.setColumnIndex(info.getKey());
+			multiCellInfo.setColumnIndex(getColumnIndexFromLookup(info.getKey()));
 			multiCellInfo.setCount(info.getValue());
 			return multiCellInfo;
 		}

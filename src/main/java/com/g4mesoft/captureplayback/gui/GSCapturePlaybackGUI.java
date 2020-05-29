@@ -2,11 +2,11 @@ package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.gui.edit.GSEditTimelineGUI;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
-import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.GSParentPanel;
 
 import net.minecraft.client.gui.widget.ButtonWidget;
 
-public class GSCapturePlaybackGUI extends GSPanel {
+public class GSCapturePlaybackGUI extends GSParentPanel {
 
 	private static final int TOP_MARGIN = 5;
 	private static final int POSITION_GUI_HEIGHT = 16;
