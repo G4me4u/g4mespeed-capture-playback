@@ -157,10 +157,10 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	
 	private Rectangle getMappedEntryBounds(GSTrack track, GSTrackEntry entry) {
 		Rectangle bounds = modelView.modelToView(track.getTrackUUID(), entry, tmpEntryRect);
-		return (bounds == null) ? null : performEntryBoundsMapping(bounds);
+		return (bounds == null) ? null : mapEntryBounds(bounds);
 	}
 	
-	private Rectangle performEntryBoundsMapping(Rectangle bounds) {
+	private Rectangle mapEntryBounds(Rectangle bounds) {
 		if (bounds.width <= 0 || bounds.height <= 0)
 			return null;
 		
