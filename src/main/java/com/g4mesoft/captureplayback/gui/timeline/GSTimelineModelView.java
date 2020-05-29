@@ -309,10 +309,6 @@ public class GSTimelineModelView {
 		return MT_COLUMN_WIDTH;
 	}
 	
-	public int getTrackEndY() {
-		return yOffset + trackIndexToUUID.size() * (trackHeight + trackSpacing);
-	}
-	
 	public int getTrackY(UUID trackUUID) {
 		Integer trackIndex = trackUUIDtoIndex.get(trackUUID);
 		if (trackIndex == null)
