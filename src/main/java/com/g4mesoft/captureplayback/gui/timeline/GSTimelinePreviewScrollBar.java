@@ -147,20 +147,6 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
-	protected void drawKnob(int mouseX, int mouseY, boolean hovered) {
-		int k0 = getKnobPos();
-		int k1 = k0 + getKnobSize();
-		
-		int color = getKnobColor(hovered);
-		
-		if (isVertical()) {
-			fill(0, k0, width, k1, color);
-		} else {
-			fill(k0, 0, k1, height, color);
-		}
-	}
-	
-	@Override
 	protected int getKnobColor(boolean hovered) {
 		if (!isEnabled())
 			return DISABLED_KNOB_COLOR;
