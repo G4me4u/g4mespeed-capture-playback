@@ -6,7 +6,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSTrackDisabledDelta extends GSTrackDelta {
 

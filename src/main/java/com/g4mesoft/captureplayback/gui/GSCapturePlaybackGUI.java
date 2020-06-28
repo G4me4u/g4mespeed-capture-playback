@@ -5,6 +5,7 @@ import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.gui.GSParentPanel;
 
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.text.LiteralText;
 
 public class GSCapturePlaybackGUI extends GSParentPanel {
 
@@ -20,7 +21,7 @@ public class GSCapturePlaybackGUI extends GSParentPanel {
 	public void init() {
 		super.init();
 		
-		addWidget(new ButtonWidget(width / 2 - 45, TOP_MARGIN, 90, 20, "Edit timeline", (button) -> {
+		addWidget(new ButtonWidget(width / 2 - 45, TOP_MARGIN, 90, 20, new LiteralText("Edit Timeline"), (button) -> {
 			client.openScreen(new GSEditTimelineGUI(module.getActiveTimeline(), module));
 		}));
 	}

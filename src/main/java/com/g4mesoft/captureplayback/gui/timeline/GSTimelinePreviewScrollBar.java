@@ -10,6 +10,7 @@ import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class GSTimelinePreviewScrollBar extends GSScrollBar {
@@ -80,25 +81,25 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
-	protected void drawKnobArea() {
-		renderPreview(SCROLL_BUTTON_WIDTH, 0, width - SCROLL_BUTTON_WIDTH, height);
+	protected void drawKnobArea(MatrixStack matrixStack) {
+		renderPreview(matrixStack, SCROLL_BUTTON_WIDTH, 0, width - SCROLL_BUTTON_WIDTH, height);
 	}
 	
-	private void renderPreview(int x0, int y0, int x1, int y1) {
-		fill(x0, y0, x1, y1, VERTICAL_BORDER_COLOR);
+	private void renderPreview(MatrixStack matrixStack, int x0, int y0, int x1, int y1) {
+		fill(matrixStack, x0, y0, x1, y1, VERTICAL_BORDER_COLOR);
 
 		y0 += VERTICAL_BORDER_HEIGHT;
 		y1 -= VERTICAL_BORDER_HEIGHT;
 		
-		fill(x0, y0, x1, y1, PREVIEW_BACKGROUND);
+		fill(matrixStack, x0, y0, x1, y1, PREVIEW_BACKGROUND);
 		
 		for (GSTrack track : timeline.getTracks()) {
-			if (isTrackVisible(track, x0, y0, x1, y1))
-				renderTrackPreview(track, x0, y0, x1, y1);
+			if (isTrackVisible(matrixStack, track, x0, y0, x1, y1))
+				renderTrackPreview(matrixStack, track, x0, y0, x1, y1);
 		}
 	}
 	
-	private boolean isTrackVisible(GSTrack track, int x0, int y0, int x1, int y1) {
+	private boolean isTrackVisible(MatrixStack matrixStack, GSTrack track, int x0, int y0, int x1, int y1) {
 		int trackY = modelView.getTrackY(track.getTrackUUID());
 		if (trackY == -1)
 			return false;
@@ -107,7 +108,7 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		return (mappedTrackY >= y0 && mappedTrackY < y1);
 	}
 	
-	private void renderTrackPreview(GSTrack track, int x0, int y0, int x1, int y1) {
+	private void renderTrackPreview(MatrixStack matrixStack, GSTrack track, int x0, int y0, int x1, int y1) {
 		int color = darkenColor(getTrackColor(track));
 		
 		for (GSTrackEntry entry : track.getEntries()) {
@@ -116,7 +117,7 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 			if (bounds != null && clampEntryBounds(bounds, x0, y0, x1, y1)) {
 				int ex1 = bounds.x + bounds.width;
 				int ey1 = bounds.y + bounds.height;
-				fill(bounds.x, bounds.y, ex1, ey1, color);
+				fill(matrixStack, bounds.x, bounds.y, ex1, ey1, color);
 			}
 		}
 	}

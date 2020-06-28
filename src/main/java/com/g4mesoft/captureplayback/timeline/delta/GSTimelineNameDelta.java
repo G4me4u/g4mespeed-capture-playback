@@ -6,7 +6,7 @@ import java.util.Objects;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.util.GSBufferUtil;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSTimelineNameDelta implements GSITimelineDelta {
 

@@ -9,7 +9,7 @@ import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.g4mesoft.captureplayback.timeline.GSTrackInfo;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSTrackRemovedDelta extends GSTrackDelta {
 

@@ -16,6 +16,8 @@ import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
 
+import net.minecraft.client.util.math.MatrixStack;
+
 public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, GSITimelineListener, GSIExpandedColumnModelListener {
 
 	private static final int TRACK_HEADER_WIDTH = 100;
@@ -90,7 +92,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public void init() {
 		super.init();
 
-		modelView.setTrackHeight(font.fontHeight + TRACK_LABEL_PADDING * 2);
+		modelView.setTrackHeight(textRenderer.fontHeight + TRACK_LABEL_PADDING * 2);
 		
 		layoutPanels();
 		initModelView();
@@ -146,16 +148,16 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	@Override
-	protected void renderTranslated(int mouseX, int mouseY, float partialTick) {
-		super.renderTranslated(mouseX, mouseY, partialTick);
+	protected void renderTranslated(MatrixStack matrixStack, int mouseX, int mouseY, float partialTick) {
+		super.renderTranslated(matrixStack, mouseX, mouseY, partialTick);
 
 		int cx = width - verticalScrollBar.getWidth();
 		int cy = height - horizontalScrollBar.getHeight();
 		
-		fill(cx, cy, width, height, CORNER_SQUARE_COLOR);
+		fill(matrixStack, cx, cy, width, height, CORNER_SQUARE_COLOR);
 		
-		fill(cx, 0, width, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderGUI.COLUMN_HEADER_COLOR);
-		fill(0, cy, TRACK_HEADER_WIDTH, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		fill(matrixStack, cx, 0, width, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderGUI.COLUMN_HEADER_COLOR);
+		fill(matrixStack, 0, cy, TRACK_HEADER_WIDTH, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
 	}
 	
 	/*

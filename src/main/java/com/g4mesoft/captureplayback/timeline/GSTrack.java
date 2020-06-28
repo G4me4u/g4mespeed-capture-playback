@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSTrack {
 

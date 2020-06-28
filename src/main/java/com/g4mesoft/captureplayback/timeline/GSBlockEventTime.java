@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.timeline;
 
 import java.io.IOException;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public final class GSBlockEventTime {
 

@@ -15,7 +15,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSTimeline {
 

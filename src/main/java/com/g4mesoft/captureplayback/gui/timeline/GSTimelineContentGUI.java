@@ -18,6 +18,7 @@ import com.g4mesoft.gui.GSPanel;
 
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.util.math.MatrixStack;
 
 public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener, GSITimelineModelViewListener {
 
@@ -85,39 +86,39 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	@Override
-	protected void renderTranslated(int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(mouseX, mouseY, partialTicks);
+	protected void renderTranslated(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+		super.renderTranslated(matrixStack, mouseX, mouseY, partialTicks);
 
 		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 		((GSIBufferBuilderAccess)buffer).pushClip(0, 0, width, height);
 		
-		renderColumns(mouseX, mouseY);
-		renderTracks(mouseX, mouseY);
+		renderColumns(matrixStack, mouseX, mouseY);
+		renderTracks(matrixStack, mouseX, mouseY);
 		
 		if (editable)
-			renderHoveredEdge(mouseX, mouseY);
+			renderHoveredEdge(matrixStack, mouseX, mouseY);
 
 		((GSIBufferBuilderAccess)buffer).popClip();
 	}
 	
-	protected void renderColumns(int mouseX, int mouseY) {
+	protected void renderColumns(MatrixStack matrixStack, int mouseX, int mouseY) {
 		int columnStart = Math.max(0, modelView.getColumnIndexFromView(0));
 		int columnEnd = modelView.getColumnIndexFromView(width - 1);
 
 		int x0 = modelView.getColumnX(columnStart);
 		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
 			int x1 = x0 + modelView.getColumnWidth(columnIndex);
-			renderColumn(mouseX, mouseY, columnIndex, x0, x1);
+			renderColumn(matrixStack, mouseX, mouseY, columnIndex, x0, x1);
 			x0 = x1;
 		}
 	}
 	
-	protected void renderColumn(int mouseX, int mouseY, int columnIndex, int x0, int x1) {
-		fill(x0, 0, x1, height, getColumnColor(columnIndex));
+	protected void renderColumn(MatrixStack matrixStack, int mouseX, int mouseY, int columnIndex, int x0, int x1) {
+		fill(matrixStack, x0, 0, x1, height, getColumnColor(columnIndex));
 	
 		if (mouseX >= x0 && mouseX < x1) {
-			fill(x0, 0, x0 + 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-			fill(x1, 0, x1 - 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+			fill(matrixStack, x0, 0, x0 + 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+			fill(matrixStack, x1, 0, x1 - 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
 		}
 		
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
@@ -127,7 +128,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				int x = modelView.getMicrotickColumnX(columnIndex, mt);
 				int y = GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING / 2;
 			
-				drawVerticalDottedLine(x, y, height, GSTimelineColumnHeaderGUI.DOTTED_LINE_LENGTH, 
+				drawVerticalDottedLine(matrixStack, x, y, height, GSTimelineColumnHeaderGUI.DOTTED_LINE_LENGTH, 
 						GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING, GSTimelineColumnHeaderGUI.MT_COLUMN_LINE_COLOR);
 			}
 		}
@@ -138,36 +139,36 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		                                    GSTimelineColumnHeaderGUI.COLUMN_COLOR;
 	}
 	
-	protected void renderTracks(int mouseX, int mouseY) {
+	protected void renderTracks(MatrixStack matrixStack, int mouseX, int mouseY) {
 		for (Map.Entry<UUID, GSTrack> trackEntry : timeline.getTrackEntries()) {
 			UUID trackUUID = trackEntry.getKey();
 			GSTrack track = trackEntry.getValue();
 			
 			int y = modelView.getTrackY(trackUUID);
 			if (y + modelView.getTrackHeight() > 0 && y < height)
-				renderTrack(track, trackUUID, y, (track == hoveredTrack));
+				renderTrack(matrixStack, track, trackUUID, y, (track == hoveredTrack));
 			y += modelView.getTrackHeight();
 		}
 	}
 	
-	protected void renderTrack(GSTrack track, UUID trackUUID, int y, boolean trackHovered) {
+	protected void renderTrack(MatrixStack matrixStack, GSTrack track, UUID trackUUID, int y, boolean trackHovered) {
 		int y1 = y + modelView.getTrackHeight();
 		
 		if (trackHovered)
-			fill(0, y, width, y1, GSTimelineTrackHeaderGUI.TRACK_HOVER_COLOR);
+			fill(matrixStack, 0, y, width, y1, GSTimelineTrackHeaderGUI.TRACK_HOVER_COLOR);
 
 		for (GSTrackEntry entry : track.getEntries())
-			renderTrackEntry(trackUUID, entry, getTrackColor(track));
-		renderMultiCells(trackUUID, y);
+			renderTrackEntry(matrixStack, trackUUID, entry, getTrackColor(track));
+		renderMultiCells(matrixStack, trackUUID, y);
 		
-		fill(0, y1, width, y1 + modelView.getTrackSpacing(), GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		fill(matrixStack, 0, y1, width, y1 + modelView.getTrackSpacing(), GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
 	}
 	
 	protected int getTrackColor(GSTrack track) {
 		return (0xFF << 24) | track.getInfo().getColor();
 	}
 	
-	protected void renderTrackEntry(UUID trackUUID, GSTrackEntry entry, int color) {
+	protected void renderTrackEntry(MatrixStack matrixStack, UUID trackUUID, GSTrackEntry entry, int color) {
 		if (selectedEntry == entry || hoveredEntry == entry)
 			color = darkenColor(color);
 
@@ -177,7 +178,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			int x1 = rect.x + rect.width;
 			int y1 = rect.y + rect.height;
 
-			fill(rect.x, rect.y, x1, y1, darkenColor(color));
+			fill(matrixStack, rect.x, rect.y, x1, y1, darkenColor(color));
 			
 			int x0 = rect.x;
 			if (entry.getType() != GSETrackEntryType.EVENT_START)
@@ -185,26 +186,26 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			if (entry.getType() != GSETrackEntryType.EVENT_END)
 				x0 += ENTRY_BORDER_THICKNESS;
 			
-			fill(x0, rect.y + ENTRY_BORDER_THICKNESS, x1, y1 - ENTRY_BORDER_THICKNESS, color);
+			fill(matrixStack, x0, rect.y + ENTRY_BORDER_THICKNESS, x1, y1 - ENTRY_BORDER_THICKNESS, color);
 		}
 	}
 	
-	protected void renderMultiCells(UUID trackUUID, int y) {
+	protected void renderMultiCells(MatrixStack matrixStack, UUID trackUUID, int y) {
 		Iterator<GSMultiCellInfo> itr = modelView.getMultiCellIterator(trackUUID);
 		while (itr.hasNext()) {
 			GSMultiCellInfo multiCellInfo = itr.next();
 			if (!expandedColumnModel.isColumnExpanded(multiCellInfo.getColumnIndex()))
-				renderMultiCell(trackUUID, y, multiCellInfo);
+				renderMultiCell(matrixStack, trackUUID, y, multiCellInfo);
 		}
 	}
 	
-	protected void renderMultiCell(UUID trackUUID, int y, GSMultiCellInfo multiCellInfo) {
+	protected void renderMultiCell(MatrixStack matrixStack, UUID trackUUID, int y, GSMultiCellInfo multiCellInfo) {
 		String infoText = formatMultiCellInfo(multiCellInfo);
 		
 		int columnIndex = multiCellInfo.getColumnIndex();
 		int xc = modelView.getColumnX(columnIndex) + modelView.getColumnWidth(columnIndex) / 2;
-		int ty = y + (modelView.getTrackHeight() - font.fontHeight) / 2;
-		drawCenteredString(font, infoText, xc, ty, TEXT_COLOR);
+		int ty = y + (modelView.getTrackHeight() - textRenderer.fontHeight) / 2;
+		drawCenteredString(matrixStack, textRenderer, infoText, xc, ty, TEXT_COLOR);
 	}
 
 	protected String formatMultiCellInfo(GSMultiCellInfo multiCellInfo) {
@@ -213,7 +214,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return Integer.toString(multiCellInfo.getCount());
 	}
 	
-	protected void renderHoveredEdge(int mouseX, int mouseY) {
+	protected void renderHoveredEdge(MatrixStack matrixStack, int mouseX, int mouseY) {
 		Rectangle hoveredRect = null;
 		boolean endTime = false;
 
@@ -247,7 +248,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			int y0 = hoveredRect.y - DRAGGING_PADDING;
 			int y1 = hoveredRect.y + hoveredRect.height + DRAGGING_PADDING;
 			int x1 = x0 + DRAGGING_AREA_SIZE + DRAGGING_PADDING;
-			fill(x0, y0, x1, y1, DRAGGING_AREA_COLOR);
+			fill(matrixStack, x0, y0, x1, y1, DRAGGING_AREA_COLOR);
 		}
 	}
 	

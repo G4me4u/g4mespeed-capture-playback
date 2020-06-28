@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public interface GSITimelineDelta {
 

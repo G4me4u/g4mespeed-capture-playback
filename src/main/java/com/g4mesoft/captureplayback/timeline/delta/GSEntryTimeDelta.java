@@ -7,7 +7,7 @@ import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSEntryTimeDelta extends GSEntryDelta {
 

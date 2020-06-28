@@ -6,6 +6,8 @@ import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.core.GSCoreOverride;
 import com.g4mesoft.gui.GSScreen;
 
+import net.minecraft.client.util.math.MatrixStack;
+
 public class GSEditTimelineGUI extends GSScreen {
 
 	private final GSTimeline timeline;
@@ -23,7 +25,7 @@ public class GSEditTimelineGUI extends GSScreen {
 	public void init() {
 		super.init();
 
-		timelineGUI.initBounds(minecraft, 0, 0, width, height);
+		timelineGUI.initBounds(client, 0, 0, width, height);
 		addPanel(timelineGUI);
 
 		setFocused(timelineGUI);
@@ -31,10 +33,10 @@ public class GSEditTimelineGUI extends GSScreen {
 
 	@Override
 	@GSCoreOverride
-	public void render(int mouseX, int mouseY, float partialTicks) {
-		renderBackground();
+	public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+		renderBackground(matrixStack);
 
-		super.render(mouseX, mouseY, partialTicks);
+		super.render(matrixStack, mouseX, mouseY, partialTicks);
 	}
 
 	@Override

@@ -8,7 +8,7 @@ import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
-import net.minecraft.util.PacketByteBuf;
+import net.minecraft.network.PacketByteBuf;
 
 public class GSEntryRemovedDelta extends GSEntryDelta {
 

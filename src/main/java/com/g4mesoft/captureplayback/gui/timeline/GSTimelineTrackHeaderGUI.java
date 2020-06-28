@@ -10,6 +10,7 @@ import com.g4mesoft.gui.GSPanel;
 
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.util.math.MatrixStack;
 
 public class GSTimelineTrackHeaderGUI extends GSPanel {
 
@@ -27,16 +28,16 @@ public class GSTimelineTrackHeaderGUI extends GSPanel {
 	}
 	
 	@Override
-	protected void renderTranslated(int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(mouseX, mouseY, partialTicks);
+	protected void renderTranslated(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+		super.renderTranslated(matrixStack, mouseX, mouseY, partialTicks);
 
-		fill(0, 0, width, height, TRACK_HEADER_COLOR);
-		fill(width - 1, 0, width, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+		fill(matrixStack, 0, 0, width, height, TRACK_HEADER_COLOR);
+		fill(matrixStack, width - 1, 0, width, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
 		
-		renderTrackLabels(mouseX, mouseY);
+		renderTrackLabels(matrixStack, mouseX, mouseY);
 	}
 	
-	protected void renderTrackLabels(int mouseX, int mouseY) {
+	protected void renderTrackLabels(MatrixStack matrixStack, int mouseX, int mouseY) {
 		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 		((GSIBufferBuilderAccess)buffer).pushClip(0, 0, width, height);
 		
@@ -47,25 +48,25 @@ public class GSTimelineTrackHeaderGUI extends GSPanel {
 			
 			int y = modelView.getTrackY(trackUUID);
 			if (y + modelView.getTrackHeight() > 0 && y < height)
-				renderTrackLabel(track, trackUUID, y, track.getTrackUUID().equals(hoveredTrackUUID));
+				renderTrackLabel(matrixStack, track, trackUUID, y, track.getTrackUUID().equals(hoveredTrackUUID));
 			y += modelView.getTrackHeight();
 		}
 
 		((GSIBufferBuilderAccess)buffer).popClip();
 	}
 	
-	private void renderTrackLabel(GSTrack track, UUID trackUUID, int y, boolean trackHovered) {
+	private void renderTrackLabel(MatrixStack matrixStack, GSTrack track, UUID trackUUID, int y, boolean trackHovered) {
 		int y1 = y + modelView.getTrackHeight();
 		
 		if (trackHovered)
-			fill(0, y, width, y1, TRACK_HOVER_COLOR);
+			fill(matrixStack, 0, y, width, y1, TRACK_HOVER_COLOR);
 		
 		String name = trimText(track.getInfo().getName(), width);
-		int xt = (width - font.getStringWidth(name)) / 2;
-		int yt = y + (modelView.getTrackHeight() - font.fontHeight) / 2;
-		drawString(font, name, xt, yt, getTrackColor(track));
+		int xt = (width - textRenderer.getWidth(name)) / 2;
+		int yt = y + (modelView.getTrackHeight() - textRenderer.fontHeight) / 2;
+		textRenderer.draw(matrixStack, name, xt, yt, getTrackColor(track));
 
-		fill(0, y1, width, y1 + modelView.getTrackSpacing(), TRACK_SPACING_COLOR);
+		fill(matrixStack, 0, y1, width, y1 + modelView.getTrackSpacing(), TRACK_SPACING_COLOR);
 	}
 	
 	private int getTrackColor(GSTrack track) {
