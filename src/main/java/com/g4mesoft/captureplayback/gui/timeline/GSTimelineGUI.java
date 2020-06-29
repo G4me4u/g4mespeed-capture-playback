@@ -17,6 +17,7 @@ import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
 
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.BlockPos;
 
 public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, GSITimelineListener, GSIExpandedColumnModelListener {
 
@@ -49,7 +50,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private int contentWidth;
 	private int contentHeight;
 	
-	private double currentMouseY;
+	private UUID hoveredTrackUUID;
 	
 	public GSTimelineGUI(GSTimeline timeline, GSITrackProvider trackProvider) {
 		this.timeline = timeline;
@@ -206,8 +207,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public boolean onKeyPressedGS(int key, int scancode, int mods) {
 		if (key == GLFW.GLFW_KEY_T) {
 			if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
-				UUID trackUUID = modelView.getTrackUUIDFromView((int)currentMouseY - timelineContent.getY());
-				if (trackUUID != null && timeline.removeTrack(trackUUID))
+				if (hoveredTrackUUID != null && timeline.removeTrack(hoveredTrackUUID))
 					return true;
 			} else {
 				timeline.addTrack(trackProvider.createNewTrackInfo(timeline));
@@ -228,9 +228,23 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	
 	@Override
 	public void onMouseMovedGS(double mouseX, double mouseY) {
-		currentMouseY = mouseY;
+		hoveredTrackUUID = modelView.getTrackUUIDFromView((int)mouseY - timelineContent.getY());
+		
+		if (hoveredTrackUUID != null) {
+			GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
+			if (hoveredTrack != null) {
+				BlockPos pos = hoveredTrack.getInfo().getPos();
+				infoPanel.setInfoText(formatTrackPosition(pos));
+			}
+		} else {
+			infoPanel.setInfoText(null);
+		}
 		
 		super.onMouseMovedGS(mouseX, mouseY);
+	}
+	
+	private String formatTrackPosition(BlockPos pos) {
+		return String.format("(%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
 	}
 	
 	@Override
