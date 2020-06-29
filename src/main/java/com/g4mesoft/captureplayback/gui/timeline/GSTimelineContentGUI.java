@@ -479,15 +479,23 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		GSBlockEventTime endTime = draggedEndTime;
 		
 		if (expandedColumnModel.hasExpandedColumn()) {
-			int deltaMicroticks = mouseTime.getMicrotick() - clickedMouseTime.getMicrotick();
-			startTime = startTime.offsetCopy(0, deltaMicroticks);
-			endTime = endTime.offsetCopy(0, deltaMicroticks);
+			int dmt = mouseTime.getMicrotick() - clickedMouseTime.getMicrotick();
+			
+			if (startTime.getMicrotick() + dmt < 0 || endTime.getMicrotick() + dmt < 0)
+				return false;
+			
+			startTime = startTime.offsetCopy(0, dmt);
+			endTime = endTime.offsetCopy(0, dmt);
 		} else {
-			long deltaGameticks = mouseTime.getGametick() - clickedMouseTime.getGametick();
-			startTime = startTime.offsetCopy(deltaGameticks, 0);
-			endTime = endTime.offsetCopy(deltaGameticks, 0);
+			long dgt = mouseTime.getGametick() - clickedMouseTime.getGametick();
+			
+			if (startTime.getGametick() + dgt < 0L || endTime.getGametick() + dgt < 0L)
+				return false;
+
+			startTime = startTime.offsetCopy(dgt, 0);
+			endTime = endTime.offsetCopy(dgt, 0);
 		}
-		
+
 		return moveEntry(selectedTrack, selectedEntry, startTime, endTime);
 	}
 	
