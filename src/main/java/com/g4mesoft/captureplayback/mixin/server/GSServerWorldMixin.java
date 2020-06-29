@@ -18,7 +18,7 @@ import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.stream.playback.GSPlaybackEvent;
 import com.g4mesoft.captureplayback.stream.playback.GSPlaybackFrame;
 import com.g4mesoft.captureplayback.stream.playback.GSPlaybackStream;
-import com.g4mesoft.core.client.GSControllerClient;
+import com.g4mesoft.core.server.GSControllerServer;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -77,7 +77,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 			            PlayerManager playerManager = server.getPlayerManager();
 			            Packet<?> packet = new BlockActionS2CPacket(pos, block, type, data);
 
-			            double dist = 16.0 * GSControllerClient.getInstance().getTpsModule().sBlockEventDistance.getValue();
+			            double dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
 			            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, dimension.getType(), packet);
 					}
 				}

@@ -204,7 +204,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public boolean onKeyPressedGS(int key, int scancode, int mods) {
 		if (key == GLFW.GLFW_KEY_T) {
 			if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
-				UUID trackUUID = modelView.getTrackUUIDFromView((int)currentMouseY + timelineContent.getY());
+				UUID trackUUID = modelView.getTrackUUIDFromView((int)currentMouseY - timelineContent.getY());
 				if (trackUUID != null && timeline.removeTrack(trackUUID))
 					return true;
 			} else {
