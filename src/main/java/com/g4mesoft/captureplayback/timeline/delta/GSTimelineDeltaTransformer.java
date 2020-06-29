@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.timeline.delta;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
