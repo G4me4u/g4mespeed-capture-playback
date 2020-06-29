@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.access.GSIBufferBuilderAccess;
-import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;

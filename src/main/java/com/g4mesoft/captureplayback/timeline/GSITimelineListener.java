@@ -1,5 +1,7 @@
 package com.g4mesoft.captureplayback.timeline;
 
+import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+
 public interface GSITimelineListener {
 
 	default public void timelineNameChanged(String oldName) {

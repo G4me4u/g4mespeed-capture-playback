@@ -3,6 +3,8 @@ package com.g4mesoft.captureplayback.timeline;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+
 import net.minecraft.network.PacketByteBuf;
 
 public final class GSTrackEntry {

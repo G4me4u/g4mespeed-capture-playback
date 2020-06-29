@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.timeline;
+package com.g4mesoft.captureplayback.common;
 
 import java.io.IOException;
 
@@ -13,6 +13,9 @@ public final class GSBlockEventTime {
 	private final int microtick;
 	
 	public GSBlockEventTime(long gametick, int microtick) {
+		if (gametick < 0L || microtick < 0)
+			throw new IllegalArgumentException("Ticks must be non-negative!");
+		
 		this.gametick = gametick;
 		this.microtick = microtick;
 	}
@@ -46,15 +49,25 @@ public final class GSBlockEventTime {
 	}
 
 	@Override
+	public int hashCode() {
+		return Long.hashCode(gametick) + 31 * microtick;
+	}
+	
+	@Override
 	public boolean equals(Object other) {
-		if (other instanceof GSBlockEventTime)
-			return isEqual((GSBlockEventTime)other);
-		return false;
+		if (!(other instanceof GSBlockEventTime))
+			return false;
+
+		return isEqual((GSBlockEventTime)other);
 	}
 	
 	public static GSBlockEventTime read(PacketByteBuf buf) throws IOException {
 		long gametick = buf.readLong();
 		int microtick = buf.readInt();
+		
+		if (gametick < 0L || microtick < 0)
+			throw new IOException("Invalid time parameters!");
+		
 		return new GSBlockEventTime(gametick, microtick);
 	}
 

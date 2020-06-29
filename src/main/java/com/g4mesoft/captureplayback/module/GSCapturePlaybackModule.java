@@ -1,5 +1,11 @@
 package com.g4mesoft.captureplayback.module;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
@@ -18,9 +24,14 @@ import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSKeyBinding;
 import com.g4mesoft.hotkey.GSKeyManager;
 import com.g4mesoft.packet.GSIPacket;
+import com.g4mesoft.util.GSFileUtils;
+import com.mojang.brigadier.CommandDispatcher;
 
+import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListener {
@@ -28,6 +39,8 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	private static final String GUI_TAB_TITLE = "gui.tab.capture-playback";
 	
 	public static final String KEY_CATEGORY = "capture-playback";
+	
+	public static final String TIMELINE_FILE_NAME = "active_timeline.dat";
 	
 	private final GSTimeline activeTimeline;
 	private final GSTimelineDeltaTransformer transformer;
@@ -51,15 +64,59 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 		this.manager = manager;
 
 		transformer.install(activeTimeline);
+
+		manager.runOnServer((serverManager) -> {
+			try {
+				activeTimeline.set(readTimeline(getTimelineFile()));
+			} catch (IOException e) {
+				CapturePlaybackMod.GSP_LOGGER.warn("Unable to read active timeline!");
+			}
+		});
 	}
 	
 	@Override
 	public void onClose() {
+		manager.runOnServer((serverManager) -> {
+			try {
+				writeTimeline(activeTimeline, getTimelineFile());
+			} catch (IOException e) {
+				CapturePlaybackMod.GSP_LOGGER.warn("Unable to write active timeline!");
+			}
+		});
+		
 		manager = null;
 		
 		transformer.uninstall(activeTimeline);
 	}
+
+	private GSTimeline readTimeline(File timelineFile) throws IOException {
+		GSTimeline timeline;
+		
+		try (FileInputStream fis = new FileInputStream(timelineFile)) {
+			byte[] data = IOUtils.toByteArray(fis);
+			PacketByteBuf buffer = new PacketByteBuf(Unpooled.wrappedBuffer(data));
+			timeline = GSTimeline.read(buffer);
+			buffer.release();
+		}
+		
+		return timeline;
+	}
 	
+	private void writeTimeline(GSTimeline timeline, File timelineFile) throws IOException {
+		GSFileUtils.ensureFileExists(timelineFile);
+		
+		try (FileOutputStream fos = new FileOutputStream(timelineFile)) {
+			PacketByteBuf buffer = new PacketByteBuf(Unpooled.buffer());
+			GSTimeline.write(buffer, timeline);
+			if (buffer.hasArray()) {
+				fos.write(buffer.array(), buffer.arrayOffset(), buffer.writerIndex());
+			} else {
+				fos.getChannel().write(buffer.nioBuffer());
+			}
+			buffer.release();
+		}
+	}
+
 	@Override
 	@Environment(EnvType.CLIENT)
 	public void initGUI(GSTabbedGUI tabbedGUI) {
@@ -71,6 +128,11 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	public void registerHotkeys(GSKeyManager keyManager) {
 		collapseTabKey = keyManager.registerKey("collapseTab", KEY_CATEGORY, GLFW.GLFW_KEY_T);
 		expandedHoveredTabKey = keyManager.registerKey("expandedHoveredTab", KEY_CATEGORY, GLFW.GLFW_KEY_T);
+	}
+	
+	@Override
+	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
+		GSPlaybackCommand.registerCommand(dispatcher);
 	}
 	
 	@Override
@@ -113,8 +175,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			transformer.setEnabled(false);
 			try {
 				delta.applyDelta(activeTimeline);
-			} catch (GSTimelineDeltaException e) {
-				// TODO: handle this exception somehow
+			} catch (GSTimelineDeltaException ignore) {
 			}
 			transformer.setEnabled(true);
 		});
@@ -135,6 +196,10 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			if (otherPlayer != player)
 				sendPacket(managerServer, packet, otherPlayer);
 		}
+	}
+	
+	private File getTimelineFile() {
+		return new File(manager.getCacheFile(), TIMELINE_FILE_NAME);
 	}
 	
 	@Environment(EnvType.CLIENT)
