@@ -3,6 +3,8 @@
   "package": "com.g4mesoft.captureplayback.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "server.GSServerWorldMixin",
+    "server.GSPistonBlockMixin"
   ],
   "client": [
   ],

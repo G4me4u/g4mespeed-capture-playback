@@ -4,9 +4,9 @@ import java.util.UUID;
 
 import org.lwjgl.glfw.GLFW;
 
+import com.g4mesoft.captureplayback.common.GSBlockEventTime;
 import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
 import com.g4mesoft.captureplayback.gui.GSITrackProvider;
-import com.g4mesoft.captureplayback.timeline.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
@@ -46,6 +46,8 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	
 	private int contentWidth;
 	private int contentHeight;
+	
+	private double currentMouseY;
 	
 	public GSTimelineGUI(GSTimeline timeline, GSITrackProvider trackProvider) {
 		this.timeline = timeline;
@@ -198,18 +200,32 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	@Override
 	public boolean onKeyPressedGS(int key, int scancode, int mods) {
 		if (key == GLFW.GLFW_KEY_T) {
-			timeline.addTrack(trackProvider.createNewTrackInfo(timeline));
-			return true;
+			if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
+				UUID trackUUID = modelView.getTrackUUIDFromView((int)currentMouseY);
+				if (trackUUID != null && timeline.removeTrack(trackUUID))
+					return true;
+			} else {
+				timeline.addTrack(trackProvider.createNewTrackInfo(timeline));
+				return true;
+			}
 		} else if (key == GLFW.GLFW_KEY_E) {
 			if (expandedColumnModel.hasExpandedColumn()) {
 				expandedColumnModel.clearExpandedColumns();
 			} else {
 				expandedColumnModel.setExpandedColumnRange(0, Integer.MAX_VALUE);
 			}
+			
 			return true;
 		}
 		
 		return super.onKeyPressedGS(key, scancode, mods);
+	}
+	
+	@Override
+	public void onMouseMovedGS(double mouseX, double mouseY) {
+		currentMouseY = mouseY;
+		
+		super.onMouseMovedGS(mouseX, mouseY);
 	}
 	
 	@Override
