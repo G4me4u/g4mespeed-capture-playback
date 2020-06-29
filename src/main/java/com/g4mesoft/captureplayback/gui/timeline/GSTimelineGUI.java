@@ -64,8 +64,11 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		
 		infoPanel = new GSTimelineInfoPanelGUI();
 		
-		verticalScrollBar = new GSDarkScrollBar(this, (newScroll) -> {
-			modelView.setYOffset((int)(-newScroll));
+		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
+			@Override
+			public void scrollChanged(double newScroll) {
+				modelView.setYOffset((int)(-newScroll));
+			}
 		});
 		
 		horizontalScrollBar = new GSTimelinePreviewScrollBar(timeline, modelView, this, this);
