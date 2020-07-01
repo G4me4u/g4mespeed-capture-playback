@@ -211,6 +211,27 @@ public class GSTimelineModelView {
 		return getColumnIndex(lookupOffset + modelStartTime.getGametick());
 	}
 	
+	public UUID getNextTrackUUID(UUID trackUUID, boolean descending) {
+		Integer trackIndex = trackUUIDtoIndex.get(trackUUID);
+		if (trackIndex == null)
+			return null;
+		
+		int nextIndex = trackIndex;
+		if (descending) {
+			nextIndex--;
+			
+			if (nextIndex < 0)
+				nextIndex = trackUUIDtoIndex.size() - 1;
+		} else {
+			nextIndex++;
+		
+			if (nextIndex >= trackUUIDtoIndex.size())
+				nextIndex = 0;
+		}
+		
+		return trackIndexToUUID.get(nextIndex);
+	}
+	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
 	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry) {
