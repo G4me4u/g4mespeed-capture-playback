@@ -32,6 +32,18 @@ public final class GSTrackInfo {
 		return color;
 	}
 
+	public GSTrackInfo withName(String name) {
+		return new GSTrackInfo(name, pos, color);
+	}
+
+	public GSTrackInfo withPos(BlockPos pos) {
+		return new GSTrackInfo(name, pos, color);
+	}
+
+	public GSTrackInfo withColor(int color) {
+		return new GSTrackInfo(name, pos, color);
+	}
+	
 	public boolean equals(GSTrackInfo other) {
 		if (other == null)
 			return false;

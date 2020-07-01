@@ -12,7 +12,7 @@ public class GSCapturePlaybackGUI extends GSParentPanel {
 	private static final int TOP_MARGIN = 5;
 
 	private final GSCapturePlaybackModule module;
-	
+
 	public GSCapturePlaybackGUI(GSCapturePlaybackModule module) {
 		this.module = module;
 	}

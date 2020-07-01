@@ -166,43 +166,6 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		fill(matrixStack, 0, cy, TRACK_HEADER_WIDTH, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
 	}
 	
-	/*
-	private static final String ADD_TRACK_BUTTON_TEXT = "+ Add Track";
-	private static final int ADD_TRACK_BUTTON_MARGIN = 2;
-	private static final int ADD_TRACK_BUTTON_PADDING = 3;
-	private static final int ADD_TRACK_BUTTON_COLOR = 0xFF222222;
-	
-	private void renderAddTrackButton(int mouseX, int mouseY) {
-		Rectangle rect = getAddTrackButtonBounds();
-		
-		int color = ADD_TRACK_BUTTON_COLOR;
-		if (rect.contains(mouseX, mouseY))
-			color = brightenColor(brightenColor(color));
-		
-		int x1 = rect.x + rect.width;
-		int y1 = rect.y + rect.height;
-		
-		fill(rect.x, rect.y, x1, y1, brightenColor(color));
-		fill(rect.x + 1, rect.y + 1, x1 - 1, y1 - 1, darkenColor(color));
-		
-		int xt = rect.x + rect.width / 2;
-		int yt = rect.y + (rect.height - font.fontHeight) / 2;
-		drawCenteredString(font, ADD_TRACK_BUTTON_TEXT, xt, yt, TEXT_COLOR);
-	}
-
-	private Rectangle getAddTrackButtonBounds() {
-		int textWidth = font.getStringWidth(ADD_TRACK_BUTTON_TEXT);
-
-		Rectangle rect = new Rectangle();
-		rect.x = (LABEL_COLUMN_WIDTH - textWidth) / 2 - ADD_TRACK_BUTTON_PADDING;
-		rect.width = textWidth + ADD_TRACK_BUTTON_PADDING * 2;
-		rect.y = modelView.getTrackEndY() + ADD_TRACK_BUTTON_MARGIN;
-		rect.height = font.fontHeight + ADD_TRACK_BUTTON_PADDING * 2;
-		
-		return rect;
-	}
-	*/
-	
 	@Override
 	public boolean onKeyPressedGS(int key, int scancode, int mods) {
 		if (key == GLFW.GLFW_KEY_T) {
