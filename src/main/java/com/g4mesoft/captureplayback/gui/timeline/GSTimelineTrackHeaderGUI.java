@@ -155,7 +155,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
 		if (trackNameField.isElementFocused()) {
 			if (!Objects.equals(hoveredTrackUUID, editingTrackUUID)) {
-				updateTrackNameInfo();
+				updateNameFieldInfo();
 				setCurrentEditingTrack(hoveredTrackUUID, true);
 				
 				// Only return immediately if the text field was not added
@@ -177,7 +177,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 				setCurrentEditingTrack(null, false);
 				return true;
 			case GLFW.GLFW_KEY_ENTER:
-				updateTrackNameInfo();
+				updateNameFieldInfo();
 				setCurrentEditingTrack(null, false);
 				return true;
 			case GLFW.GLFW_KEY_TAB:
@@ -192,11 +192,11 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		if (trackNameField.isElementFocused() && editingTrackUUID != null) {
 			UUID nextTrackUUID = modelView.getNextTrackUUID(editingTrackUUID, descending);
 			
-			updateTrackNameInfo();
+			updateNameFieldInfo();
 			setCurrentEditingTrack(nextTrackUUID, true);
 
 			if (nextTrackUUID != null)
-				selectAllText();
+				selectAllNameFieldText();
 			
 			return true;
 		}
@@ -209,31 +209,44 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			editingTrackUUID = trackUUID;
 
 			if (editingTrackUUID != null)
-				resetTrackNameField();
+				resetNameField();
 			
-			initTrackNameField();
+			initNameField();
 		}
 		
 		if (editingTrackUUID != null && autoFocus && !trackNameField.isElementFocused()) {
-			initTrackNameField();
+			initNameField();
 			setFocused(trackNameField);
 		}
 	}
 	
-	private void initTrackNameField() {
+	private void initNameField() {
 		if (editingTrackUUID != null) {
 			if (!trackNameField.isAdded())
 				addPanel(trackNameField);
 			
-			int ty = modelView.getTrackY(editingTrackUUID);
-			int th = modelView.getTrackHeight();
-			trackNameField.initBounds(client, 0, ty, width, th);
+			updateNameFieldBounds();
 		} else if (trackNameField.isAdded()) {
 			removePanel(trackNameField);
 		}
 	}
 	
-	private void resetTrackNameField() {
+	private void updateNameFieldBounds() {
+		if (trackNameField.isAdded()) {
+			int ty = modelView.getTrackY(editingTrackUUID);
+			int th = modelView.getTrackHeight();
+			
+			if (ty < 0 || ty + th > height) {
+				// The name field is out of bounds. We have to cancel
+				// the editing.
+				setCurrentEditingTrack(null, false);
+			} else {
+				trackNameField.initBounds(client, 0, ty, width, th);
+			}
+		}
+	}
+
+	private void resetNameField() {
 		GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 		if (editingTrack != null) {
 			trackNameField.setText(editingTrack.getInfo().getName());
@@ -241,7 +254,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		}
 	}
 	
-	private void selectAllText() {
+	private void selectAllNameFieldText() {
 		GSITextModel textModel = trackNameField.getTextModel();
 		GSITextCaret caret = trackNameField.getCaret();
 		
@@ -249,11 +262,11 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		caret.setCaretMark(0);
 	}
 	
-	private void updateTrackNameInfo() {
+	private void updateNameFieldInfo() {
 		String name = trackNameField.getText();
 
 		if (name.isEmpty()) {
-			resetTrackNameField();
+			resetNameField();
 		} else {
 			GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 			
@@ -269,10 +282,12 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	@Override
 	public void trackRemoved(GSTrack track) {
 		updateHoveredTrack();
+		updateNameFieldBounds();
 	}
 	
 	@Override
 	public void modelViewChanged() {
 		updateHoveredTrack();
+		updateNameFieldBounds();
 	}
 }
