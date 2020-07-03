@@ -213,7 +213,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			editingTrackUUID = trackUUID;
 
 			if (editingTrackUUID != null)
-				resetNameField();
+				resetNameFieldText();
 			
 			initNameField();
 		}
@@ -250,7 +250,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		}
 	}
 
-	private void resetNameField() {
+	private void resetNameFieldText() {
 		GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 		if (editingTrack != null) {
 			trackNameField.setText(editingTrack.getInfo().getName());
@@ -270,7 +270,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		String name = trackNameField.getText();
 
 		if (name.isEmpty()) {
-			resetNameField();
+			resetNameFieldText();
 		} else {
 			GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 			
@@ -287,6 +287,14 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	public void trackRemoved(GSTrack track) {
 		updateHoveredTrack();
 		updateNameFieldBounds();
+	}
+	
+	@Override
+	public void trackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
+		// In case the user is hovering, but not editing, a track and another
+		// user changes the name of that track, we have to update the name.
+		if (!trackNameField.isElementFocused() && track.getTrackUUID().equals(editingTrackUUID))
+			resetNameFieldText();
 	}
 	
 	@Override
