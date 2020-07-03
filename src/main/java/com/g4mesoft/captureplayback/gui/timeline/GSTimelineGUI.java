@@ -166,7 +166,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	@Override
-	public boolean onKeyPressedGS(int key, int scancode, int mods) {
+	public boolean onKeyPressedGS(int key, int scancode, int mods, boolean repeating) {
 		if (key == GLFW.GLFW_KEY_T) {
 			if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
 				if (hoveredTrackUUID != null && timeline.removeTrack(hoveredTrackUUID))
@@ -175,7 +175,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 				timeline.addTrack(trackProvider.createNewTrackInfo(timeline));
 				return true;
 			}
-		} else if (key == GLFW.GLFW_KEY_E) {
+		} else if (!repeating && key == GLFW.GLFW_KEY_E) {
 			if (expandedColumnModel.hasExpandedColumn()) {
 				expandedColumnModel.clearExpandedColumns();
 			} else {
@@ -185,7 +185,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 			return true;
 		}
 		
-		return super.onKeyPressedGS(key, scancode, mods);
+		return super.onKeyPressedGS(key, scancode, mods, repeating);
 	}
 	
 	@Override

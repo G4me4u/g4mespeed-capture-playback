@@ -170,7 +170,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 	
 	@Override
-	public boolean onKeyPressedGS(int key, int scancode, int mods) {
+	public boolean onKeyPressedGS(int key, int scancode, int mods, boolean repeating) {
 		if (trackNameField.isElementFocused()) {
 			switch (key) {
 			case GLFW.GLFW_KEY_ESCAPE:
@@ -181,21 +181,25 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 				setCurrentEditingTrack(null, false);
 				return true;
 			case GLFW.GLFW_KEY_TAB:
-				return editNextTrack((mods & GLFW.GLFW_MOD_SHIFT) != 0);
+				return editNextTrack(true, (mods & GLFW.GLFW_MOD_SHIFT) != 0);
+			case GLFW.GLFW_KEY_DOWN:
+				return editNextTrack(false, false);
+			case GLFW.GLFW_KEY_UP:
+				return editNextTrack(false, true);
 			}
 		}
 		
-		return super.onKeyPressedGS(key, scancode, mods);
+		return super.onKeyPressedGS(key, scancode, mods, repeating);
 	}
 	
-	private boolean editNextTrack(boolean descending) {
+	private boolean editNextTrack(boolean select, boolean descending) {
 		if (trackNameField.isElementFocused() && editingTrackUUID != null) {
 			UUID nextTrackUUID = modelView.getNextTrackUUID(editingTrackUUID, descending);
 			
 			updateNameFieldInfo();
 			setCurrentEditingTrack(nextTrackUUID, true);
 
-			if (nextTrackUUID != null)
+			if (select && nextTrackUUID != null)
 				selectAllNameFieldText();
 			
 			return true;
