@@ -287,7 +287,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	@Override
-	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
+	public boolean onMouseClickedGS(double mouseX, double mouseY, int button, int mods) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY >= 0.0) {
 			clickedMouseX = mouseX;
 			clickedMouseY = mouseY;
@@ -312,7 +312,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			}
 		}
 		
-		return super.onMouseClickedGS(mouseX, mouseY, button);
+		return super.onMouseClickedGS(mouseX, mouseY, button, mods);
 	}
 
 	private boolean prepareDragging(double mouseX, double mouseY) {
@@ -410,7 +410,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	@Override
-	public boolean onMouseReleasedGS(double mouseX, double mouseY, int button) {
+	public boolean onMouseReleasedGS(double mouseX, double mouseY, int button, int mods) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY > 0) {
 			if (draggedEntryChanged || toggleSelection)
 				unselectEntries();
@@ -420,7 +420,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		draggingType = GSDraggingType.NOT_DRAGGING;
 		draggedEntryChanged = false;
 		
-		return super.onMouseReleasedGS(mouseX, mouseY, button);
+		return super.onMouseReleasedGS(mouseX, mouseY, button, mods);
 	}
 
 	@Override

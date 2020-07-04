@@ -8,7 +8,6 @@ import com.g4mesoft.access.GSIBufferBuilderAccess;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.gui.GSPanel;
 
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 
@@ -125,20 +124,20 @@ public class GSTimelineColumnHeaderGUI extends GSPanel {
 	}
 	
 	@Override
-	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
+	public boolean onMouseClickedGS(double mouseX, double mouseY, int button, int mods) {
 		if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
 			int hoveredColumn = modelView.getColumnIndexFromView((int)mouseX);
 			if (hoveredColumn != -1) {
-				if (!Screen.hasShiftDown()) {
-					expandedColumnModel.toggleExpandedColumn(hoveredColumn);
-				} else {
+				if ((mods & GLFW.GLFW_MOD_SHIFT) != 0) {
 					expandedColumnModel.includeExpandedColumn(hoveredColumn);
+				} else {
+					expandedColumnModel.toggleExpandedColumn(hoveredColumn);
 				}
 				
 				return true;
 			}
 		}
 		
-		return super.onMouseClickedGS(mouseX, mouseY, button);
+		return super.onMouseClickedGS(mouseX, mouseY, button, mods);
 	}
 }

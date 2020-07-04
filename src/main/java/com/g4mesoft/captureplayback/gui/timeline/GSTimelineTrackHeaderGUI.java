@@ -152,7 +152,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 
 	@Override
-	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
+	public boolean onMouseClickedGS(double mouseX, double mouseY, int button, int mods) {
 		if (trackNameField.isElementFocused()) {
 			if (!Objects.equals(hoveredTrackUUID, editingTrackUUID)) {
 				updateNameFieldInfo();
@@ -166,7 +166,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			}
 		}
 		
-		return super.onMouseClickedGS(mouseX, mouseY, button);
+		return super.onMouseClickedGS(mouseX, mouseY, button, mods);
 	}
 	
 	@Override
