@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.gui;
 
+import com.g4mesoft.gui.renderer.GSTexture;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
@@ -8,7 +9,8 @@ import net.minecraft.util.Identifier;
 
 public class GSDarkScrollBar extends GSScrollBar {
 
-	private static final Identifier DARK_TEXTURE = new Identifier("g4mespeed/captureplayback/textures/scroll_bar_dark.png");
+	private static final Identifier DARK_TEXTURE_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/scroll_bar_dark.png");
+	private static final GSTexture DARK_TEXTURE = new GSTexture(DARK_TEXTURE_IDENTIFIER, 30, 40);
 	
 	private static final int DARK_KNOB_AREA_COLOR = 0xFF171717;
 	private static final int DARK_DISABLED_KNOB_AREA_COLOR = 0xFF000000;
@@ -22,7 +24,7 @@ public class GSDarkScrollBar extends GSScrollBar {
 	}
 
 	@Override
-	protected Identifier getScrollButtonTexture() {
+	protected GSTexture getScrollButtonTexture() {
 		return DARK_TEXTURE;
 	}
 	

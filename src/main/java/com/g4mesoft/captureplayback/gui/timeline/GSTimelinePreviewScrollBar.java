@@ -5,16 +5,18 @@ import java.awt.Rectangle;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.gui.renderer.GSTexture;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 
 public class GSTimelinePreviewScrollBar extends GSScrollBar {
 
-	private static final Identifier SCROLL_BUTTON_TEXTURE = new Identifier("g4mespeed/captureplayback/textures/scroll_bar_preview.png");
+	private static final Identifier TEXTURE_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/scroll_bar_preview.png");
+	private static final GSTexture SCROLL_BUTTON_TEXTURE = new GSTexture(TEXTURE_IDENTIFIER, 30, 54);
 	
 	private static final int PREVIEW_BACKGROUND = 0xFF171717;
 	
@@ -45,12 +47,12 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
-	public void initVerticalLeft(MinecraftClient client, int xl, int yt, int height) {
+	public void initVerticalLeft(int xl, int yt, int height) {
 		throw new IllegalStateException("Vertical scroll bar not supported");
 	}
 	
 	@Override
-	public void initVerticalRight(MinecraftClient client, int xr, int yt, int height) {
+	public void initVerticalRight(int xr, int yt, int height) {
 		throw new IllegalStateException("Vertical scroll bar not supported");
 	}
 
@@ -65,59 +67,46 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
-	protected int getScrollButtonSpriteWidth() {
-		return 3 * SCROLL_BUTTON_WIDTH;
-	}
-
-	@Override
-	protected int getScrollButtonSpriteHeight() {
-		return 2 * SCROLL_BUTTON_HEIGHT;
-	}
-	
-	@Override
-	protected Identifier getScrollButtonTexture() {
+	protected GSTexture getScrollButtonTexture() {
 		return SCROLL_BUTTON_TEXTURE;
 	}
 	
 	@Override
-	protected void drawKnobArea() {
-		renderPreview(SCROLL_BUTTON_WIDTH, 0, width - SCROLL_BUTTON_WIDTH, height);
+	protected void drawKnobArea(GSIRenderer2D renderer) {
+		renderPreview(renderer, SCROLL_BUTTON_WIDTH, 0, width - 2 * SCROLL_BUTTON_WIDTH, height);
 	}
 	
-	private void renderPreview(int x0, int y0, int x1, int y1) {
-		fill(x0, y0, x1, y1, VERTICAL_BORDER_COLOR);
+	private void renderPreview(GSIRenderer2D renderer, int x, int y, int width, int height) {
+		renderer.fillRect(x, y, width, height, VERTICAL_BORDER_COLOR);
 
-		y0 += VERTICAL_BORDER_HEIGHT;
-		y1 -= VERTICAL_BORDER_HEIGHT;
+		y += VERTICAL_BORDER_HEIGHT;
+		height -= 2 * VERTICAL_BORDER_HEIGHT;
 		
-		fill(x0, y0, x1, y1, PREVIEW_BACKGROUND);
+		renderer.fillRect(x, y, width, height, PREVIEW_BACKGROUND);
 		
 		for (GSTrack track : timeline.getTracks()) {
-			if (isTrackVisible(track, x0, y0, x1, y1))
-				renderTrackPreview(track, x0, y0, x1, y1);
+			if (isTrackVisible(track, x, y, width, height))
+				renderTrackPreview(renderer, track, x, y, width, height);
 		}
 	}
 	
-	private boolean isTrackVisible(GSTrack track, int x0, int y0, int x1, int y1) {
+	private boolean isTrackVisible(GSTrack track, int x, int y, int width, int height) {
 		int trackY = modelView.getTrackY(track.getTrackUUID());
 		if (trackY == -1)
 			return false;
 		
 		int mappedTrackY = mapEntryY(trackY);
-		return (mappedTrackY >= y0 && mappedTrackY < y1);
+		return (mappedTrackY >= y && mappedTrackY < y + height);
 	}
 	
-	private void renderTrackPreview(GSTrack track, int x0, int y0, int x1, int y1) {
-		int color = darkenColor(getTrackColor(track));
+	private void renderTrackPreview(GSIRenderer2D renderer, GSTrack track, int x0, int y0, int x1, int y1) {
+		int color = renderer.darkenColor(getTrackColor(track));
 		
 		for (GSTrackEntry entry : track.getEntries()) {
-			Rectangle bounds = getMappedEntryBounds(track, entry);
+			Rectangle bounds = getMappedEntryBounds(entry);
 			
-			if (bounds != null && clampEntryBounds(bounds, x0, y0, x1, y1)) {
-				int ex1 = bounds.x + bounds.width;
-				int ey1 = bounds.y + bounds.height;
-				fill(bounds.x, bounds.y, ex1, ey1, color);
-			}
+			if (bounds != null && clampEntryBounds(bounds, x0, y0, x1, y1))
+				renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, color);
 		}
 	}
 	
@@ -155,8 +144,8 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		return KNOB_COLOR;
 	}
 	
-	private Rectangle getMappedEntryBounds(GSTrack track, GSTrackEntry entry) {
-		Rectangle bounds = modelView.modelToView(track.getTrackUUID(), entry, tmpEntryRect);
+	private Rectangle getMappedEntryBounds(GSTrackEntry entry) {
+		Rectangle bounds = modelView.modelToView(entry, tmpEntryRect);
 		return (bounds == null) ? null : mapEntryBounds(bounds);
 	}
 	
