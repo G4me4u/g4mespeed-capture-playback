@@ -2,17 +2,14 @@ package com.g4mesoft.captureplayback.gui.timeline;
 
 import java.util.Locale;
 
-import org.lwjgl.glfw.GLFW;
-
-import com.g4mesoft.access.GSIBufferBuilderAccess;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.event.GSEvent;
+import com.g4mesoft.gui.event.GSIMouseListener;
+import com.g4mesoft.gui.event.GSMouseEvent;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Tessellator;
-
-public class GSTimelineColumnHeaderGUI extends GSPanel {
+public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListener {
 
 	public static final int COLUMN_HEADER_COLOR = 0x60000000;
 	public static final int HEADER_TEXT_COLOR = 0xFFFFFFFF;
@@ -33,83 +30,86 @@ public class GSTimelineColumnHeaderGUI extends GSPanel {
 	public GSTimelineColumnHeaderGUI(GSTimeline timeline, GSExpandedColumnModel expandedColumnModel, GSTimelineModelView modelView) {
 		this.expandedColumnModel = expandedColumnModel;
 		this.modelView = modelView;
+		
+		addMouseEventListener(this);
 	}
 	
 	@Override
-	public void renderTranslated(int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(mouseX, mouseY, partialTicks);
+	public void render(GSIRenderer2D renderer) {
+		super.render(renderer);
 	
-		fill(0, 0, width, height, COLUMN_HEADER_COLOR);
+		renderer.fillRect(0, 0, width, height, COLUMN_HEADER_COLOR);
 		
-		renderColumnHeaders(mouseX, mouseY);
+		renderColumnHeaders(renderer);
 
-		fill(0, height - 1, width, height, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
 	}
 	
-	private void renderColumnHeaders(int mouseX, int mouseY) {
-		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-		((GSIBufferBuilderAccess)buffer).pushClip(0.0f, 0.0f, width, height);
+	private void renderColumnHeaders(GSIRenderer2D renderer) {
+		renderer.pushClip(0, 0, width, height);
 		
 		int columnStart = Math.max(0, modelView.getColumnIndexFromView(0));
 		int columnEnd = modelView.getColumnIndexFromView(width - 1);
 
-		int x0 = modelView.getColumnX(columnStart);
+		int cx = modelView.getColumnX(columnStart);
 		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
-			int x1 = x0 + modelView.getColumnWidth(columnIndex);
-			renderColumnHeader(mouseX, mouseY, columnIndex, x0, x1);
-			x0 = x1;
+			int cw = modelView.getColumnWidth(columnIndex);
+			renderColumnHeader(renderer, columnIndex, cx, cw);
+			cx += cw;
 		}
 
-		((GSIBufferBuilderAccess)buffer).popClip();
+		renderer.popClip();
 	}
 	
-	private void renderColumnHeader(int mouseX, int mouseY, int columnIndex, int x0, int x1) {
+	private void renderColumnHeader(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
 		boolean expanded = expandedColumnModel.isColumnExpanded(columnIndex);
 		
-		int y;
+		renderer.fillRect(cx, 0, cw, height, getColumnColor(columnIndex));
+
+		int ty;
 		int color = HEADER_TEXT_COLOR;
+		
 		if (expanded) {
-			y = (height / 2 - font.fontHeight) / 2;
+			ty = (height / 2 - renderer.getFontHeight() + 1) / 2;
 		} else {
 			if (expandedColumnModel.hasExpandedColumn())
 				color = DARK_HEADER_TEXT_COLOR;
-			y = (height - font.fontHeight) / 2;
+			ty = (height - renderer.getFontHeight() + 1) / 2;
 		}
 
-		fill(x0, 0, x1, height, getColumnColor(columnIndex));
-		
 		String title = getColumnTitle(columnIndex);
-		drawCenteredString(font, title, (x0 + x1) / 2, y, color);
+		renderer.drawCenteredString(title, cx + cw / 2, ty, color);
 		
-		if (mouseX >= x0 && mouseX < x1) {
-			fill(x0, 0, x0 + 1, height, COLUMN_LINE_COLOR);
-			fill(x1 - 1, 0, x1, height, COLUMN_LINE_COLOR);
+		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
+			renderer.drawVLine(cx, 0, height, COLUMN_LINE_COLOR);
+			renderer.drawVLine(cx + cw - 1, 0, height, COLUMN_LINE_COLOR);
 		}
 		
 		if (expanded)
-			renderExpandedColumnHeader(mouseX, mouseY, columnIndex);
+			renderMicrotickLabels(renderer, columnIndex);
 	}
 	
-	private void renderExpandedColumnHeader(int mouseX, int mouseY, int expandedColumnIndex) {
+	private void renderMicrotickLabels(GSIRenderer2D renderer, int expandedColumnIndex) {
 		int duration = modelView.getColumnDuration(expandedColumnIndex);
-		int y = height * 3 / 4 - font.fontHeight / 2;
+		int y = height * 3 / 4 - renderer.getFontHeight() / 2;
+		
 		for (int mt = 0; mt < duration; mt++) {
 			int x = modelView.getMicrotickColumnX(expandedColumnIndex, mt);
 			int w = modelView.getMicrotickColumnWidth(expandedColumnIndex, mt);
 
 			String title = getMicrotickHeaderTitle(mt);
-			drawCenteredString(font, title, x + w / 2, y, HEADER_TEXT_COLOR);
+			renderer.drawCenteredString(title, x + w / 2, y, HEADER_TEXT_COLOR);
 		
 			if (mt != 0) {
 				int ly = height / 2 + GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING / 2;
-				drawVerticalDottedLine(x, ly, height, DOTTED_LINE_LENGTH, DOTTED_LINE_SPACING, MT_COLUMN_LINE_COLOR);
+				renderer.drawDottedVLine(x, ly, height, DOTTED_LINE_LENGTH, 
+						DOTTED_LINE_SPACING, MT_COLUMN_LINE_COLOR);
 			}
 		}
 		
-		int x0 = modelView.getColumnX(expandedColumnIndex);
-		int x1 = x0 + modelView.getColumnWidth(expandedColumnIndex);
-		int ys = height / 2;
-		fill(x0, ys - 1, x1, ys, MT_COLUMN_LINE_COLOR);
+		int ex = modelView.getColumnX(expandedColumnIndex);
+		int ew = modelView.getColumnWidth(expandedColumnIndex);
+		renderer.fillRect(ex, height / 2 - 1, ew, 1, MT_COLUMN_LINE_COLOR);
 	}
 	
 	private int getColumnColor(int columnIndex) {
@@ -125,20 +125,18 @@ public class GSTimelineColumnHeaderGUI extends GSPanel {
 	}
 	
 	@Override
-	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
-		if (button == GLFW.GLFW_MOUSE_BUTTON_1) {
-			int hoveredColumn = modelView.getColumnIndexFromView((int)mouseX);
+	public void mousePressed(GSMouseEvent event) {
+		if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
+			int hoveredColumn = modelView.getColumnIndexFromView(event.getX());
 			if (hoveredColumn != -1) {
-				if (!Screen.hasShiftDown()) {
-					expandedColumnModel.toggleExpandedColumn(hoveredColumn);
-				} else {
+				if (event.isModifierHeld(GSEvent.MODIFIER_SHIFT)) {
 					expandedColumnModel.includeExpandedColumn(hoveredColumn);
+				} else {
+					expandedColumnModel.toggleExpandedColumn(hoveredColumn);
 				}
 				
-				return true;
+				event.consume();
 			}
 		}
-		
-		return super.onMouseClickedGS(mouseX, mouseY, button);
 	}
 }

@@ -234,17 +234,19 @@ public class GSTimelineModelView {
 	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
-	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry) {
-		return modelToView(trackUUID, entry, null);
+	public Rectangle modelToView(GSTrackEntry entry) {
+		return modelToView(entry, null);
 	}
 	
-	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry, Rectangle dest) {
+	public Rectangle modelToView(GSTrackEntry entry, Rectangle dest) {
 		int startColumnIndex = getColumnIndex(entry.getStartTime());
 		int endColumnIndex = getColumnIndex(entry.getEndTime());
 
 		// This should rarely or never happen
 		if (startColumnIndex < 0)
 			return null;
+		
+		UUID trackUUID = entry.getOwnerTrack().getTrackUUID();
 		
 		boolean expanded = expandedColumnModel.isColumnExpanded(startColumnIndex);
 		if (!expanded && startColumnIndex == endColumnIndex && isMultiCell(trackUUID, startColumnIndex)) {

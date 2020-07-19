@@ -5,27 +5,26 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-import org.lwjgl.glfw.GLFW;
-
-import com.g4mesoft.access.GSIBufferBuilderAccess;
 import com.g4mesoft.captureplayback.common.GSBlockEventTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.event.GSIMouseListener;
+import com.g4mesoft.gui.event.GSMouseEvent;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
 
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Tessellator;
-
-public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener, GSITimelineModelViewListener {
+public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener, GSITimelineModelViewListener,
+                                                             GSIMouseListener {
 
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
 	
 	private static final int ENTRY_BORDER_THICKNESS = 2;
 
-	private static final double MINIMUM_DRAG_DISTANCE = 5.0;
+	private static final int MINIMUM_DRAG_DISTANCE = 5;
 
 	private static final int DRAGGING_AREA_SIZE = 6;
 	private static final int DRAGGING_PADDING = 2;
@@ -37,14 +36,14 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	
 	private final Rectangle tmpRenderRect;
 	
-	private double currentMouseX;
-	private double currentMouseY;
+	private int currentMouseX;
+	private int currentMouseY;
 	private GSBlockEventTime hoveredTime;
 	private GSTrack hoveredTrack;
 	private GSTrackEntry hoveredEntry;
 	
-	private double clickedMouseX;
-	private double clickedMouseY;
+	private int clickedMouseX;
+	private int clickedMouseY;
 	private GSBlockEventTime clickedMouseTime;
 	
 	private GSDraggingType draggingType;
@@ -66,58 +65,59 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		tmpRenderRect = new Rectangle();
 		
 		draggingType = GSDraggingType.NOT_DRAGGING;
+		
+		addMouseEventListener(this);
 	}
 	
 	@Override
-	protected void onAdded() {
-		super.onAdded();
+	public void onAdded(GSIElement parent) {
+		super.onAdded(parent);
 
 		timeline.addTimelineListener(this);
 		modelView.addModelViewListener(this);
 	}
 
 	@Override
-	protected void onRemoved() {
-		super.onRemoved();
+	public void onRemoved(GSIElement parent) {
+		super.onRemoved(parent);
 		
 		timeline.removeTimelineListener(this);
 		modelView.removeModelViewListener(this);
 	}
 	
 	@Override
-	protected void renderTranslated(int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(mouseX, mouseY, partialTicks);
+	public void render(GSIRenderer2D renderer) {
+		super.render(renderer);
 
-		BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-		((GSIBufferBuilderAccess)buffer).pushClip(0, 0, width, height);
+		renderer.pushClip(0, 0, width, height);
 		
-		renderColumns(mouseX, mouseY);
-		renderTracks(mouseX, mouseY);
+		renderColumns(renderer);
+		renderTracks(renderer);
 		
 		if (editable)
-			renderHoveredEdge(mouseX, mouseY);
+			renderHoveredEdge(renderer);
 
-		((GSIBufferBuilderAccess)buffer).popClip();
+		renderer.popClip();
 	}
 	
-	protected void renderColumns(int mouseX, int mouseY) {
+	protected void renderColumns(GSIRenderer2D renderer) {
 		int columnStart = Math.max(0, modelView.getColumnIndexFromView(0));
 		int columnEnd = modelView.getColumnIndexFromView(width - 1);
 
-		int x0 = modelView.getColumnX(columnStart);
+		int x = modelView.getColumnX(columnStart);
 		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
-			int x1 = x0 + modelView.getColumnWidth(columnIndex);
-			renderColumn(mouseX, mouseY, columnIndex, x0, x1);
-			x0 = x1;
+			int cw = modelView.getColumnWidth(columnIndex);
+			renderColumn(renderer, columnIndex, x, cw);
+			x += cw;
 		}
 	}
 	
-	protected void renderColumn(int mouseX, int mouseY, int columnIndex, int x0, int x1) {
-		fill(x0, 0, x1, height, getColumnColor(columnIndex));
+	protected void renderColumn(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
+		renderer.fillRect(cx, 0, cw, height, getColumnColor(columnIndex));
 	
-		if (mouseX >= x0 && mouseX < x1) {
-			fill(x0, 0, x0 + 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-			fill(x1, 0, x1 - 1, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
+			renderer.drawVLine(cx, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+			renderer.drawVLine(cx + cw - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
 		}
 		
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
@@ -127,7 +127,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				int x = modelView.getMicrotickColumnX(columnIndex, mt);
 				int y = GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING / 2;
 			
-				drawVerticalDottedLine(x, y, height, GSTimelineColumnHeaderGUI.DOTTED_LINE_LENGTH, 
+				renderer.drawDottedVLine(x, y, height, GSTimelineColumnHeaderGUI.DOTTED_LINE_LENGTH, 
 						GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING, GSTimelineColumnHeaderGUI.MT_COLUMN_LINE_COLOR);
 			}
 		}
@@ -138,73 +138,76 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		                                    GSTimelineColumnHeaderGUI.COLUMN_COLOR;
 	}
 	
-	protected void renderTracks(int mouseX, int mouseY) {
+	protected void renderTracks(GSIRenderer2D renderer) {
 		for (Map.Entry<UUID, GSTrack> trackEntry : timeline.getTrackEntries()) {
 			UUID trackUUID = trackEntry.getKey();
 			GSTrack track = trackEntry.getValue();
 			
-			int y = modelView.getTrackY(trackUUID);
-			if (y + modelView.getTrackHeight() > 0 && y < height)
-				renderTrack(track, trackUUID, y, (track == hoveredTrack));
-			y += modelView.getTrackHeight();
+			int ty = modelView.getTrackY(trackUUID);
+			if (ty + modelView.getTrackHeight() > 0 && ty < height)
+				renderTrack(renderer, track, trackUUID, ty);
+			ty += modelView.getTrackHeight();
 		}
 	}
 	
-	protected void renderTrack(GSTrack track, UUID trackUUID, int y, boolean trackHovered) {
-		int y1 = y + modelView.getTrackHeight();
+	protected void renderTrack(GSIRenderer2D renderer, GSTrack track, UUID trackUUID, int ty) {
+		int th = modelView.getTrackHeight();
 		
-		if (trackHovered)
-			fill(0, y, width, y1, GSTimelineTrackHeaderGUI.TRACK_HOVER_COLOR);
+		if (track == hoveredTrack)
+			renderer.fillRect(0, ty, width, th, GSTimelineTrackHeaderGUI.TRACK_HOVER_COLOR);
 
 		for (GSTrackEntry entry : track.getEntries())
-			renderTrackEntry(trackUUID, entry, getTrackColor(track));
-		renderMultiCells(trackUUID, y);
+			renderTrackEntry(renderer, entry, getTrackColor(track));
+		renderMultiCells(renderer, trackUUID, ty);
 		
-		fill(0, y1, width, y1 + modelView.getTrackSpacing(), GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.fillRect(0, ty + th, width, modelView.getTrackSpacing(), 
+				GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
 	}
 	
 	protected int getTrackColor(GSTrack track) {
 		return (0xFF << 24) | track.getInfo().getColor();
 	}
 	
-	protected void renderTrackEntry(UUID trackUUID, GSTrackEntry entry, int color) {
+	protected void renderTrackEntry(GSIRenderer2D renderer, GSTrackEntry entry, int color) {
 		if (selectedEntry == entry || hoveredEntry == entry)
-			color = darkenColor(color);
+			color = renderer.darkenColor(color);
 
-		Rectangle rect = modelView.modelToView(trackUUID, entry, tmpRenderRect);
+		Rectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
-			int x1 = rect.x + rect.width;
-			int y1 = rect.y + rect.height;
-
-			fill(rect.x, rect.y, x1, y1, darkenColor(color));
+			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, renderer.darkenColor(color));
 			
-			int x0 = rect.x;
 			if (entry.getType() != GSETrackEntryType.EVENT_START)
-				x1 -= ENTRY_BORDER_THICKNESS;
-			if (entry.getType() != GSETrackEntryType.EVENT_END)
-				x0 += ENTRY_BORDER_THICKNESS;
+				rect.width -= ENTRY_BORDER_THICKNESS;
+
+			if (entry.getType() != GSETrackEntryType.EVENT_END) {
+				rect.x += ENTRY_BORDER_THICKNESS;
+				rect.width -= ENTRY_BORDER_THICKNESS;
+			}
 			
-			fill(x0, rect.y + ENTRY_BORDER_THICKNESS, x1, y1 - ENTRY_BORDER_THICKNESS, color);
+			rect.y += ENTRY_BORDER_THICKNESS;
+			rect.height -= 2 * ENTRY_BORDER_THICKNESS;
+			
+			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, color);
 		}
 	}
 	
-	protected void renderMultiCells(UUID trackUUID, int y) {
+	protected void renderMultiCells(GSIRenderer2D renderer, UUID trackUUID, int y) {
 		Iterator<GSMultiCellInfo> itr = modelView.getMultiCellIterator(trackUUID);
 		while (itr.hasNext()) {
 			GSMultiCellInfo multiCellInfo = itr.next();
 			if (!expandedColumnModel.isColumnExpanded(multiCellInfo.getColumnIndex()))
-				renderMultiCell(trackUUID, y, multiCellInfo);
+				renderMultiCell(renderer, trackUUID, y, multiCellInfo);
 		}
 	}
 	
-	protected void renderMultiCell(UUID trackUUID, int y, GSMultiCellInfo multiCellInfo) {
+	protected void renderMultiCell(GSIRenderer2D renderer, UUID trackUUID, int y, GSMultiCellInfo multiCellInfo) {
 		String infoText = formatMultiCellInfo(multiCellInfo);
 		
 		int columnIndex = multiCellInfo.getColumnIndex();
 		int xc = modelView.getColumnX(columnIndex) + modelView.getColumnWidth(columnIndex) / 2;
-		int ty = y + (modelView.getTrackHeight() - font.fontHeight) / 2;
-		drawCenteredString(font, infoText, xc, ty, TEXT_COLOR);
+		int ty = y + (modelView.getTrackHeight() - renderer.getFontHeight() + 1) / 2;
+		renderer.drawCenteredString(infoText, xc, ty, TEXT_COLOR);
 	}
 
 	protected String formatMultiCellInfo(GSMultiCellInfo multiCellInfo) {
@@ -213,60 +216,69 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return Integer.toString(multiCellInfo.getCount());
 	}
 	
-	protected void renderHoveredEdge(int mouseX, int mouseY) {
-		Rectangle hoveredRect = null;
-		boolean endTime = false;
-
+	protected void renderHoveredEdge(GSIRenderer2D renderer) {
 		switch (draggingType) {
 		case NOT_DRAGGING:
 			if (hoveredEntry != null) {
-				GSResizeArea resizeArea = getHoveredResizeArea(hoveredTrack.getTrackUUID(), hoveredEntry, mouseX, mouseY);
-				if (resizeArea != null) {
-					hoveredRect = modelView.modelToView(hoveredTrack.getTrackUUID(), hoveredEntry, tmpRenderRect);
-					endTime = (resizeArea == GSResizeArea.HOVERING_END);
-				}
+				int mouseX = renderer.getMouseX();
+				int mouseY = renderer.getMouseY();
+				
+				GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, mouseX, mouseY);
+				if (resizeArea != null)
+					renderResizeArea(renderer, hoveredEntry, resizeArea);
 			}
 			break;
-		case DRAGGING:
+		case RESIZING_START:
+			renderResizeArea(renderer, selectedEntry, GSResizeArea.HOVERING_START);
 			break;
 		case RESIZING_END:
-			endTime = true;
-		case RESIZING_START:
-			hoveredRect = modelView.modelToView(selectedTrack.getTrackUUID(), selectedEntry, tmpRenderRect);
+			renderResizeArea(renderer, selectedEntry, GSResizeArea.HOVERING_END);
+			break;
+		case DRAGGING:
+		default:
 			break;
 		}
+	}
+	
+	private void renderResizeArea(GSIRenderer2D renderer, GSTrackEntry entry, GSResizeArea resizeArea) {
+		Rectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
-		if (hoveredRect != null) {
-			int x0;
-			if (endTime) {
-				x0 = hoveredRect.x + hoveredRect.width - DRAGGING_AREA_SIZE;
+		if (rect != null) {
+			if (resizeArea == GSResizeArea.HOVERING_END) {
+				rect.x += rect.width - DRAGGING_AREA_SIZE;
 			} else {
-				x0 = hoveredRect.x - DRAGGING_PADDING;
+				rect.x -= DRAGGING_PADDING;
 			}
 			
-			int y0 = hoveredRect.y - DRAGGING_PADDING;
-			int y1 = hoveredRect.y + hoveredRect.height + DRAGGING_PADDING;
-			int x1 = x0 + DRAGGING_AREA_SIZE + DRAGGING_PADDING;
-			fill(x0, y0, x1, y1, DRAGGING_AREA_COLOR);
+			rect.y -= DRAGGING_PADDING;
+
+			rect.width = DRAGGING_AREA_SIZE + DRAGGING_PADDING;
+			rect.height += 2 * DRAGGING_PADDING;
+			
+			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, DRAGGING_AREA_COLOR);
 		}
 	}
 	
 	@Override
-	public void onMouseMovedGS(double mouseX, double mouseY) {
-		super.onMouseMovedGS(mouseX, mouseY);
-		
-		currentMouseX = mouseX;
-		currentMouseY = mouseY;
+	public void mouseMoved(GSMouseEvent event) {
+		currentMouseX = event.getX();
+		currentMouseY = event.getY();
 		
 		updateHoveredEntry();
 	}
 	
 	private void updateHoveredEntry() {
-		UUID hoveredTrackUUID = modelView.getTrackUUIDFromView((int)currentMouseY);
+		hoveredTime = null;
+		hoveredTrack = null;
+		hoveredEntry = null;
+		
+		UUID hoveredTrackUUID = modelView.getTrackUUIDFromView(currentMouseY);
+		
 		if (hoveredTrackUUID != null) {
 			hoveredTrack = timeline.getTrack(hoveredTrackUUID);
-			
-			hoveredTime = modelView.viewToModel((int)currentMouseX, (int)currentMouseY);
+		
+			hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
+
 			if (hoveredTime != null && hoveredTrack != null) {
 				int columnIndex = modelView.getColumnIndex(hoveredTime);
 				boolean multiCell = modelView.isMultiCell(hoveredTrackUUID, columnIndex);
@@ -274,63 +286,55 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				hoveredEntry = hoveredTrack.getEntryAt(hoveredTime, mtPrecision);
 				
 				if (hoveredEntry != null) {
-					Rectangle rect = modelView.modelToView(hoveredTrackUUID, hoveredEntry);
+					Rectangle rect = modelView.modelToView(hoveredEntry);
 					if (rect == null || !rect.contains(currentMouseX, currentMouseY))
 						hoveredEntry = null;
 				}
 			}
-		} else {
-			hoveredTime = null;
-			hoveredTrack = null;
-			hoveredEntry = null;
 		}
 	}
 	
 	@Override
-	public boolean onMouseClickedGS(double mouseX, double mouseY, int button) {
-		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY >= 0.0) {
-			clickedMouseX = mouseX;
-			clickedMouseY = mouseY;
+	public void mousePressed(GSMouseEvent event) {
+		switch (event.getButton()) {
+		case GSMouseEvent.BUTTON_LEFT:
+			clickedMouseX = event.getX();
+			clickedMouseY = event.getY();
 			clickedMouseTime = hoveredTime;
 			
 			if (hoveredEntry != null) {
 				updateSelectedEntry();
+				prepareDragging(event);
+			}
+			break;
+		case GSMouseEvent.BUTTON_RIGHT:
+			if (editable && hoveredEntry != null) {
+				GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
 				
-				if (prepareDragging(mouseX, mouseY))
-					return true;
-			} else {
-				// In case we are adding a new entry, we should return
-				// true to ensure we receive the mouse dragging events.
-				return true;
+				if (resizeArea != null) {
+					toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
+					event.consume();
+				} else if (draggingType == GSDraggingType.NOT_DRAGGING) {
+					removeEntry(hoveredTrack, hoveredEntry);
+					event.consume();
+				}
 			}
-		} else if (editable && button == GLFW.GLFW_MOUSE_BUTTON_2 && hoveredEntry != null) {
-			GSResizeArea resizeArea = getHoveredResizeArea(hoveredTrack.getTrackUUID(), hoveredEntry, (int)mouseX, (int)mouseY);
-			if (resizeArea != null) {
-				toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
-			} else if (draggingType == GSDraggingType.NOT_DRAGGING) {
-				removeEntry(hoveredTrack, hoveredEntry);
-			}
+			break;
 		}
-		
-		return super.onMouseClickedGS(mouseX, mouseY, button);
 	}
 
-	private boolean prepareDragging(double mouseX, double mouseY) {
-		if (!editable || hoveredTrack == null || hoveredEntry == null)
-			return false;
-
-		UUID trackUUID = hoveredTrack.getTrackUUID();
-		GSResizeArea resizeArea = getHoveredResizeArea(trackUUID, hoveredEntry, (int)mouseX, (int)mouseY);
-
-		GSDraggingType type = resizeAreaToDraggingType(resizeArea);
-		if (isDraggingAllowed(hoveredEntry, type)) {
-			draggingType = type;
-			draggedStartTime = hoveredEntry.getStartTime();
-			draggedEndTime = hoveredEntry.getEndTime();
-			return true;
+	private void prepareDragging(GSMouseEvent event) {
+		if (editable && hoveredEntry != null) {
+			GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
+	
+			GSDraggingType type = resizeAreaToDraggingType(resizeArea);
+			if (isDraggingAllowed(hoveredEntry, type)) {
+				draggingType = type;
+				draggedStartTime = hoveredEntry.getStartTime();
+				draggedEndTime = hoveredEntry.getEndTime();
+				event.consume();
+			}
 		}
-		
-		return false;
 	}
 	
 	private boolean isDraggingAllowed(GSTrackEntry entry, GSDraggingType type) {
@@ -374,8 +378,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			track.removeEntry(entry);
 	}
 	
-	private GSResizeArea getHoveredResizeArea(UUID trackUUID, GSTrackEntry entry, int mouseX, int mouseY) {
-		Rectangle r = modelView.modelToView(trackUUID, entry);
+	private GSResizeArea getHoveredResizeArea(GSTrackEntry entry, int mouseX, int mouseY) {
+		Rectangle r = modelView.modelToView(entry);
 		
 		if (r == null || !r.contains(mouseX, mouseY))
 			return null;
@@ -410,42 +414,37 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	@Override
-	public boolean onMouseReleasedGS(double mouseX, double mouseY, int button) {
-		if (button == GLFW.GLFW_MOUSE_BUTTON_1 && mouseY > 0) {
-			if (draggedEntryChanged || toggleSelection)
+	public void mouseReleased(GSMouseEvent event) {
+		if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
+			if (draggedEntryChanged || toggleSelection) {
 				unselectEntries();
+				event.consume();
+			}
+			
 			toggleSelection = (selectedEntry != null);
 		}
 		
 		draggingType = GSDraggingType.NOT_DRAGGING;
 		draggedEntryChanged = false;
-		
-		return super.onMouseReleasedGS(mouseX, mouseY, button);
 	}
 
 	@Override
-	public boolean onMouseDraggedGS(double mouseX, double mouseY, int button, double dragX, double dragY) {
-		if (editable && button == GLFW.GLFW_MOUSE_BUTTON_1) {
+	public void mouseDragged(GSMouseEvent event) {
+		if (editable && event.getButton() == GSMouseEvent.BUTTON_LEFT) {
 			if (selectedTrack != null && selectedEntry != null) {
-				return dragSelectedEntry(mouseX, mouseY);
+				dragSelectedEntry(event);
 			} else if (hoveredTrack != null && hoveredEntry == null) {
-				double dx = mouseX - clickedMouseX;
-				double dy = mouseY - clickedMouseY;
+				int dx = event.getX() - clickedMouseX;
+				int dy = event.getY() - clickedMouseY;
 
-				if (dx * dx + dy * dy > MINIMUM_DRAG_DISTANCE * MINIMUM_DRAG_DISTANCE) {
-					GSDraggingType draggingType = (dx > 0) ? GSDraggingType.RESIZING_END :
-					                                         GSDraggingType.RESIZING_START;
-					addTrackEntry(mouseX, mouseY, draggingType);
-					return true;
-				}
+				if (dx * dx + dy * dy > MINIMUM_DRAG_DISTANCE * MINIMUM_DRAG_DISTANCE)
+					addTrackEntry(event, (dx > 0) ? GSDraggingType.RESIZING_END : GSDraggingType.RESIZING_START);
 			}
 		}
-		
-		return super.onMouseDraggedGS(mouseX, mouseY, button, dragX, dragY);
 	}
 	
-	private boolean dragSelectedEntry(double mouseX, double mouseY) {
-		GSBlockEventTime draggedTime = modelView.getDraggedTime((int)mouseX, (int)mouseY);
+	private void dragSelectedEntry(GSMouseEvent event) {
+		GSBlockEventTime draggedTime = modelView.getDraggedTime(event.getX(), event.getY());
 		
 		boolean changed = false;
 
@@ -468,10 +467,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		if (changed) {
 			draggedEntryChanged = true;
-			return true;
+			event.consume();
 		}
-
-		return false;
 	}
 
 	private boolean moveDraggedEntry(GSBlockEventTime mouseTime) {
@@ -555,9 +552,9 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return !track.isOverlappingEntries(startTime, endTime, entry);
 	}
 
-	private void addTrackEntry(double mouseX, double mouseY, GSDraggingType draggingType) {
-		GSBlockEventTime t0 = modelView.getDraggedTime((int)clickedMouseX, (int)clickedMouseY);
-		GSBlockEventTime t1 = modelView.getDraggedTime((int)mouseX, (int)mouseY);
+	private void addTrackEntry(GSMouseEvent event, GSDraggingType draggingType) {
+		GSBlockEventTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
+		GSBlockEventTime t1 = modelView.getDraggedTime(event.getX(), event.getY());
 
 		if (t0 != null && t1 != null) {
 			if (t0.isAfter(t1)) {
@@ -585,6 +582,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				draggedStartTime = hoveredEntry.getStartTime();
 				draggedEndTime = hoveredEntry.getEndTime();
 				draggedEntryChanged = true;
+				
+				event.consume();
 			}
 		}
 	}

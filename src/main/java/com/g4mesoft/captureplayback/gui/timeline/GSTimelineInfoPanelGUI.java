@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
 import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
 
 public class GSTimelineInfoPanelGUI extends GSPanel {
 
@@ -9,16 +10,18 @@ public class GSTimelineInfoPanelGUI extends GSPanel {
 	private String infoText;
 	
 	@Override
-	public void renderTranslated(int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(mouseX, mouseY, partialTicks);
+	public void render(GSIRenderer2D renderer) {
+		super.render(renderer);
 		
-		fill(0, 0, width, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		renderer.fillRect(0, 0, width, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
 
-		fill(width - 1, 0, width, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-		fill(0, height - 1, width, height, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
 		
-		if (infoText != null)
-			drawCenteredString(font, infoText, width / 2, (height - font.fontHeight) / 2, INFO_TEXT_COLOR);
+		if (infoText != null) {
+			int ty = (height - renderer.getFontHeight() + 1) / 2;
+			renderer.drawCenteredString(infoText, width / 2, ty, INFO_TEXT_COLOR);
+		}
 	}
 	
 	public void setInfoText(String infoText) {
