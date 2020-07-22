@@ -9,7 +9,6 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
-import com.g4mesoft.gui.GSElementContext;
 import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
 import com.g4mesoft.gui.event.GSEvent;
@@ -21,8 +20,7 @@ import com.g4mesoft.gui.renderer.GSIRenderer2D;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
-
-import net.minecraft.util.math.BlockPos;
+import com.google.common.base.Objects;
 
 public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, 
                                                             GSITimelineListener, GSIExpandedColumnModelListener,
@@ -32,8 +30,6 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 	
 	private static final int CORNER_SQUARE_COLOR = 0xFF000000;
-	
-	private static final int TRACK_LABEL_PADDING = 2;
 	
 	private final GSTimeline timeline;
 	private final GSITrackProvider trackProvider;
@@ -57,6 +53,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private int contentWidth;
 	private int contentHeight;
 	
+	private int hoveredMouseY;
 	private UUID hoveredTrackUUID;
 	
 	public GSTimelineGUI(GSTimeline timeline, GSITrackProvider trackProvider) {
@@ -70,7 +67,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		trackHeader = new GSTimelineTrackHeaderGUI(timeline, modelView);
 		columnHeader = new GSTimelineColumnHeaderGUI(timeline, expandedColumnModel, modelView);
 		
-		infoPanel = new GSTimelineInfoPanelGUI();
+		infoPanel = new GSTimelineInfoPanelGUI(timeline);
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
 			@Override
@@ -116,9 +113,6 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public void onBoundsChanged() {
 		super.onBoundsChanged();
 
-		GSIRenderer2D renderer = GSElementContext.getRenderer();
-		modelView.setTrackHeight(renderer.getFontHeight() + TRACK_LABEL_PADDING * 2);
-		
 		layoutPanels();
 		initModelView();
 	}
@@ -181,16 +175,20 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	
 	@Override
 	public void mouseMoved(GSMouseEvent event) {
-		hoveredTrackUUID = modelView.getTrackUUIDFromView(event.getY() - timelineContent.getY());
+		hoveredMouseY = event.getY() - timelineContent.getY();
 		
-		if (hoveredTrackUUID != null) {
-			GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
-			if (hoveredTrack != null) {
-				BlockPos pos = hoveredTrack.getInfo().getPos();
-				infoPanel.setInfoText(formatTrackPosition(pos));
-			}
-		} else {
-			infoPanel.setInfoText(null);
+		updateHoveredTrack();
+	}
+	
+	private void updateHoveredTrack() {
+		UUID hoveredTrackUUID = modelView.getTrackUUIDFromView(hoveredMouseY);
+		
+		if (!Objects.equal(hoveredTrackUUID, this.hoveredTrackUUID)) {
+			this.hoveredTrackUUID = hoveredTrackUUID;
+			
+			timelineContent.setHoveredTrackUUID(hoveredTrackUUID);
+			trackHeader.setHoveredTrackUUID(hoveredTrackUUID);
+			infoPanel.setHoveredTrackUUID(hoveredTrackUUID);
 		}
 	}
 	
@@ -213,10 +211,6 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 			
 			event.consume();
 		}
-	}
-	
-	private String formatTrackPosition(BlockPos pos) {
-		return String.format("(%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
 	}
 	
 	@Override
@@ -302,6 +296,10 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		updateContentSize();
 	}
 	
+	public UUID getHoveredTrackUUID() {
+		return hoveredTrackUUID;
+	}
+	
 	public boolean isEditable() {
 		return editable;
 	}
@@ -309,6 +307,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public void setEditable(boolean editable) {
 		this.editable = editable;
 		
+		trackHeader.setEditable(editable);
 		timelineContent.setEditable(editable);
 	}
 }
