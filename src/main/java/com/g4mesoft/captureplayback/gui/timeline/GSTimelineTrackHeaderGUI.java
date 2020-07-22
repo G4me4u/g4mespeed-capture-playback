@@ -8,7 +8,7 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackInfo;
-import com.g4mesoft.gui.GSCursorType;
+import com.g4mesoft.gui.GSECursorType;
 import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
 import com.g4mesoft.gui.event.GSEvent;
@@ -17,9 +17,9 @@ import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSKeyEvent;
 import com.g4mesoft.gui.event.GSMouseEvent;
 import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.gui.text.GSETextAlignment;
 import com.g4mesoft.gui.text.GSITextCaret;
 import com.g4mesoft.gui.text.GSITextModel;
-import com.g4mesoft.gui.text.GSTextAlignment;
 import com.g4mesoft.gui.text.GSTextField;
 
 public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimelineListener, GSITimelineModelViewListener,
@@ -46,7 +46,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 		trackNameField = new GSTextField();
 		trackNameField.setBackgroundColor(0x00000000);
-		trackNameField.setTextAlignment(GSTextAlignment.CENTER);
+		trackNameField.setTextAlignment(GSETextAlignment.CENTER);
 		trackNameField.setBorderWidth(0);
 		trackNameField.setVerticalMargin(0);
 		trackNameField.setHorizontalMargin(0);
@@ -130,7 +130,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 	
 	@Override
-	public GSCursorType getCursor() {
+	public GSECursorType getCursor() {
 		return hoveredTrackUUID != null ? trackNameField.getCursor() : super.getCursor();
 	}
 	
