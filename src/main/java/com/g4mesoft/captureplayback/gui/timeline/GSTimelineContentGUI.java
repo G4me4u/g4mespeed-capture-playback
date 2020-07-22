@@ -46,7 +46,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	private int clickedMouseY;
 	private GSBlockEventTime clickedMouseTime;
 	
-	private GSDraggingType draggingType;
+	private GSEDraggingType draggingType;
 	private GSBlockEventTime draggedStartTime;
 	private GSBlockEventTime draggedEndTime;
 	private boolean draggedEntryChanged;
@@ -64,7 +64,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		tmpRenderRect = new Rectangle();
 		
-		draggingType = GSDraggingType.NOT_DRAGGING;
+		draggingType = GSEDraggingType.NOT_DRAGGING;
 		
 		addMouseEventListener(this);
 	}
@@ -223,16 +223,16 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				int mouseX = renderer.getMouseX();
 				int mouseY = renderer.getMouseY();
 				
-				GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, mouseX, mouseY);
+				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, mouseX, mouseY);
 				if (resizeArea != null)
 					renderResizeArea(renderer, hoveredEntry, resizeArea);
 			}
 			break;
 		case RESIZING_START:
-			renderResizeArea(renderer, selectedEntry, GSResizeArea.HOVERING_START);
+			renderResizeArea(renderer, selectedEntry, GSEResizeArea.HOVERING_START);
 			break;
 		case RESIZING_END:
-			renderResizeArea(renderer, selectedEntry, GSResizeArea.HOVERING_END);
+			renderResizeArea(renderer, selectedEntry, GSEResizeArea.HOVERING_END);
 			break;
 		case DRAGGING:
 		default:
@@ -240,11 +240,11 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		}
 	}
 	
-	private void renderResizeArea(GSIRenderer2D renderer, GSTrackEntry entry, GSResizeArea resizeArea) {
+	private void renderResizeArea(GSIRenderer2D renderer, GSTrackEntry entry, GSEResizeArea resizeArea) {
 		Rectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
-			if (resizeArea == GSResizeArea.HOVERING_END) {
+			if (resizeArea == GSEResizeArea.HOVERING_END) {
 				rect.x += rect.width - DRAGGING_AREA_SIZE;
 			} else {
 				rect.x -= DRAGGING_PADDING;
@@ -309,12 +309,12 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			break;
 		case GSMouseEvent.BUTTON_RIGHT:
 			if (editable && hoveredEntry != null) {
-				GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
+				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
 				
 				if (resizeArea != null) {
 					toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
 					event.consume();
-				} else if (draggingType == GSDraggingType.NOT_DRAGGING) {
+				} else if (draggingType == GSEDraggingType.NOT_DRAGGING) {
 					removeEntry(hoveredTrack, hoveredEntry);
 					event.consume();
 				}
@@ -325,9 +325,9 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 
 	private void prepareDragging(GSMouseEvent event) {
 		if (editable && hoveredEntry != null) {
-			GSResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
+			GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
 	
-			GSDraggingType type = resizeAreaToDraggingType(resizeArea);
+			GSEDraggingType type = resizeAreaToDraggingType(resizeArea);
 			if (isDraggingAllowed(hoveredEntry, type)) {
 				draggingType = type;
 				draggedStartTime = hoveredEntry.getStartTime();
@@ -337,8 +337,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		}
 	}
 	
-	private boolean isDraggingAllowed(GSTrackEntry entry, GSDraggingType type) {
-		if (type != GSDraggingType.DRAGGING || !expandedColumnModel.hasExpandedColumn())
+	private boolean isDraggingAllowed(GSTrackEntry entry, GSEDraggingType type) {
+		if (type != GSEDraggingType.DRAGGING || !expandedColumnModel.hasExpandedColumn())
 			return true;
 	
 		int startColumn = modelView.getColumnIndex(entry.getStartTime());
@@ -355,16 +355,16 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return true;
 	}
 	
-	private GSDraggingType resizeAreaToDraggingType(GSResizeArea resizeArea) {
-		if (resizeArea == GSResizeArea.HOVERING_START)
-			return GSDraggingType.RESIZING_START;
-		if (resizeArea == GSResizeArea.HOVERING_END)
-			return GSDraggingType.RESIZING_END;
-		return GSDraggingType.DRAGGING;
+	private GSEDraggingType resizeAreaToDraggingType(GSEResizeArea resizeArea) {
+		if (resizeArea == GSEResizeArea.HOVERING_START)
+			return GSEDraggingType.RESIZING_START;
+		if (resizeArea == GSEResizeArea.HOVERING_END)
+			return GSEDraggingType.RESIZING_END;
+		return GSEDraggingType.DRAGGING;
 	}
 	
-	private GSETrackEntryType resizeAreaToEntryType(GSResizeArea resizeArea) {
-		if (resizeArea == GSResizeArea.HOVERING_START)
+	private GSETrackEntryType resizeAreaToEntryType(GSEResizeArea resizeArea) {
+		if (resizeArea == GSEResizeArea.HOVERING_START)
 			return GSETrackEntryType.EVENT_END;
 		return GSETrackEntryType.EVENT_START;
 	}
@@ -378,7 +378,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			track.removeEntry(entry);
 	}
 	
-	private GSResizeArea getHoveredResizeArea(GSTrackEntry entry, int mouseX, int mouseY) {
+	private GSEResizeArea getHoveredResizeArea(GSTrackEntry entry, int mouseX, int mouseY) {
 		Rectangle r = modelView.modelToView(entry);
 		
 		if (r == null || !r.contains(mouseX, mouseY))
@@ -386,10 +386,10 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		if (mouseX < r.x + DRAGGING_AREA_SIZE) {
 			if (isColumnModifiable(modelView.getColumnIndex(entry.getStartTime())))
-				return GSResizeArea.HOVERING_START;
+				return GSEResizeArea.HOVERING_START;
 		} else if (mouseX >= r.x + r.width - DRAGGING_AREA_SIZE) {
 			if (isColumnModifiable(modelView.getColumnIndex(entry.getEndTime())))
-				return GSResizeArea.HOVERING_END;
+				return GSEResizeArea.HOVERING_END;
 		}
 		
 		return null;
@@ -407,7 +407,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	private void unselectEntries() {
 		if (selectedEntry != null) {
 			selectedEntry = null;
-			draggingType = GSDraggingType.NOT_DRAGGING;
+			draggingType = GSEDraggingType.NOT_DRAGGING;
 		}
 
 		selectedTrack = null;
@@ -424,7 +424,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 			toggleSelection = (selectedEntry != null);
 		}
 		
-		draggingType = GSDraggingType.NOT_DRAGGING;
+		draggingType = GSEDraggingType.NOT_DRAGGING;
 		draggedEntryChanged = false;
 	}
 
@@ -438,7 +438,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 				int dy = event.getY() - clickedMouseY;
 
 				if (dx * dx + dy * dy > MINIMUM_DRAG_DISTANCE * MINIMUM_DRAG_DISTANCE)
-					addTrackEntry(event, (dx > 0) ? GSDraggingType.RESIZING_END : GSDraggingType.RESIZING_START);
+					addTrackEntry(event, (dx > 0) ? GSEDraggingType.RESIZING_END : GSEDraggingType.RESIZING_START);
 			}
 		}
 	}
@@ -552,7 +552,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return !track.isOverlappingEntries(startTime, endTime, entry);
 	}
 
-	private void addTrackEntry(GSMouseEvent event, GSDraggingType draggingType) {
+	private void addTrackEntry(GSMouseEvent event, GSEDraggingType draggingType) {
 		GSBlockEventTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
 		GSBlockEventTime t1 = modelView.getDraggedTime(event.getX(), event.getY());
 
@@ -602,7 +602,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		this.editable = editable;
 		
 		if (!editable)
-			draggingType = GSDraggingType.NOT_DRAGGING;
+			draggingType = GSEDraggingType.NOT_DRAGGING;
 	}
 
 	@Override
@@ -631,13 +631,13 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		updateHoveredEntry();
 	}
 	
-	private enum GSResizeArea {
+	private enum GSEResizeArea {
 
 		HOVERING_START, HOVERING_END;
 	
 	}
 	
-	private enum GSDraggingType {
+	private enum GSEDraggingType {
 		
 		NOT_DRAGGING,
 		DRAGGING,
