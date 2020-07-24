@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.g4mesoft.captureplayback.common.GSEGameTickPhase;
+import com.google.common.collect.Iterators;
 
 public class GSPlaybackFrame {
 
@@ -20,6 +21,6 @@ public class GSPlaybackFrame {
 	}
 	
 	public Iterator<GSPlaybackEvent> getPhaseIterator(GSEGameTickPhase phase) {
-		return events.iterator();
+		return Iterators.unmodifiableIterator(events.iterator());
 	}
 }

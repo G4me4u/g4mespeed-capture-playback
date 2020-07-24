@@ -1,33 +1,55 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
-import com.g4mesoft.gui.GSPanel;
+import java.util.UUID;
 
-import net.minecraft.client.util.math.MatrixStack;
+import com.g4mesoft.captureplayback.timeline.GSTimeline;
+import com.g4mesoft.captureplayback.timeline.GSTrack;
+import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
+
+import net.minecraft.util.math.BlockPos;
 
 public class GSTimelineInfoPanelGUI extends GSPanel {
 
 	private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
 	
+	private final GSTimeline timeline;
+	
 	private String infoText;
 	
+	public GSTimelineInfoPanelGUI(GSTimeline timeline) {
+		this.timeline = timeline;
+	
+		infoText = null;
+	}
+	
 	@Override
-	public void renderTranslated(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-		super.renderTranslated(matrixStack, mouseX, mouseY, partialTicks);
+	public void render(GSIRenderer2D renderer) {
+		super.render(renderer);
 		
-		fill(matrixStack, 0, 0, width, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		renderer.fillRect(0, 0, width, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
 
-		fill(matrixStack, width - 1, 0, width, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-		fill(matrixStack, 0, height - 1, width, height, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
 		
-		if (infoText != null)
-			drawCenteredString(matrixStack, textRenderer, infoText, width / 2, (height - textRenderer.fontHeight) / 2, INFO_TEXT_COLOR);
+		if (infoText != null) {
+			int ty = (height - renderer.getFontHeight() + 1) / 2;
+			renderer.drawCenteredString(infoText, width / 2, ty, INFO_TEXT_COLOR);
+		}
 	}
 	
-	public void setInfoText(String infoText) {
-		this.infoText = infoText;
+	public void setHoveredTrackUUID(UUID hoveredTrackUUID) {
+		GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
+		
+		if (hoveredTrack != null) {
+			BlockPos pos = hoveredTrack.getInfo().getPos();
+			infoText = formatTrackPosition(pos);
+		} else {
+			infoText = null;
+		}
 	}
 	
-	public String getInfoText() {
-		return infoText;
+	private String formatTrackPosition(BlockPos pos) {
+		return String.format("(%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
 	}
 }

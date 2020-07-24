@@ -2,8 +2,6 @@ package com.g4mesoft.captureplayback.gui.timeline;
 
 import java.util.UUID;
 
-import org.lwjgl.glfw.GLFW;
-
 import com.g4mesoft.captureplayback.common.GSBlockEventTime;
 import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
 import com.g4mesoft.captureplayback.gui.GSITrackProvider;
@@ -11,22 +9,27 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
+import com.g4mesoft.gui.event.GSEvent;
+import com.g4mesoft.gui.event.GSIKeyListener;
+import com.g4mesoft.gui.event.GSIMouseListener;
+import com.g4mesoft.gui.event.GSKeyEvent;
+import com.g4mesoft.gui.event.GSMouseEvent;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.google.common.base.Objects;
 
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
-
-public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, GSITimelineListener, GSIExpandedColumnModelListener {
+public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, 
+                                                            GSITimelineListener, GSIExpandedColumnModelListener,
+                                                            GSIMouseListener, GSIKeyListener {
 
 	private static final int TRACK_HEADER_WIDTH = 100;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 	
 	private static final int CORNER_SQUARE_COLOR = 0xFF000000;
-	
-	private static final int TRACK_LABEL_PADDING = 2;
 	
 	private final GSTimeline timeline;
 	private final GSITrackProvider trackProvider;
@@ -50,6 +53,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private int contentWidth;
 	private int contentHeight;
 	
+	private int hoveredMouseY;
 	private UUID hoveredTrackUUID;
 	
 	public GSTimelineGUI(GSTimeline timeline, GSITrackProvider trackProvider) {
@@ -63,11 +67,11 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		trackHeader = new GSTimelineTrackHeaderGUI(timeline, modelView);
 		columnHeader = new GSTimelineColumnHeaderGUI(timeline, expandedColumnModel, modelView);
 		
-		infoPanel = new GSTimelineInfoPanelGUI();
+		infoPanel = new GSTimelineInfoPanelGUI(timeline);
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
 			@Override
-			public void scrollChanged(double newScroll) {
+			public void scrollChanged(float newScroll) {
 				modelView.setYOffset((int)(-newScroll));
 			}
 		});
@@ -76,30 +80,39 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	
 		// Editable by default
 		editable = true;
+		
+		add(timelineContent);
+		add(trackHeader);
+		add(columnHeader);
+		add(infoPanel);
+	
+		add(verticalScrollBar);
+		add(horizontalScrollBar);
+		
+		addMouseEventListener(this);
+		addKeyEventListener(this);
 	}
 	
 	@Override
-	protected void onAdded() {
-		super.onAdded();
+	public void onAdded(GSIElement parent) {
+		super.onAdded(parent);
 		
 		timeline.addTimelineListener(this);
 		expandedColumnModel.addModelListener(this);
 	}
 
 	@Override
-	protected void onRemoved() {
-		super.onRemoved();
+	public void onRemoved(GSIElement parent) {
+		super.onRemoved(parent);
 
 		timeline.removeTimelineListener(this);
 		expandedColumnModel.removeModelListener(this);
 	}
 	
 	@Override
-	public void init() {
-		super.init();
+	public void onBoundsChanged() {
+		super.onBoundsChanged();
 
-		modelView.setTrackHeight(textRenderer.fontHeight + TRACK_LABEL_PADDING * 2);
-		
 		layoutPanels();
 		initModelView();
 	}
@@ -108,22 +121,14 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		int cw = Math.max(1, width - TRACK_HEADER_WIDTH - verticalScrollBar.getPreferredScrollBarWidth());
 		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - horizontalScrollBar.getPreferredScrollBarWidth());
 
-		timelineContent.initBounds(client, TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
-		trackHeader.initBounds(client, 0, COLUMN_HEADER_HEIGHT, TRACK_HEADER_WIDTH, ch);
-		columnHeader.initBounds(client, TRACK_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
+		timelineContent.setBounds(TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
+		trackHeader.setBounds(0, COLUMN_HEADER_HEIGHT, TRACK_HEADER_WIDTH, ch);
+		columnHeader.setBounds(TRACK_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
 		
-		addPanel(timelineContent);
-		addPanel(trackHeader);
-		addPanel(columnHeader);
-	
-		infoPanel.initBounds(client, 0, 0, TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT);
-		addPanel(infoPanel);
+		infoPanel.setBounds(0, 0, TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT);
 
-		verticalScrollBar.initVerticalRight(client, width, COLUMN_HEADER_HEIGHT, ch);
-		horizontalScrollBar.initHorizontalBottom(client, TRACK_HEADER_WIDTH, height, cw);
-		
-		addPanel(verticalScrollBar);
-		addPanel(horizontalScrollBar);
+		verticalScrollBar.initVerticalRight(width, COLUMN_HEADER_HEIGHT, ch);
+		horizontalScrollBar.initHorizontalBottom(TRACK_HEADER_WIDTH, height, cw);
 	}
 
 	public void initModelView() {
@@ -154,69 +159,67 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	@Override
-	protected void renderTranslated(MatrixStack matrixStack, int mouseX, int mouseY, float partialTick) {
-		super.renderTranslated(matrixStack, mouseX, mouseY, partialTick);
+	public void render(GSIRenderer2D renderer) {
+		super.render(renderer);
 
-		int cx = width - verticalScrollBar.getWidth();
-		int cy = height - horizontalScrollBar.getHeight();
+		int sw = verticalScrollBar.getWidth();
+		int sh = horizontalScrollBar.getHeight();
+		int cx = width - sw;
+		int cy = height - sh;
 		
-		fill(matrixStack, cx, cy, width, height, CORNER_SQUARE_COLOR);
+		renderer.fillRect(cx, cy, sw, sh, CORNER_SQUARE_COLOR);
 		
-		fill(matrixStack, cx, 0, width, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderGUI.COLUMN_HEADER_COLOR);
-		fill(matrixStack, 0, cy, TRACK_HEADER_WIDTH, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderGUI.COLUMN_HEADER_COLOR);
+		renderer.fillRect(0, cy, TRACK_HEADER_WIDTH, sh, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
 	}
 	
 	@Override
-	public boolean onKeyPressedGS(int key, int scancode, int mods) {
-		if (key == GLFW.GLFW_KEY_T) {
-			if ((mods & GLFW.GLFW_MOD_CONTROL) != 0) {
+	public void mouseMoved(GSMouseEvent event) {
+		hoveredMouseY = event.getY() - timelineContent.getY();
+		
+		updateHoveredTrack();
+	}
+	
+	private void updateHoveredTrack() {
+		UUID hoveredTrackUUID = modelView.getTrackUUIDFromView(hoveredMouseY);
+		
+		if (!Objects.equal(hoveredTrackUUID, this.hoveredTrackUUID)) {
+			this.hoveredTrackUUID = hoveredTrackUUID;
+			
+			timelineContent.setHoveredTrackUUID(hoveredTrackUUID);
+			trackHeader.setHoveredTrackUUID(hoveredTrackUUID);
+			infoPanel.setHoveredTrackUUID(hoveredTrackUUID);
+		}
+	}
+	
+	@Override
+	public void keyPressed(GSKeyEvent event) {
+		if (event.getKeyCode() == GSKeyEvent.KEY_T) {
+			if (event.isModifierHeld(GSEvent.MODIFIER_CONTROL)) {
 				if (hoveredTrackUUID != null && timeline.removeTrack(hoveredTrackUUID))
-					return true;
+					event.consume();
 			} else {
 				timeline.addTrack(trackProvider.createNewTrackInfo(timeline));
-				return true;
+				event.consume();
 			}
-		} else if (key == GLFW.GLFW_KEY_E) {
+		} else if (!event.isRepeating() && event.getKeyCode() == GSKeyEvent.KEY_E) {
 			if (expandedColumnModel.hasExpandedColumn()) {
 				expandedColumnModel.clearExpandedColumns();
 			} else {
 				expandedColumnModel.setExpandedColumnRange(0, Integer.MAX_VALUE);
 			}
 			
-			return true;
+			event.consume();
 		}
-		
-		return super.onKeyPressedGS(key, scancode, mods);
 	}
 	
 	@Override
-	public void onMouseMovedGS(double mouseX, double mouseY) {
-		hoveredTrackUUID = modelView.getTrackUUIDFromView((int)mouseY - timelineContent.getY());
-		
-		if (hoveredTrackUUID != null) {
-			GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
-			if (hoveredTrack != null) {
-				BlockPos pos = hoveredTrack.getInfo().getPos();
-				infoPanel.setInfoText(formatTrackPosition(pos));
-			}
-		} else {
-			infoPanel.setInfoText(null);
-		}
-		
-		super.onMouseMovedGS(mouseX, mouseY);
-	}
-	
-	private String formatTrackPosition(BlockPos pos) {
-		return String.format("(%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
-	}
-	
-	@Override
-	public void preScrollChanged(double newScroll) {
+	public void preScrollChanged(float newScroll) {
 		contentWidth = Math.max(minContentWidth, (int)newScroll + getContentViewWidth());
 	}
 	
 	@Override
-	public void scrollChanged(double newScroll) {
+	public void scrollChanged(float newScroll) {
 		modelView.setXOffset((int)(-newScroll));
 	}
 
@@ -241,7 +244,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	@Override
-	public double getIncrementalScrollX(int sign) {
+	public float getIncrementalScrollX(int sign) {
 		int leadingColumnIndex = modelView.getColumnIndexFromView(0);
 		int alignedColumn = leadingColumnIndex + sign;
 		if (leadingColumnIndex != -1 && alignedColumn >= 0)
@@ -251,7 +254,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 
 	@Override
-	public double getIncrementalScrollY(int sign) {
+	public float getIncrementalScrollY(int sign) {
 		UUID leadingTrackUUID = modelView.getTrackUUIDFromView(0);
 		if (leadingTrackUUID != null) {
 			// Default incremental scroll is 2 tracks
@@ -293,6 +296,10 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		updateContentSize();
 	}
 	
+	public UUID getHoveredTrackUUID() {
+		return hoveredTrackUUID;
+	}
+	
 	public boolean isEditable() {
 		return editable;
 	}
@@ -300,6 +307,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	public void setEditable(boolean editable) {
 		this.editable = editable;
 		
+		trackHeader.setEditable(editable);
 		timelineContent.setEditable(editable);
 	}
 }

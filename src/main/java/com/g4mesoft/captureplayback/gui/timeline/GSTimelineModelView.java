@@ -15,6 +15,8 @@ import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.gui.GSElementContext;
+import com.g4mesoft.gui.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSMathUtils;
 
 public class GSTimelineModelView {
@@ -28,6 +30,7 @@ public class GSTimelineModelView {
 	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	
 	private static final int ENTRY_HEIGHT = 8;
+	private static final int TRACK_LABEL_PADDING = 2;
 	private static final int DEFAULT_TRACK_SPACING = 1;
 	
 	private static final int MINIMUM_TRACK_HEIGHT = ENTRY_HEIGHT;
@@ -74,6 +77,9 @@ public class GSTimelineModelView {
 	/* ******************** MODEL-VIEW initialization ******************** */
 	
 	public void updateModelView() {
+		GSIRenderer2D renderer = GSElementContext.getRenderer();
+		setTrackHeight(renderer.getFontHeight() + TRACK_LABEL_PADDING * 2);
+		
 		updateBoundLookup();
 		updateDurationLookup();
 		updateTrackIndexLookup();
@@ -234,17 +240,19 @@ public class GSTimelineModelView {
 	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
-	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry) {
-		return modelToView(trackUUID, entry, null);
+	public Rectangle modelToView(GSTrackEntry entry) {
+		return modelToView(entry, null);
 	}
 	
-	public Rectangle modelToView(UUID trackUUID, GSTrackEntry entry, Rectangle dest) {
+	public Rectangle modelToView(GSTrackEntry entry, Rectangle dest) {
 		int startColumnIndex = getColumnIndex(entry.getStartTime());
 		int endColumnIndex = getColumnIndex(entry.getEndTime());
 
 		// This should rarely or never happen
 		if (startColumnIndex < 0)
 			return null;
+		
+		UUID trackUUID = entry.getOwnerTrack().getTrackUUID();
 		
 		boolean expanded = expandedColumnModel.isColumnExpanded(startColumnIndex);
 		if (!expanded && startColumnIndex == endColumnIndex && isMultiCell(trackUUID, startColumnIndex)) {
