@@ -84,6 +84,8 @@ task obfuscateJar(type: proguard.gradle.ProGuardTask) {
 
 	applymapping "${project.g4mespeed_path}/g4mespeed-mappings-mc${project.minecraft_version}.map"
 
+	obfuscationdictionary "member_obfuscation_dictionary.txt"
+
 	injars "./build/libs/${jar.archiveName}" 
 	outjars "./build/libs/${obfuscatedFileName}"
 }

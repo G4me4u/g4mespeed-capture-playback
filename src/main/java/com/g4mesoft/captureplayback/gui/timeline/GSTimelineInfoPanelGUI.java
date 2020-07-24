@@ -1,13 +1,27 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
+import java.util.UUID;
+
+import com.g4mesoft.captureplayback.timeline.GSTimeline;
+import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.gui.GSPanel;
 import com.g4mesoft.gui.renderer.GSIRenderer2D;
+
+import net.minecraft.util.math.BlockPos;
 
 public class GSTimelineInfoPanelGUI extends GSPanel {
 
 	private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
 	
+	private final GSTimeline timeline;
+	
 	private String infoText;
+	
+	public GSTimelineInfoPanelGUI(GSTimeline timeline) {
+		this.timeline = timeline;
+	
+		infoText = null;
+	}
 	
 	@Override
 	public void render(GSIRenderer2D renderer) {
@@ -24,11 +38,18 @@ public class GSTimelineInfoPanelGUI extends GSPanel {
 		}
 	}
 	
-	public void setInfoText(String infoText) {
-		this.infoText = infoText;
+	public void setHoveredTrackUUID(UUID hoveredTrackUUID) {
+		GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
+		
+		if (hoveredTrack != null) {
+			BlockPos pos = hoveredTrack.getInfo().getPos();
+			infoText = formatTrackPosition(pos);
+		} else {
+			infoText = null;
+		}
 	}
 	
-	public String getInfoText() {
-		return infoText;
+	private String formatTrackPosition(BlockPos pos) {
+		return String.format("(%d, %d, %d)", pos.getX(), pos.getY(), pos.getZ());
 	}
 }

@@ -8,18 +8,20 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackInfo;
-import com.g4mesoft.gui.GSCursorType;
+import com.g4mesoft.gui.GSECursorType;
 import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
 import com.g4mesoft.gui.event.GSEvent;
+import com.g4mesoft.gui.event.GSFocusEvent;
+import com.g4mesoft.gui.event.GSIFocusEventListener;
 import com.g4mesoft.gui.event.GSIKeyListener;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSKeyEvent;
 import com.g4mesoft.gui.event.GSMouseEvent;
 import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.gui.text.GSETextAlignment;
 import com.g4mesoft.gui.text.GSITextCaret;
 import com.g4mesoft.gui.text.GSITextModel;
-import com.g4mesoft.gui.text.GSTextAlignment;
 import com.g4mesoft.gui.text.GSTextField;
 
 public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimelineListener, GSITimelineModelViewListener,
@@ -33,23 +35,35 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	private final GSTimeline timeline;
 	private final GSTimelineModelView modelView;
 	
-	private int currentMouseY;
 	private UUID hoveredTrackUUID;
 
 	private final GSTextField trackNameField;
 
+	private boolean editable;
 	private UUID editingTrackUUID;
 	
 	public GSTimelineTrackHeaderGUI(GSTimeline timeline, GSTimelineModelView modelView) {
 		this.timeline = timeline;
 		this.modelView = modelView;
 	
+		hoveredTrackUUID = null;
+		
 		trackNameField = new GSTextField();
 		trackNameField.setBackgroundColor(0x00000000);
-		trackNameField.setTextAlignment(GSTextAlignment.CENTER);
+		trackNameField.setTextAlignment(GSETextAlignment.CENTER);
 		trackNameField.setBorderWidth(0);
 		trackNameField.setVerticalMargin(0);
 		trackNameField.setHorizontalMargin(0);
+		
+		trackNameField.addFocusEventListener(new GSIFocusEventListener() {
+			@Override
+			public void focusLost(GSFocusEvent event) {
+				setCurrentEditingTrack(hoveredTrackUUID, false);
+			}
+		});
+		
+		editable = true;
+		editingTrackUUID = null;
 		
 		addMouseEventListener(this);
 		addKeyEventListener(this);
@@ -57,7 +71,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	protected void onBoundsChanged() {
-		if (trackNameField.isFocused() && editingTrackUUID != null)
+		if (editable && trackNameField.isFocused() && editingTrackUUID != null)
 			updateNameFieldBounds();
 	}
 	
@@ -79,7 +93,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public boolean isEditingText() {
-		return trackNameField.isEditingText();
+		return (editable && trackNameField.isEditingText());
 	}
 	
 	@Override
@@ -99,11 +113,9 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			UUID trackUUID = trackEntry.getKey();
 			GSTrack track = trackEntry.getValue();
 			
-			int y = modelView.getTrackY(trackUUID);
-			if (y + modelView.getTrackHeight() > 0 && y < height)
-				renderTrackLabel(renderer, track, trackUUID, y);
-			
-			y += modelView.getTrackHeight();
+			int ty = modelView.getTrackY(trackUUID);
+			if (ty + modelView.getTrackHeight() > 0 && ty < height)
+				renderTrackLabel(renderer, track, trackUUID, ty);
 		}
 
 		renderer.popClip();
@@ -130,28 +142,15 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 	
 	@Override
-	public GSCursorType getCursor() {
-		return hoveredTrackUUID != null ? trackNameField.getCursor() : super.getCursor();
+	public GSECursorType getCursor() {
+		if (editable && hoveredTrackUUID != null)
+			return trackNameField.getCursor();
+		return super.getCursor();
 	}
 	
-	@Override
-	public void mouseMoved(GSMouseEvent event) {
-		currentMouseY = event.getY();
-
-		updateHoveredTrack();
-	}
-	
-	private void updateHoveredTrack() {
-		hoveredTrackUUID = modelView.getTrackUUIDFromView(currentMouseY);
-
-		if (!trackNameField.isFocused())
-			setCurrentEditingTrack(hoveredTrackUUID, false);
-	}
-
 	@Override
 	public void mousePressed(GSMouseEvent event) {
-		if (!Objects.equals(hoveredTrackUUID, editingTrackUUID)) {
-			updateNameFieldInfo();
+		if (editable && event.getButton() == GSMouseEvent.BUTTON_LEFT && !trackNameField.isFocused()) {
 			setCurrentEditingTrack(hoveredTrackUUID, true);
 			
 			if (editingTrackUUID != null)
@@ -163,14 +162,14 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public void keyPressed(GSKeyEvent event) {
-		if (trackNameField.isFocused()) {
+		if (editable && trackNameField.isFocused()) {
 			switch (event.getKeyCode()) {
 			case GSKeyEvent.KEY_ESCAPE:
 				setCurrentEditingTrack(null, false);
 				event.consume();
 				break;
 			case GSKeyEvent.KEY_ENTER:
-				updateNameFieldInfo();
+				updateTrackNameInfo();
 				setCurrentEditingTrack(null, false);
 				event.consume();
 				break;
@@ -191,7 +190,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		if (trackNameField.isFocused() && editingTrackUUID != null) {
 			UUID nextTrackUUID = modelView.getNextTrackUUID(editingTrackUUID, descending);
 			
-			updateNameFieldInfo();
+			updateTrackNameInfo();
 			setCurrentEditingTrack(nextTrackUUID, true);
 
 			if (select && nextTrackUUID != null)
@@ -212,13 +211,17 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 					add(trackNameField);
 				
 				updateNameFieldBounds();
-			}else if (trackNameField.isAdded()) {
+			} else if (trackNameField.isAdded()) {
 				remove(trackNameField);
 			}
 		}
 		
-		if (trackNameField.isAdded() && autoFocus)
-			trackNameField.requestFocus();
+		if (trackNameField.isAdded() && !trackNameField.isFocused()) {
+			if (autoFocus)
+				trackNameField.requestFocus();
+
+			resetNameFieldCaret();
+		}
 	}
 	
 	private void updateNameFieldBounds() {
@@ -242,6 +245,13 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		}
 	}
 	
+	private void resetNameFieldCaret() {
+		GSITextModel textModel = trackNameField.getTextModel();
+		GSITextCaret caret = trackNameField.getCaret();
+		
+		caret.setCaretLocation(textModel.getLength());
+	}
+	
 	private void selectAllNameFieldText() {
 		GSITextModel textModel = trackNameField.getTextModel();
 		GSITextCaret caret = trackNameField.getCaret();
@@ -250,7 +260,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		caret.setCaretMark(0);
 	}
 	
-	private void updateNameFieldInfo() {
+	private void updateTrackNameInfo() {
 		String name = trackNameField.getText();
 
 		if (name.isEmpty()) {
@@ -269,7 +279,6 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public void trackRemoved(GSTrack track) {
-		updateHoveredTrack();
 		updateNameFieldBounds();
 	}
 	
@@ -283,7 +292,30 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public void modelViewChanged() {
-		updateHoveredTrack();
 		updateNameFieldBounds();
+	}
+
+	public UUID getHoveredTrackUUID() {
+		return hoveredTrackUUID;
+	}
+	
+	void setHoveredTrackUUID(UUID hoveredTrackUUID) {
+		this.hoveredTrackUUID = hoveredTrackUUID;
+		
+		if (editable && !trackNameField.isFocused())
+			setCurrentEditingTrack(hoveredTrackUUID, false);
+	}
+	
+	public boolean isEditable() {
+		return editable;
+	}
+	
+	public void setEditable(boolean editable) {
+		this.editable = editable;
+	
+		if (!editable && editingTrackUUID != null)
+			setCurrentEditingTrack(null, false);
+		
+		trackNameField.setEditable(editable);
 	}
 }
