@@ -62,6 +62,8 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			}
 		});
 		
+		trackNameField.setEditable(false);
+		
 		editable = true;
 		editingTrackUUID = null;
 		
@@ -143,7 +145,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public GSECursorType getCursor() {
-		if (editable && hoveredTrackUUID != null)
+		if (hoveredTrackUUID != null)
 			return trackNameField.getCursor();
 		return super.getCursor();
 	}
@@ -241,7 +243,10 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 		if (editingTrack != null) {
 			trackNameField.setText(editingTrack.getInfo().getName());
-			trackNameField.setEditableTextColor(getTrackColor(editingTrack));
+			
+			int textColor = getTrackColor(editingTrack);
+			trackNameField.setEditableTextColor(textColor);
+			trackNameField.setUneditableTextColor(textColor);
 		}
 	}
 	
@@ -314,7 +319,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		this.editable = editable;
 	
 		if (!editable && editingTrackUUID != null)
-			setCurrentEditingTrack(null, false);
+			resetNameFieldText();
 		
 		trackNameField.setEditable(editable);
 	}
