@@ -73,7 +73,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	protected void onBoundsChanged() {
-		if (editable && trackNameField.isFocused() && editingTrackUUID != null)
+		if (editingTrackUUID != null)
 			updateNameFieldBounds();
 	}
 	
@@ -91,11 +91,6 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 
 		modelView.removeModelViewListener(this);
 		timeline.removeTimelineListener(this);
-	}
-	
-	@Override
-	public boolean isEditingText() {
-		return (editable && trackNameField.isEditingText());
 	}
 	
 	@Override
@@ -152,7 +147,10 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	
 	@Override
 	public void mousePressed(GSMouseEvent event) {
-		if (editable && event.getButton() == GSMouseEvent.BUTTON_LEFT && !trackNameField.isFocused()) {
+		if (event.getButton() == GSMouseEvent.BUTTON_LEFT && !trackNameField.isFocused()) {
+			if (editable)
+				updateTrackNameInfo();
+			
 			setCurrentEditingTrack(hoveredTrackUUID, true);
 			
 			if (editingTrackUUID != null)
@@ -283,8 +281,22 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 	
 	@Override
-	public void trackRemoved(GSTrack track) {
+	public void trackAdded(GSTrack track) {
 		updateNameFieldBounds();
+	}
+	
+	@Override
+	public void trackRemoved(GSTrack track) {
+		if (track.getTrackUUID().equals(editingTrackUUID)) {
+			// Make sure to unfocus the track name field. This is
+			// to ensure that it is no longer focused in case the
+			// hoveredTrackUUID has not been updated yet.
+			trackNameField.unfocus();
+			
+			setCurrentEditingTrack(hoveredTrackUUID, false);
+		} else {
+			updateNameFieldBounds();
+		}
 	}
 	
 	@Override
@@ -307,7 +319,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	void setHoveredTrackUUID(UUID hoveredTrackUUID) {
 		this.hoveredTrackUUID = hoveredTrackUUID;
 		
-		if (editable && !trackNameField.isFocused())
+		if (!trackNameField.isFocused())
 			setCurrentEditingTrack(hoveredTrackUUID, false);
 	}
 	
