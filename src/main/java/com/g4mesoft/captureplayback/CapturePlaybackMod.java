@@ -14,7 +14,7 @@ public class CapturePlaybackMod implements ModInitializer {
 	public static final String MOD_NAME = "G4mespeed Capture & Playback";
 	
 	/* CAPL in HEX */
-	public static final GSExtensionUID EXTENSION_UID = new GSExtensionUID(0x4341504c);
+	public static final GSExtensionUID EXTENSION_UID = new GSExtensionUID(0x4341504C);
 	
 	public static final Logger GSP_LOGGER = LogManager.getLogger(MOD_NAME);
 
