@@ -269,11 +269,13 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	@Override
 	public void trackAdded(GSTrack track) {
 		initModelView();
+		updateHoveredTrack();
 	}
 
 	@Override
 	public void trackRemoved(GSTrack track) {
 		initModelView();
+		updateHoveredTrack();
 	}
 
 	@Override

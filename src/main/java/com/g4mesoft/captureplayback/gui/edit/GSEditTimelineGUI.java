@@ -12,7 +12,7 @@ public class GSEditTimelineGUI extends GSBasePanel {
 	private final GSTimelineGUI timelineGUI;
 
 	public GSEditTimelineGUI(GSTimeline timeline, GSCapturePlaybackModule module) {
-		timelineGUI = new GSTimelineGUI(timeline, new DefaultTrackProvider());
+		timelineGUI = new GSTimelineGUI(timeline, new GSDefaultTrackProvider());
 		timelineGUI.setEditable(true);
 
 		add(timelineGUI);

@@ -13,7 +13,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
-public class DefaultTrackProvider implements GSITrackProvider {
+public class GSDefaultTrackProvider implements GSITrackProvider {
 
 	private static final String DEFAULT_TRACK_NAME = "timeline.track.defaultname";
 	private static final int MAX_COLOR_TRIES = 10;
@@ -33,11 +33,11 @@ public class DefaultTrackProvider implements GSITrackProvider {
 	}
 	
 	private int getUniqueColor(GSTimeline timeline, int maxTries) {
-		int tries = 0;
-
 		int color = 0x000000;
-		while (tries++ < maxTries) {
-			color = (int) (Math.random() * 0xFFFFFF);
+
+		int tries = 0;
+		while (++tries <= maxTries) {
+			color = (int)(Math.random() * 0xFFFFFF);
 
 			if (isColorUnique(timeline, color))
 				break;

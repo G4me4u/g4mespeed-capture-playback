@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
 
+import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackGUI;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
@@ -17,13 +18,9 @@ import com.g4mesoft.captureplayback.timeline.delta.GSTimelineDeltaException;
 import com.g4mesoft.captureplayback.timeline.delta.GSTimelineDeltaTransformer;
 import com.g4mesoft.core.GSIModule;
 import com.g4mesoft.core.GSIModuleManager;
-import com.g4mesoft.core.GSVersion;
-import com.g4mesoft.core.client.GSIModuleManagerClient;
-import com.g4mesoft.core.server.GSIModuleManagerServer;
 import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSKeyBinding;
 import com.g4mesoft.hotkey.GSKeyManager;
-import com.g4mesoft.packet.GSIPacket;
 import com.g4mesoft.util.GSFileUtils;
 import com.mojang.brigadier.CommandDispatcher;
 
@@ -69,7 +66,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			try {
 				activeTimeline.set(readTimeline(getTimelineFile()));
 			} catch (IOException e) {
-				CapturePlaybackMod.GSP_LOGGER.warn("Unable to read active timeline!");
+				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read active timeline!");
 			}
 		});
 	}
@@ -80,7 +77,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			try {
 				writeTimeline(activeTimeline, getTimelineFile());
 			} catch (IOException e) {
-				CapturePlaybackMod.GSP_LOGGER.warn("Unable to write active timeline!");
+				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write active timeline!");
 			}
 		});
 		
@@ -136,8 +133,10 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	}
 	
 	@Override
-	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSVersion version) {
-		manager.runOnServer(ms -> sendPacket(ms, new GSTimelinePacket(activeTimeline), player));
+	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSExtensionInfo coreInfo) {
+		manager.runOnServer(managerServer -> {
+			managerServer.sendPacket(new GSTimelinePacket(activeTimeline), player);	
+		});
 	}
 	
 	public void onTimelineReceived(GSTimeline timeline) {
@@ -151,7 +150,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	@Override
 	public void onTimelineDelta(GSITimelineDelta delta) {
 		manager.runOnClient(managerClient -> {
-			sendPacket(managerClient, new GSTimelineDeltaPacket(delta));
+			managerClient.sendPacket(new GSTimelineDeltaPacket(delta));
 		});
 	}
 
@@ -161,7 +160,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 			try {
 				delta.applyDelta(activeTimeline);
 				
-				sendPacketToAllExcept(managerServer, new GSTimelineDeltaPacket(delta), player);
+				managerServer.sendPacketToAllExcept(new GSTimelineDeltaPacket(delta), player);
 			} catch (GSTimelineDeltaException e) {
 				managerServer.sendPacket(new GSTimelinePacket(activeTimeline), player);	
 			}
@@ -181,23 +180,6 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 		});
 	}
 
-	private void sendPacket(GSIModuleManagerClient managerClient, GSIPacket packet) {
-		if (managerClient.isServerExtensionInstalled(CapturePlaybackMod.EXTENSION_UID))
-			managerClient.sendPacket(packet);
-	}
-
-	private void sendPacket(GSIModuleManagerServer managerServer, GSIPacket packet, ServerPlayerEntity player) {
-		if (managerServer.isExtensionInstalled(player, CapturePlaybackMod.EXTENSION_UID))
-			managerServer.sendPacket(packet, player);
-	}
-
-	private void sendPacketToAllExcept(GSIModuleManagerServer managerServer, GSIPacket packet, ServerPlayerEntity player) {
-		for (ServerPlayerEntity otherPlayer : managerServer.getAllPlayers()) {
-			if (otherPlayer != player)
-				sendPacket(managerServer, packet, otherPlayer);
-		}
-	}
-	
 	private File getTimelineFile() {
 		return new File(manager.getCacheFile(), TIMELINE_FILE_NAME);
 	}
