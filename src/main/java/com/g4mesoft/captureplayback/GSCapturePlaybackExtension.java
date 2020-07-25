@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback;
 
+import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
@@ -15,6 +16,7 @@ import com.g4mesoft.captureplayback.timeline.delta.GSTrackAddedDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSTrackDisabledDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSTrackInfoDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSTrackRemovedDelta;
+import com.g4mesoft.core.GSVersion;
 import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.core.server.GSControllerServer;
 import com.g4mesoft.packet.GSIPacket;
@@ -25,6 +27,13 @@ import net.fabricmc.api.Environment;
 
 public class GSCapturePlaybackExtension implements GSIExtension {
 
+	public static final String NAME = "Capture & Playback";
+	/* "CAPL" in ASCII as HEX */
+	public static final GSExtensionUID UID = new GSExtensionUID(0x4341504C);
+	public static final GSVersion VERSION = new GSVersion(1, 0, 0);
+	
+	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
+	
 	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
 	
 	private GSElementRegistry<GSITimelineDelta> deltaRegistry;
@@ -68,17 +77,12 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	public String getTranslationPath() {
 		return TRANSLATION_PATH;
 	}
-
+	
 	@Override
-	public String getName() {
-		return CapturePlaybackMod.MOD_NAME;
+	public GSExtensionInfo getInfo() {
+		return INFO;
 	}
-
-	@Override
-	public GSExtensionUID getUniqueId() {
-		return CapturePlaybackMod.EXTENSION_UID;
-	}
-
+	
 	@Environment(EnvType.CLIENT)
 	public GSCapturePlaybackModule getClientModule() {
 		if (clientModule == null)
