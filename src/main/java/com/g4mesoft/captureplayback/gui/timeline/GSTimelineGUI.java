@@ -9,7 +9,6 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
-import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
 import com.g4mesoft.gui.event.GSEvent;
 import com.g4mesoft.gui.event.GSIKeyListener;
@@ -94,19 +93,24 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	@Override
-	public void onAdded(GSIElement parent) {
-		super.onAdded(parent);
+	public void onShown() {
+		super.onShown();
 		
 		timeline.addTimelineListener(this);
 		expandedColumnModel.addModelListener(this);
+		
+		initModelView();
+		updateHoveredTrack();
 	}
 
 	@Override
-	public void onRemoved(GSIElement parent) {
-		super.onRemoved(parent);
+	public void onHidden() {
+		super.onHidden();
 
 		timeline.removeTimelineListener(this);
 		expandedColumnModel.removeModelListener(this);
+	
+		setHoveredTrackUUID(null);
 	}
 	
 	@Override
@@ -114,7 +118,9 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		super.onBoundsChanged();
 
 		layoutPanels();
-		initModelView();
+		
+		if (isVisible())
+			initModelView();
 	}
 	
 	private void layoutPanels() {
@@ -181,15 +187,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 	
 	private void updateHoveredTrack() {
-		UUID hoveredTrackUUID = modelView.getTrackUUIDFromView(hoveredMouseY);
-		
-		if (!Objects.equal(hoveredTrackUUID, this.hoveredTrackUUID)) {
-			this.hoveredTrackUUID = hoveredTrackUUID;
-			
-			timelineContent.setHoveredTrackUUID(hoveredTrackUUID);
-			trackHeader.setHoveredTrackUUID(hoveredTrackUUID);
-			infoPanel.setHoveredTrackUUID(hoveredTrackUUID);
-		}
+		setHoveredTrackUUID(modelView.getTrackUUIDFromView(hoveredMouseY));
 	}
 	
 	@Override
@@ -300,6 +298,16 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	
 	public UUID getHoveredTrackUUID() {
 		return hoveredTrackUUID;
+	}
+	
+	private void setHoveredTrackUUID(UUID hoveredTrackUUID) {
+		if (!Objects.equal(hoveredTrackUUID, this.hoveredTrackUUID)) {
+			this.hoveredTrackUUID = hoveredTrackUUID;
+			
+			timelineContent.setHoveredTrackUUID(hoveredTrackUUID);
+			trackHeader.setHoveredTrackUUID(hoveredTrackUUID);
+			infoPanel.setHoveredTrackUUID(hoveredTrackUUID);
+		}
 	}
 	
 	public boolean isEditable() {
