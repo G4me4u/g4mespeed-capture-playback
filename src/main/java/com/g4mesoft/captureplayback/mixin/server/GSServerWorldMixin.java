@@ -42,10 +42,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 
 	@Shadow @Final private MinecraftServer server;
 	
-	protected GSServerWorldMixin(MutableWorldProperties mutableWorldProperties, RegistryKey<World> registryKey,
-			RegistryKey<DimensionType> registryKey2, DimensionType dimensionType, Supplier<Profiler> profiler,
-			boolean bl, boolean bl2, long l) {
-		super(mutableWorldProperties, registryKey, registryKey2, dimensionType, profiler, bl, bl2, l);
+	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryKey,
+			DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
+		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
 	}
 
 	private final List<GSPlaybackStream> playbackStreams = new ArrayList<GSPlaybackStream>();
