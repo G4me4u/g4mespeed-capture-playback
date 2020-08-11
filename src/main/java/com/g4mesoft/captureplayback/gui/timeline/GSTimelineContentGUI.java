@@ -10,7 +10,6 @@ import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
-import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSPanel;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSMouseEvent;
@@ -64,19 +63,21 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	@Override
-	public void onAdded(GSIElement parent) {
-		super.onAdded(parent);
-
+	public void onShown() {
+		super.onShown();
+		
 		timeline.addTimelineListener(this);
 		modelView.addModelViewListener(this);
 	}
 
 	@Override
-	public void onRemoved(GSIElement parent) {
-		super.onRemoved(parent);
+	public void onHidden() {
+		super.onHidden();
 		
 		timeline.removeTimelineListener(this);
 		modelView.removeModelViewListener(this);
+		
+		stopDragging();
 	}
 	
 	@Override

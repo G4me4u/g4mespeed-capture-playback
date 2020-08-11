@@ -9,7 +9,6 @@ import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackInfo;
 import com.g4mesoft.gui.GSECursorType;
-import com.g4mesoft.gui.GSIElement;
 import com.g4mesoft.gui.GSParentPanel;
 import com.g4mesoft.gui.event.GSEvent;
 import com.g4mesoft.gui.event.GSFocusEvent;
@@ -78,19 +77,23 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	}
 	
 	@Override
-	public void onAdded(GSIElement parent) {
-		super.onAdded(parent);
+	public void onShown() {
+		super.onShown();
 
 		modelView.addModelViewListener(this);
 		timeline.addTimelineListener(this);
+		
+		setCurrentEditingTrack(hoveredTrackUUID, false);
 	}
 	
 	@Override
-	public void onRemoved(GSIElement parent) {
-		super.onRemoved(parent);
+	public void onHidden() {
+		super.onHidden();
 
 		modelView.removeModelViewListener(this);
 		timeline.removeTimelineListener(this);
+	
+		setCurrentEditingTrack(null, false);
 	}
 	
 	@Override
