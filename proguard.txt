@@ -21,7 +21,7 @@
 -keepnames class com.g4mesoft.captureplayback.mixin.**
 
 # Keep g4mespeed entry class for multi obfuscation
--keep public class com.g4mesoft.G4mespeedMod { *; }
+-keep public class com.g4mesoft.G4mespeedMod { }
 
 -keepnames class com.g4mesoft.mixin.**
 
