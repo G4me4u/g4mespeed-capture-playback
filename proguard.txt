@@ -23,7 +23,6 @@
 
 # Keep g4mespeed entry class for multi obfuscation
 -keep public class com.g4mesoft.G4mespeedMod { }
-
 -keepnames class com.g4mesoft.mixin.**
 
 -keepclassmembernames @org.spongepowered.asm.mixin.Mixin public class * {
@@ -44,6 +43,7 @@
 -optimizationpasses 3
 -overloadaggressively
 -repackageclasses 'captureplayback'
+-useuniqueclassmembernames
 -allowaccessmodification
 
 -dontshrink
