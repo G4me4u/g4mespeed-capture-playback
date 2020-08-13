@@ -42,7 +42,6 @@
 -optimizations !code/simplification/advanced,code/simplification/*
 -optimizationpasses 3
 -repackageclasses 'captureplayback'
--useuniqueclassmembernames
 -allowaccessmodification
 
 -dontshrink
