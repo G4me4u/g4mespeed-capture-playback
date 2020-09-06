@@ -36,7 +36,7 @@ public class GSTrack {
 		this.info = info;
 		disabled = DEFAULT_DISABLED;
 		
-		entries = new LinkedHashMap<UUID, GSTrackEntry>();
+		entries = new LinkedHashMap<>();
 
 		owner = null;
 	}

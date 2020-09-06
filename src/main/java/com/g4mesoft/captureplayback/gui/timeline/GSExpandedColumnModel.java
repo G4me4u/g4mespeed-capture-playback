@@ -11,7 +11,7 @@ public class GSExpandedColumnModel {
 	private int maxColumnIndex;
 	
 	public GSExpandedColumnModel() {
-		listeners = new ArrayList<GSIExpandedColumnModelListener>();
+		listeners = new ArrayList<>();
 
 		clearExpandedColumns();
 	}

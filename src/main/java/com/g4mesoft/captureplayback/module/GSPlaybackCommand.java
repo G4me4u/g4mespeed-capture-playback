@@ -50,7 +50,7 @@ public final class GSPlaybackCommand {
 	}
 
 	private static GSPlaybackStream createPlaybackStream(GSTimeline timeline) {
-		List<GSPlaybackEvent> events = new ArrayList<GSPlaybackEvent>();
+		List<GSPlaybackEvent> events = new ArrayList<>();
 
 		int x0 = Integer.MAX_VALUE;
 		int y0 = Integer.MAX_VALUE;

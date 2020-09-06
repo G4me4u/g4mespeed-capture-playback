@@ -26,8 +26,8 @@ public class GSTimeline {
 	private final List<GSITimelineListener> listeners;
 	
 	public GSTimeline() {
-		tracks = new LinkedHashMap<UUID, GSTrack>();
-		listeners = new ArrayList<GSITimelineListener>();
+		tracks = new LinkedHashMap<>();
+		listeners = new ArrayList<>();
 	}
 
 	public void set(GSTimeline other) {

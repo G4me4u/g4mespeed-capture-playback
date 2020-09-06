@@ -29,7 +29,7 @@ public class GSPlaybackStream implements GSIReadableStream<GSPlaybackFrame> {
 		GSPlaybackEvent event;
 		while ((event = events.peek()) != null && event.getTime().getGametick() == playbackFrameIndex) {
 			if (frameEvents == null)
-				frameEvents = new ArrayList<GSPlaybackEvent>();
+				frameEvents = new ArrayList<>();
 			frameEvents.add(events.poll());
 		}
 		

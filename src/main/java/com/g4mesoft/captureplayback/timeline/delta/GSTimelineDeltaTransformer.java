@@ -19,7 +19,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	private boolean enabled;
 	
 	public GSTimelineDeltaTransformer() {
-		listeners = new ArrayList<GSITimelineDeltaListener>();
+		listeners = new ArrayList<>();
 	
 		timeline = null;
 		enabled = true;

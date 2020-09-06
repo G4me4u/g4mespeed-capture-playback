@@ -61,13 +61,12 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 			}
 		});
 		
-		trackNameField.setEditable(false);
-		
-		editable = true;
 		editingTrackUUID = null;
 		
 		addMouseEventListener(this);
 		addKeyEventListener(this);
+
+		setEditable(true);
 	}
 	
 	@Override
