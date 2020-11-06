@@ -2,22 +2,19 @@ package com.g4mesoft.captureplayback.gui.timeline;
 
 public class GSMultiCellInfo {
 
-	private int columnIndex;
-	private int count;
+	private final int columnIndex;
+	private final int count;
+	
+	GSMultiCellInfo(int columnIndex, int count) {
+		this.columnIndex = columnIndex;
+		this.count = count;
+	}
 	
 	public int getColumnIndex() {
 		return columnIndex;
 	}
 
-	void setColumnIndex(int columnIndex) {
-		this.columnIndex = columnIndex;
-	}
-
 	public int getCount() {
 		return count;
-	}
-
-	void setCount(int count) {
-		this.count = count;
 	}
 }

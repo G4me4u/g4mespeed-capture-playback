@@ -518,11 +518,9 @@ public class GSTimelineModelView {
 	private class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {
 
 		private final Iterator<Map.Entry<Integer, Integer>> countEntryIterator;
-		private final GSMultiCellInfo multiCellInfo;
 		
 		public GSMultiCellIterator(Iterator<Map.Entry<Integer, Integer>> countEntryIterator) {
 			this.countEntryIterator = countEntryIterator;
-			multiCellInfo = new GSMultiCellInfo();
 		}
 		
 		@Override
@@ -532,13 +530,12 @@ public class GSTimelineModelView {
 
 		@Override
 		public GSMultiCellInfo next() {
-			if (!countEntryIterator.hasNext())
-				throw new IllegalStateException("Iterator has no next element.");
-			
 			Map.Entry<Integer, Integer> info = countEntryIterator.next();
-			multiCellInfo.setColumnIndex(getColumnIndexFromLookup(info.getKey()));
-			multiCellInfo.setCount(info.getValue());
-			return multiCellInfo;
+
+			int columnIndex = getColumnIndexFromLookup(info.getKey());
+			int count = info.getValue();
+			
+			return new GSMultiCellInfo(columnIndex, count);
 		}
 	}
 }
