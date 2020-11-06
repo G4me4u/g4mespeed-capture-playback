@@ -64,14 +64,14 @@ public class GSTimelineModelView {
 		
 		lookupSize = 0;
 		durationLookup = new int[0];
-		trackUUIDtoIndex = new HashMap<UUID, Integer>();
-		trackIndexToUUID = new HashMap<Integer, UUID>();
-		multiCellLookup = new HashMap<UUID, Map<Integer,Integer>>();
+		trackUUIDtoIndex = new HashMap<>();
+		trackIndexToUUID = new HashMap<>();
+		multiCellLookup = new HashMap<>();
 		
 		trackHeight = MINIMUM_TRACK_HEIGHT;
 		trackSpacing = DEFAULT_TRACK_SPACING;
 	
-		listenters = new ArrayList<GSITimelineModelViewListener>();
+		listenters = new ArrayList<>();
 	}
 	
 	/* ******************** MODEL-VIEW initialization ******************** */
@@ -157,7 +157,7 @@ public class GSTimelineModelView {
 					columnEntryCount[endLookupOffset]++;
 			}
 			
-			Map<Integer, Integer> multiCellCount = new HashMap<Integer, Integer>();
+			Map<Integer, Integer> multiCellCount = new HashMap<>();
 			for (int lookupIndex = 0; lookupIndex < lookupSize; lookupIndex++) {
 				int entryCount = columnEntryCount[lookupIndex];
 				if (entryCount > 1)
@@ -518,11 +518,9 @@ public class GSTimelineModelView {
 	private class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {
 
 		private final Iterator<Map.Entry<Integer, Integer>> countEntryIterator;
-		private final GSMultiCellInfo multiCellInfo;
 		
 		public GSMultiCellIterator(Iterator<Map.Entry<Integer, Integer>> countEntryIterator) {
 			this.countEntryIterator = countEntryIterator;
-			multiCellInfo = new GSMultiCellInfo();
 		}
 		
 		@Override
@@ -532,13 +530,12 @@ public class GSTimelineModelView {
 
 		@Override
 		public GSMultiCellInfo next() {
-			if (!countEntryIterator.hasNext())
-				throw new IllegalStateException("Iterator has no next element.");
-			
 			Map.Entry<Integer, Integer> info = countEntryIterator.next();
-			multiCellInfo.setColumnIndex(getColumnIndexFromLookup(info.getKey()));
-			multiCellInfo.setCount(info.getValue());
-			return multiCellInfo;
+
+			int columnIndex = getColumnIndexFromLookup(info.getKey());
+			int count = info.getValue();
+			
+			return new GSMultiCellInfo(columnIndex, count);
 		}
 	}
 }

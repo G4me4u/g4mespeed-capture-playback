@@ -455,26 +455,22 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 
 	private boolean moveDraggedEntry(GSBlockEventTime mouseTime) {
-		GSBlockEventTime startTime = draggingStartTime;
-		GSBlockEventTime endTime = draggingEndTime;
+		long dgt = 0L;
+		int dmt = 0;
 		
 		if (expandedColumnModel.hasExpandedColumn()) {
-			int dmt = mouseTime.getMicrotick() - clickedMouseTime.getMicrotick();
-			
-			if (startTime.getMicrotick() + dmt < 0 || endTime.getMicrotick() + dmt < 0)
-				return false;
-			
-			startTime = startTime.offsetCopy(0, dmt);
-			endTime = endTime.offsetCopy(0, dmt);
+			dmt = mouseTime.getMicrotick() - clickedMouseTime.getMicrotick();
 		} else {
-			long dgt = mouseTime.getGametick() - clickedMouseTime.getGametick();
-			
-			if (startTime.getGametick() + dgt < 0L || endTime.getGametick() + dgt < 0L)
-				return false;
-
-			startTime = startTime.offsetCopy(dgt, 0);
-			endTime = endTime.offsetCopy(dgt, 0);
+			dgt = mouseTime.getGametick() - clickedMouseTime.getGametick();
 		}
+
+		if (draggingStartTime.getGametick() + dgt < 0L || draggingStartTime.getMicrotick() + dmt < 0)
+			return false;
+		if (draggingEndTime.getGametick() + dgt < 0L || draggingEndTime.getMicrotick() + dmt < 0)
+			return false;
+		
+		GSBlockEventTime startTime = draggingStartTime.offsetCopy(dgt, dmt);
+		GSBlockEventTime endTime = draggingEndTime.offsetCopy(dgt, dmt);
 
 		return moveEntry(draggingEntry, startTime, endTime);
 	}

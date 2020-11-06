@@ -24,21 +24,25 @@ public class GSPlaybackStream implements GSIReadableStream<GSPlaybackFrame> {
 	
 	@Override
 	public GSPlaybackFrame read() {
-		List<GSPlaybackEvent> frameEvents = null;
+		GSPlaybackFrame frame = GSPlaybackFrame.EMPTY;
 
-		GSPlaybackEvent event;
-		while ((event = events.peek()) != null && event.getTime().getGametick() == playbackFrameIndex) {
-			if (frameEvents == null)
-				frameEvents = new ArrayList<GSPlaybackEvent>();
-			frameEvents.add(events.poll());
+		if (!isClosed() && isEventInFrame(events.peek())) {
+			List<GSPlaybackEvent> frameEvents = new ArrayList<>();
+	
+			do {
+				frameEvents.add(events.poll());
+			} while (!isClosed() && isEventInFrame(events.peek()));
+
+			frame = new GSPlaybackFrame(frameEvents);
 		}
-		
+
 		playbackFrameIndex++;
 		
-		if (frameEvents == null)
-			return GSPlaybackFrame.EMPTY;
-		
-		return new GSPlaybackFrame(frameEvents);
+		return frame;
+	}
+	
+	private boolean isEventInFrame(GSPlaybackEvent event) {
+		return (event.getTime().getGametick() <= playbackFrameIndex);
 	}
 	
 	@Override

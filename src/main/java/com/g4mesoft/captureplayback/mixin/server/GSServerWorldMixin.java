@@ -47,7 +47,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
 	}
 
-	private final List<GSPlaybackStream> playbackStreams = new ArrayList<GSPlaybackStream>();
+	private final List<GSPlaybackStream> playbackStreams = new ArrayList<>();
 
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
 	

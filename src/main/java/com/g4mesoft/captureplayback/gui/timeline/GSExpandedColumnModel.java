@@ -11,7 +11,7 @@ public class GSExpandedColumnModel {
 	private int maxColumnIndex;
 	
 	public GSExpandedColumnModel() {
-		listeners = new ArrayList<GSIExpandedColumnModelListener>();
+		listeners = new ArrayList<>();
 
 		clearExpandedColumns();
 	}
@@ -33,7 +33,8 @@ public class GSExpandedColumnModel {
 	}
 
 	public void setExpandedColumnRange(int minColumnIndex, int maxColumnIndex) {
-		if (maxColumnIndex < minColumnIndex)
+		// Ensure that the selection is valid (and invalidate it properly if not).
+		if (minColumnIndex < 0 || maxColumnIndex < minColumnIndex)
 			maxColumnIndex = minColumnIndex = -1;
 			
 		if (minColumnIndex != this.minColumnIndex || maxColumnIndex != this.maxColumnIndex) {

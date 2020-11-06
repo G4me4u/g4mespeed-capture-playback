@@ -44,7 +44,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	@Override
 	public void init() {
-		deltaRegistry = new GSElementRegistry<GSITimelineDelta>();
+		deltaRegistry = new GSElementRegistry<>();
 		
 		deltaRegistry.register(0, GSTimelineNameDelta.class, GSTimelineNameDelta::new);
 		deltaRegistry.register(1, GSTrackAddedDelta.class, GSTrackAddedDelta::new);
