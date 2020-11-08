@@ -99,13 +99,13 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		return (mappedTrackY >= y && mappedTrackY < y + height);
 	}
 	
-	private void renderTrackPreview(GSIRenderer2D renderer, GSTrack track, int x0, int y0, int x1, int y1) {
+	private void renderTrackPreview(GSIRenderer2D renderer, GSTrack track, int x, int y, int width, int height) {
 		int color = renderer.darkenColor(getTrackColor(track));
 		
 		for (GSTrackEntry entry : track.getEntries()) {
 			Rectangle bounds = getMappedEntryBounds(entry);
 			
-			if (bounds != null && clampEntryBounds(bounds, x0, y0, x1, y1))
+			if (bounds != null && clampEntryBounds(bounds, x, y, width, height))
 				renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, color);
 		}
 	}
@@ -114,23 +114,23 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		return (0xFF << 24) | track.getInfo().getColor();
 	}
 	
-	private boolean clampEntryBounds(Rectangle bounds, int x0, int y0, int x1, int y1) {
+	private boolean clampEntryBounds(Rectangle bounds, int x, int y, int width, int height) {
 		// Clamp left, top, right, bottom
-		if (bounds.x < x0) {
-			bounds.width += bounds.x - x0;
-			bounds.x = x0;
+		if (bounds.x < x) {
+			bounds.width += bounds.x - x;
+			bounds.x = x;
 		}
 		
-		if (bounds.y < y0) {
-			bounds.height += bounds.y;
-			bounds.y = y0;
+		if (bounds.y < y) {
+			bounds.height += bounds.y - y;
+			bounds.y = y;
 		}
 		
-		if (bounds.x + bounds.width > x1)
-			bounds.width -= x1 - (bounds.x + bounds.width);
+		if (bounds.x + bounds.width > x + width)
+			bounds.width -= (bounds.x + bounds.width) - (x + width);
 		
-		if (bounds.y + bounds.height > y1)
-			bounds.height -= y1 - (bounds.y + bounds.height);
+		if (bounds.y + bounds.height > y + height)
+			bounds.height -= (bounds.y + bounds.height) - (y + height);
 		
 		return (bounds.width > 0 && bounds.height > 0);
 	}

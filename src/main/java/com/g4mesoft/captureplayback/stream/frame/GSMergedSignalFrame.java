@@ -46,12 +46,10 @@ public class GSMergedSignalFrame implements GSISignalFrame {
 					nextFrame = frame;
 					nextEvent = event;
 				}
-			} else {
-				itr.remove();
 			}
 		}
 
-		if (nextEvent == null)
+		if (nextFrame == null)
 			throw new NoSuchElementException();
 		
 		return nextFrame;
