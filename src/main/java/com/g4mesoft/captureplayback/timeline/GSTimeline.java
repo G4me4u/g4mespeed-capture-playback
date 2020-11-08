@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
@@ -114,7 +114,7 @@ public class GSTimeline {
 			listener.entryRemoved(entry);
 	}
 	
-	void onEntryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+	void onEntryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		for (GSITimelineListener listener : listeners)
 			listener.entryTimeChanged(entry, oldStart, oldEnd);
 	}

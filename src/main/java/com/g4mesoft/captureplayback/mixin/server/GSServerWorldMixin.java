@@ -3,7 +3,9 @@ package com.g4mesoft.captureplayback.mixin.server;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,17 +14,19 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.g4mesoft.captureplayback.CapturePlaybackMod;
+import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
-import com.g4mesoft.captureplayback.common.GSEGameTickPhase;
-import com.g4mesoft.captureplayback.common.GSESignalEdge;
-import com.g4mesoft.captureplayback.stream.playback.GSPlaybackEvent;
-import com.g4mesoft.captureplayback.stream.playback.GSPlaybackFrame;
-import com.g4mesoft.captureplayback.stream.playback.GSPlaybackStream;
+import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
+import com.g4mesoft.captureplayback.stream.GSSignalEvent;
+import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
+import com.g4mesoft.captureplayback.stream.frame.GSMergedSignalFrame;
+import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
+import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.core.server.GSControllerServer;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.PistonBlock;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.BlockActionS2CPacket;
@@ -39,59 +43,56 @@ import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.LevelProperties;
 
 @Mixin(ServerWorld.class)
-public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess {
+public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSISignalEventContext {
 
 	@Shadow @Final private MinecraftServer server;
+	
+	private final List<GSPlaybackStream> playbackStreams = new ArrayList<>();
+	private GSISignalFrame signalFrame;
 	
 	protected GSServerWorldMixin(LevelProperties levelProperties, DimensionType dimensionType,
 			BiFunction<World, Dimension, ChunkManager> chunkManagerProvider, Profiler profiler, boolean isClient) {
 		super(levelProperties, dimensionType, chunkManagerProvider, profiler, isClient);
 	}
 
-	private final List<GSPlaybackStream> playbackStreams = new ArrayList<>();
-
 	@Shadow protected abstract boolean method_14174(BlockAction blockAction);
+	
+	@Inject(method = "tick", at = @At("HEAD"))
+	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+		GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
+		
+		Iterator<GSPlaybackStream> streamItr = playbackStreams.iterator();
+		while (streamItr.hasNext()) {
+			GSPlaybackStream stream = streamItr.next();
+			if (stream.isClosed()) {
+				streamItr.remove();
+			} else {
+				mergedFrame.merge(stream.read());
+			}
+		}
+		
+		signalFrame = mergedFrame;
+	}
 	
 	@Inject(method = "sendBlockActions", at = @At("RETURN"))
 	public void onSendBlockActionsReturn(CallbackInfo ci) {
-		Iterator<GSPlaybackStream> streamItr = playbackStreams.iterator();
+		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		Map<Block, GSISignalEventHandler> handlerRegistry = extension.getSignalEventHandlerRegistry();
 		
-		while (streamItr.hasNext()) {
-			GSPlaybackStream stream = streamItr.next();
-			GSPlaybackFrame frame = stream.read();
-			
-			Iterator<GSPlaybackEvent> frameItr = frame.getPhaseIterator(GSEGameTickPhase.BLOCK_EVENTS);
-			while (frameItr.hasNext()) {
-				GSPlaybackEvent event = frameItr.next();
+		while (signalFrame.hasNext()) {
+			GSSignalEvent event = signalFrame.next();
+			BlockState state = getBlockState(event.getPos());
 
-				BlockPos pos = event.getPos();
-				BlockState blockState = getBlockState(pos);
-				Block block = blockState.getBlock();
-				
-				if (block == Blocks.PISTON || block == Blocks.STICKY_PISTON) {
-					int type = (event.getEdge() == GSESignalEdge.RISING_EDGE) ? 0 : 1;
-					int data = blockState.get(PistonBlock.FACING).getId();
-					BlockAction blockAction = new BlockAction(pos, block, type, data);
-					
-					if (this.method_14174(blockAction)) {
-			            PlayerManager playerManager = server.getPlayerManager();
-			            Packet<?> packet = new BlockActionS2CPacket(pos, block, type, data);
-
-			            double dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
-			            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, dimension.getType(), packet);
-					}
-				}
-			}
-			
-			if (stream.isClosed())
-				streamItr.remove();
+			GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
+			if (handler != null)
+				handler.handle(state, event, this);
 		}
 	}
 	
 	@Override
-	public void startPlaybackStream(GSPlaybackStream playbackStream) {
-		if (!playbackStream.isClosed())
-			playbackStreams.add(playbackStream);
+	public void playStream(GSPlaybackStream stream) {
+		if (!stream.isClosed())
+			playbackStreams.add(stream);
 	}
 	
 	@Override
@@ -99,6 +100,29 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		for (GSPlaybackStream stream : playbackStreams) {
 			if (stream.getBlockRegion().contains(pos.getX(), pos.getY(), pos.getZ()))
 				return true;
+		}
+		
+		return false;
+	}
+	
+	@Override
+	public boolean dispatchBlockAction(BlockPos pos, Block block, int type, int data) {
+		BlockAction blockAction = new BlockAction(pos, block, type, data);
+		
+		if (this.method_14174(blockAction)) {
+            Packet<?> packet = new BlockActionS2CPacket(pos, block, type, data);
+
+            double dist = 64.0;
+            if (block instanceof PistonBlock) {
+            	// This is a g4mespeed specific feature that allows the user
+            	// to change the distance at which the block actions are sent.
+	            dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
+            }
+
+            PlayerManager playerManager = server.getPlayerManager();
+            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, dimension.getType(), packet);
+            
+            return true;
 		}
 		
 		return false;

@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 
 import net.minecraft.util.PacketByteBuf;
@@ -78,11 +78,11 @@ public class GSTrack {
 		}
 	}
 
-	public GSTrackEntry tryAddEntry(GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	public GSTrackEntry tryAddEntry(GSSignalTime startTime, GSSignalTime endTime) {
 		return tryAddEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), startTime, endTime);
 	}
 	
-	public GSTrackEntry tryAddEntry(UUID entryUUID, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	public GSTrackEntry tryAddEntry(UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
 		if (entryUUID == null || hasEntryUUID(entryUUID))
 			return null;
 		if (isOverlappingEntries(startTime, endTime, null))
@@ -118,7 +118,7 @@ public class GSTrack {
 		return false;
 	}
 	
-	public boolean isOverlappingEntries(GSBlockEventTime startTime, GSBlockEventTime endTime, GSTrackEntry ignoreEntry) {
+	public boolean isOverlappingEntries(GSSignalTime startTime, GSSignalTime endTime, GSTrackEntry ignoreEntry) {
 		if (startTime.isAfter(endTime))
 			return false;
 		
@@ -129,7 +129,7 @@ public class GSTrack {
 		return false;
 	}
 	
-	public GSTrackEntry getEntryAt(GSBlockEventTime time, boolean preciseSearch) {
+	public GSTrackEntry getEntryAt(GSSignalTime time, boolean preciseSearch) {
 		for (GSTrackEntry entry : entries.values()) {
 			if (entry.containsTimestamp(time, preciseSearch))
 				return entry;
@@ -138,7 +138,7 @@ public class GSTrack {
 		return null;
 	}
 
-	void onEntryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+	void onEntryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		if (owner != null)
 			owner.onEntryTimeChanged(entry, oldStart, oldEnd);
 	}

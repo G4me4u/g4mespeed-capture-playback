@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.timeline.delta;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
@@ -104,7 +104,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	}
 
 	@Override
-	public void entryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+	public void entryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		if (enabled) {
 			dispatchTimelineDeltaEvent(new GSEntryTimeDelta(entry.getOwnerTrack().getTrackUUID(),
 					entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), oldStart, oldEnd));

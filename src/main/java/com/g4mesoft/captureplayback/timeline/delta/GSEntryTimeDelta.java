@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.timeline.delta;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
@@ -11,17 +11,17 @@ import net.minecraft.util.PacketByteBuf;
 
 public class GSEntryTimeDelta extends GSEntryDelta {
 
-	private GSBlockEventTime newStartTime;
-	private GSBlockEventTime newEndTime;
+	private GSSignalTime newStartTime;
+	private GSSignalTime newEndTime;
 
-	private GSBlockEventTime oldStartTime;
-	private GSBlockEventTime oldEndTime;
+	private GSSignalTime oldStartTime;
+	private GSSignalTime oldEndTime;
 
 	public GSEntryTimeDelta() {
 	}
 	
-	public GSEntryTimeDelta(UUID trackUUID, UUID entryUUID, GSBlockEventTime newStartTime,
-			GSBlockEventTime newEndTime, GSBlockEventTime oldStartTime, GSBlockEventTime oldEndTime) {
+	public GSEntryTimeDelta(UUID trackUUID, UUID entryUUID, GSSignalTime newStartTime,
+			GSSignalTime newEndTime, GSSignalTime oldStartTime, GSSignalTime oldEndTime) {
 
 		super(trackUUID, entryUUID);
 		
@@ -32,8 +32,8 @@ public class GSEntryTimeDelta extends GSEntryDelta {
 		this.oldEndTime = oldEndTime;
 	}
 	
-	private void setEntryTime(GSBlockEventTime newStartTime, GSBlockEventTime newEndTime,
-			GSBlockEventTime oldStartTime, GSBlockEventTime oldEndTime, GSTimeline timeline) throws GSTimelineDeltaException {
+	private void setEntryTime(GSSignalTime newStartTime, GSSignalTime newEndTime,
+			GSSignalTime oldStartTime, GSSignalTime oldEndTime, GSTimeline timeline) throws GSTimelineDeltaException {
 
 		GSTrackEntry entry = getEntry(timeline);
 		checkEntryTimespan(entry, oldStartTime, oldEndTime);
@@ -54,19 +54,19 @@ public class GSEntryTimeDelta extends GSEntryDelta {
 	public void read(PacketByteBuf buf) throws IOException {
 		super.read(buf);
 		
-		newStartTime = GSBlockEventTime.read(buf);
-		newEndTime = GSBlockEventTime.read(buf);
-		oldStartTime = GSBlockEventTime.read(buf);
-		oldEndTime = GSBlockEventTime.read(buf);
+		newStartTime = GSSignalTime.read(buf);
+		newEndTime = GSSignalTime.read(buf);
+		oldStartTime = GSSignalTime.read(buf);
+		oldEndTime = GSSignalTime.read(buf);
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
 		super.write(buf);
 
-		GSBlockEventTime.write(buf, newStartTime);
-		GSBlockEventTime.write(buf, newEndTime);
-		GSBlockEventTime.write(buf, oldStartTime);
-		GSBlockEventTime.write(buf, oldEndTime);
+		GSSignalTime.write(buf, newStartTime);
+		GSSignalTime.write(buf, newEndTime);
+		GSSignalTime.write(buf, oldStartTime);
+		GSSignalTime.write(buf, oldEndTime);
 	}
 }

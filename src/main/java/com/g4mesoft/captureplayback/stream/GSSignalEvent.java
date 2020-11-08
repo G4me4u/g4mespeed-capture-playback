@@ -1,17 +1,17 @@
-package com.g4mesoft.captureplayback.stream.playback;
+package com.g4mesoft.captureplayback.stream;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 
 import net.minecraft.util.math.BlockPos;
 
-public final class GSPlaybackEvent implements Comparable<GSPlaybackEvent> {
+public final class GSSignalEvent implements Comparable<GSSignalEvent> {
 
 	private final BlockPos pos;
-	private final GSBlockEventTime time;
+	private final GSSignalTime time;
 	private final GSESignalEdge edge;
 	
-	public GSPlaybackEvent(BlockPos pos, GSBlockEventTime time, GSESignalEdge edge) {
+	public GSSignalEvent(BlockPos pos, GSSignalTime time, GSESignalEdge edge) {
 		this.pos = pos;
 		this.time = time;
 		this.edge = edge;
@@ -21,7 +21,7 @@ public final class GSPlaybackEvent implements Comparable<GSPlaybackEvent> {
 		return pos;
 	}
 	
-	public GSBlockEventTime getTime() {
+	public GSSignalTime getTime() {
 		return time;
 	}
 	
@@ -30,7 +30,7 @@ public final class GSPlaybackEvent implements Comparable<GSPlaybackEvent> {
 	}
 
 	@Override
-	public int compareTo(GSPlaybackEvent other) {
+	public int compareTo(GSSignalEvent other) {
 		if (time.isEqual(other.time)) {
 			int pc = pos.compareTo(other.pos);
 		
@@ -60,10 +60,10 @@ public final class GSPlaybackEvent implements Comparable<GSPlaybackEvent> {
 	
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof GSPlaybackEvent))
+		if (!(other instanceof GSSignalEvent))
 			return false;
 		
-		GSPlaybackEvent event = (GSPlaybackEvent)other;
+		GSSignalEvent event = (GSSignalEvent)other;
 
 		if (edge != event.edge)
 			return false;

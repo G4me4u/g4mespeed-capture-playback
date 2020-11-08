@@ -4,15 +4,15 @@ import java.io.IOException;
 
 import net.minecraft.util.PacketByteBuf;
 
-public final class GSBlockEventTime {
+public final class GSSignalTime {
 
-	public static final GSBlockEventTime ZERO = new GSBlockEventTime(0L, 0);
-	public static final GSBlockEventTime INFINITY = new GSBlockEventTime(Long.MAX_VALUE, Integer.MAX_VALUE);
+	public static final GSSignalTime ZERO = new GSSignalTime(0L, 0);
+	public static final GSSignalTime INFINITY = new GSSignalTime(Long.MAX_VALUE, Integer.MAX_VALUE);
 	
 	private final long gametick;
 	private final int microtick;
 	
-	public GSBlockEventTime(long gametick, int microtick) {
+	public GSSignalTime(long gametick, int microtick) {
 		if (gametick < 0L || microtick < 0)
 			throw new IllegalArgumentException("Ticks must be non-negative!");
 		
@@ -20,23 +20,23 @@ public final class GSBlockEventTime {
 		this.microtick = microtick;
 	}
 	
-	public GSBlockEventTime offsetCopy(long gtOffset, int mtOffset) {
-		return new GSBlockEventTime(gametick + gtOffset, microtick + mtOffset);
+	public GSSignalTime offsetCopy(long gtOffset, int mtOffset) {
+		return new GSSignalTime(gametick + gtOffset, microtick + mtOffset);
 	}
 	
-	public boolean isAfter(GSBlockEventTime other) {
+	public boolean isAfter(GSSignalTime other) {
 		if (gametick == other.gametick)
 			return (microtick > other.microtick);
 		return (gametick > other.gametick);
 	}
 
-	public boolean isBefore(GSBlockEventTime other) {
+	public boolean isBefore(GSSignalTime other) {
 		if (gametick == other.gametick)
 			return (microtick < other.microtick);
 		return (gametick < other.gametick);
 	}
 
-	public boolean isEqual(GSBlockEventTime other) {
+	public boolean isEqual(GSSignalTime other) {
 		return (gametick == other.gametick && microtick == other.microtick);
 	}
 	
@@ -55,23 +55,23 @@ public final class GSBlockEventTime {
 	
 	@Override
 	public boolean equals(Object other) {
-		if (!(other instanceof GSBlockEventTime))
+		if (!(other instanceof GSSignalTime))
 			return false;
 
-		return isEqual((GSBlockEventTime)other);
+		return isEqual((GSSignalTime)other);
 	}
 	
-	public static GSBlockEventTime read(PacketByteBuf buf) throws IOException {
+	public static GSSignalTime read(PacketByteBuf buf) throws IOException {
 		long gametick = buf.readLong();
 		int microtick = buf.readInt();
 		
 		if (gametick < 0L || microtick < 0)
 			throw new IOException("Invalid time parameters!");
 		
-		return new GSBlockEventTime(gametick, microtick);
+		return new GSSignalTime(gametick, microtick);
 	}
 
-	public static void write(PacketByteBuf buf, GSBlockEventTime time) throws IOException {
+	public static void write(PacketByteBuf buf, GSSignalTime time) throws IOException {
 		buf.writeLong(time.gametick);
 		buf.writeInt(time.microtick);
 	}

@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.timeline.delta;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
@@ -36,8 +36,8 @@ public abstract class GSEntryDelta extends GSTrackDelta {
 		return entry;
 	}
 	
-	protected void checkEntryTimespan(GSTrackEntry entry, GSBlockEventTime startTime,
-			GSBlockEventTime endTime) throws GSTimelineDeltaException {
+	protected void checkEntryTimespan(GSTrackEntry entry, GSSignalTime startTime,
+			GSSignalTime endTime) throws GSTimelineDeltaException {
 		
 		if (!entry.getStartTime().isEqual(startTime) || !entry.getEndTime().isEqual(endTime))
 			throw new GSTimelineDeltaException("Entry does not have the expected timespan");
@@ -48,8 +48,8 @@ public abstract class GSEntryDelta extends GSTrackDelta {
 			throw new GSTimelineDeltaException("Entry does not have the expected type");
 	}
 	
-	protected void removeEntry(GSTimeline timeline, UUID entryUUID, GSBlockEventTime startTime, 
-			GSBlockEventTime endTime, GSETrackEntryType expectedType) throws GSTimelineDeltaException {
+	protected void removeEntry(GSTimeline timeline, UUID entryUUID, GSSignalTime startTime, 
+			GSSignalTime endTime, GSETrackEntryType expectedType) throws GSTimelineDeltaException {
 
 		GSTrackEntry entry = getEntry(timeline);
 		checkEntryTimespan(entry, startTime, endTime);
@@ -57,8 +57,8 @@ public abstract class GSEntryDelta extends GSTrackDelta {
 		entry.getOwnerTrack().removeEntry(entryUUID);
 	}
 	
-	protected GSTrackEntry addEntry(GSTimeline timeline, UUID entryUUID, GSBlockEventTime startTime,
-			GSBlockEventTime endTime) throws GSTimelineDeltaException {
+	protected GSTrackEntry addEntry(GSTimeline timeline, UUID entryUUID, GSSignalTime startTime,
+			GSSignalTime endTime) throws GSTimelineDeltaException {
 		
 		GSTrack track = getTrack(timeline);
 		if (track.hasEntryUUID(entryUUID))

@@ -1,11 +1,17 @@
 package com.g4mesoft.captureplayback;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+
 import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.module.GSTimelineDeltaPacket;
 import com.g4mesoft.captureplayback.module.GSTimelinePacket;
+import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
+import com.g4mesoft.captureplayback.stream.handler.GSNoteBlockSignalEventHandler;
+import com.g4mesoft.captureplayback.stream.handler.GSPistonSignalEventHandler;
 import com.g4mesoft.captureplayback.timeline.delta.GSEntryAddedDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSEntryRemovedDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSEntryTimeDelta;
@@ -20,10 +26,12 @@ import com.g4mesoft.core.GSVersion;
 import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.core.server.GSControllerServer;
 import com.g4mesoft.packet.GSIPacket;
-import com.g4mesoft.registry.GSElementRegistry;
+import com.g4mesoft.registry.GSSupplierRegistry;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 
 public class GSCapturePlaybackExtension implements GSIExtension {
 
@@ -36,7 +44,8 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
 	
-	private GSElementRegistry<GSITimelineDelta> deltaRegistry;
+	private GSSupplierRegistry<Integer, GSITimelineDelta> deltaRegistry;
+	private Map<Block, GSISignalEventHandler> signalEventHandlerRegistry;
 	
 	@Environment(EnvType.CLIENT)
 	private GSCapturePlaybackModule clientModule;
@@ -44,7 +53,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	@Override
 	public void init() {
-		deltaRegistry = new GSElementRegistry<>();
+		deltaRegistry = new GSSupplierRegistry<>();
 		
 		deltaRegistry.register(0, GSTimelineNameDelta.class, GSTimelineNameDelta::new);
 		deltaRegistry.register(1, GSTrackAddedDelta.class, GSTrackAddedDelta::new);
@@ -55,10 +64,16 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		deltaRegistry.register(6, GSEntryRemovedDelta.class, GSEntryRemovedDelta::new);
 		deltaRegistry.register(7, GSEntryTimeDelta.class, GSEntryTimeDelta::new);
 		deltaRegistry.register(8, GSEntryTypeDelta.class, GSEntryTypeDelta::new);
+		
+		signalEventHandlerRegistry = new IdentityHashMap<>();
+		
+		signalEventHandlerRegistry.put(Blocks.PISTON, new GSPistonSignalEventHandler());
+		signalEventHandlerRegistry.put(Blocks.STICKY_PISTON, new GSPistonSignalEventHandler());
+		signalEventHandlerRegistry.put(Blocks.NOTE_BLOCK, new GSNoteBlockSignalEventHandler());
 	}
 	
 	@Override
-	public void registerPackets(GSElementRegistry<GSIPacket> registry) {
+	public void registerPackets(GSSupplierRegistry<Integer, GSIPacket> registry) {
 		registry.register(0, GSTimelinePacket.class, GSTimelinePacket::new);
 		registry.register(1, GSTimelineDeltaPacket.class, GSTimelineDeltaPacket::new);
 	}
@@ -96,7 +111,11 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		return serverModule;
 	}
 	
-	public GSElementRegistry<GSITimelineDelta> getDeltaRegistry() {
+	public GSSupplierRegistry<Integer, GSITimelineDelta> getDeltaRegistry() {
 		return deltaRegistry;
+	}
+	
+	public Map<Block, GSISignalEventHandler> getSignalEventHandlerRegistry() {
+		return signalEventHandlerRegistry;
 	}
 }

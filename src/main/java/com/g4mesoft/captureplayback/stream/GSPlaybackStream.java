@@ -1,39 +1,39 @@
-package com.g4mesoft.captureplayback.stream.playback;
+package com.g4mesoft.captureplayback.stream;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.PriorityQueue;
 
-import com.g4mesoft.captureplayback.stream.GSBlockRegion;
-import com.g4mesoft.captureplayback.stream.GSIReadableStream;
+import com.g4mesoft.captureplayback.stream.frame.GSBasicSignalFrame;
+import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
-public class GSPlaybackStream implements GSIReadableStream<GSPlaybackFrame> {
+public class GSPlaybackStream implements GSIReadableStream<GSISignalFrame> {
 
 	private final GSBlockRegion blockRegion;
-	private final PriorityQueue<GSPlaybackEvent> events;
+	private final PriorityQueue<GSSignalEvent> events;
 	
 	private long playbackFrameIndex;
 	
-	public GSPlaybackStream(GSBlockRegion blockRegion, Collection<GSPlaybackEvent> events) {
+	public GSPlaybackStream(GSBlockRegion blockRegion, Collection<GSSignalEvent> events) {
 		this.blockRegion = blockRegion;
-		this.events = new PriorityQueue<GSPlaybackEvent>(events);
+		this.events = new PriorityQueue<GSSignalEvent>(events);
 	
 		playbackFrameIndex = 0L;
 	}
 	
 	@Override
-	public GSPlaybackFrame read() {
-		GSPlaybackFrame frame = GSPlaybackFrame.EMPTY;
+	public GSISignalFrame read() {
+		GSISignalFrame frame = GSISignalFrame.EMPTY;
 
 		if (!isClosed() && isEventInFrame(events.peek())) {
-			List<GSPlaybackEvent> frameEvents = new ArrayList<>();
+			List<GSSignalEvent> frameEvents = new ArrayList<>();
 	
 			do {
 				frameEvents.add(events.poll());
 			} while (!isClosed() && isEventInFrame(events.peek()));
 
-			frame = new GSPlaybackFrame(frameEvents);
+			frame = new GSBasicSignalFrame(frameEvents);
 		}
 
 		playbackFrameIndex++;
@@ -41,7 +41,7 @@ public class GSPlaybackStream implements GSIReadableStream<GSPlaybackFrame> {
 		return frame;
 	}
 	
-	private boolean isEventInFrame(GSPlaybackEvent event) {
+	private boolean isEventInFrame(GSSignalEvent event) {
 		return (event.getTime().getGametick() <= playbackFrameIndex);
 	}
 	

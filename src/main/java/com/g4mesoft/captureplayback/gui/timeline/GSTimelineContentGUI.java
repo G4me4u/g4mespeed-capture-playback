@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 import java.util.Iterator;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
@@ -41,12 +41,12 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	
 	private int clickedMouseX;
 	private int clickedMouseY;
-	private GSBlockEventTime clickedMouseTime;
+	private GSSignalTime clickedMouseTime;
 	
 	private GSTrackEntry draggingEntry;
 	private GSEDraggingType draggingType;
-	private GSBlockEventTime draggingStartTime;
-	private GSBlockEventTime draggingEndTime;
+	private GSSignalTime draggingStartTime;
+	private GSSignalTime draggingEndTime;
 	
 	private boolean editable;
 	
@@ -264,7 +264,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		if (hoveredTrackUUID != null) {
 			GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
-			GSBlockEventTime hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
+			GSSignalTime hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
 			
 			if (hoveredTrack != null && hoveredTime != null) {
 				int columnIndex = modelView.getColumnIndex(hoveredTime);
@@ -435,7 +435,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	private boolean dragSelectedEntry(int mouseX, int mouseY) {
-		GSBlockEventTime draggedTime = modelView.getDraggedTime(mouseX, mouseY);
+		GSSignalTime draggedTime = modelView.getDraggedTime(mouseX, mouseY);
 		
 		if (draggedTime != null) {
 			switch (draggingType) {
@@ -454,7 +454,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return false;
 	}
 
-	private boolean moveDraggedEntry(GSBlockEventTime mouseTime) {
+	private boolean moveDraggedEntry(GSSignalTime mouseTime) {
 		long dgt = 0L;
 		int dmt = 0;
 		
@@ -469,41 +469,41 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		if (draggingEndTime.getGametick() + dgt < 0L || draggingEndTime.getMicrotick() + dmt < 0)
 			return false;
 		
-		GSBlockEventTime startTime = draggingStartTime.offsetCopy(dgt, dmt);
-		GSBlockEventTime endTime = draggingEndTime.offsetCopy(dgt, dmt);
+		GSSignalTime startTime = draggingStartTime.offsetCopy(dgt, dmt);
+		GSSignalTime endTime = draggingEndTime.offsetCopy(dgt, dmt);
 
 		return moveEntry(draggingEntry, startTime, endTime);
 	}
 	
-	private boolean isValidDraggedTime(GSBlockEventTime currentTime, GSBlockEventTime mouseTime) {
+	private boolean isValidDraggedTime(GSSignalTime currentTime, GSSignalTime mouseTime) {
 		int c0 = modelView.getColumnIndex(currentTime);
 		int c1 = modelView.getColumnIndex(mouseTime);
 		return isColumnModifiable(c1) && isColumnModifiable(c0);
 	}
 	
-	private boolean changeDraggedStart(GSBlockEventTime mouseTime) {
+	private boolean changeDraggedStart(GSSignalTime mouseTime) {
 		if (isValidDraggedTime(draggingEntry.getStartTime(), mouseTime)) {
-			GSBlockEventTime startTime = offsetDraggedTime(draggingEntry.getStartTime(), mouseTime);
+			GSSignalTime startTime = offsetDraggedTime(draggingEntry.getStartTime(), mouseTime);
 			return moveEntry(draggingEntry, startTime, draggingEntry.getEndTime());
 		}
 		
 		return false;
 	}
 
-	private boolean changeDraggedEnd(GSBlockEventTime mouseTime) {
+	private boolean changeDraggedEnd(GSSignalTime mouseTime) {
 		if (isValidDraggedTime(draggingEntry.getEndTime(), mouseTime)) {
-			GSBlockEventTime endTime = offsetDraggedTime(draggingEntry.getEndTime(), mouseTime);
+			GSSignalTime endTime = offsetDraggedTime(draggingEntry.getEndTime(), mouseTime);
 			return moveEntry(draggingEntry, draggingEntry.getStartTime(), endTime);
 		}
 		
 		return false;
 	}
 	
-	private GSBlockEventTime offsetDraggedTime(GSBlockEventTime t0, GSBlockEventTime t1) {
-		return expandedColumnModel.hasExpandedColumn() ? t1 : new GSBlockEventTime(t1.getGametick(), t0.getMicrotick());
+	private GSSignalTime offsetDraggedTime(GSSignalTime t0, GSSignalTime t1) {
+		return expandedColumnModel.hasExpandedColumn() ? t1 : new GSSignalTime(t1.getGametick(), t0.getMicrotick());
 	}
 	
-	private boolean moveEntry(GSTrackEntry entry, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	private boolean moveEntry(GSTrackEntry entry, GSSignalTime startTime, GSSignalTime endTime) {
 		if (!canMoveEntry(startTime, endTime, draggingEntry))
 			return false;
 		
@@ -512,7 +512,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return true;
 	}
 	
-	private boolean canMoveEntry(GSBlockEventTime startTime, GSBlockEventTime endTime, GSTrackEntry entry) {
+	private boolean canMoveEntry(GSSignalTime startTime, GSSignalTime endTime, GSTrackEntry entry) {
 		// The model has not changed. No reason to move it.
 		if (entry.getStartTime().isEqual(startTime) && entry.getEndTime().isEqual(endTime))
 			return false;
@@ -537,12 +537,12 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
 		
 		if (hoveredTrack != null) {
-			GSBlockEventTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
-			GSBlockEventTime t1 = modelView.getDraggedTime(mouseX, mouseY);
+			GSSignalTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
+			GSSignalTime t1 = modelView.getDraggedTime(mouseX, mouseY);
 	
 			if (t0 != null && t1 != null) {
 				if (t0.isAfter(t1)) {
-					GSBlockEventTime tmp = t0;
+					GSSignalTime tmp = t0;
 					t0 = t1;
 					t1 = tmp;
 				}
@@ -553,8 +553,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 					if (c0 != c1 || !isColumnModifiable(c0))
 						return false;
 				} else {
-					t0 = new GSBlockEventTime(t0.getGametick(), 0);
-					t1 = new GSBlockEventTime(t1.getGametick(), 0);
+					t0 = new GSSignalTime(t0.getGametick(), 0);
+					t1 = new GSSignalTime(t1.getGametick(), 0);
 				}
 				
 				GSTrackEntry entry = hoveredTrack.tryAddEntry(t0, t1);
