@@ -3,19 +3,19 @@ package com.g4mesoft.captureplayback.timeline;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSPlaybackTime;
 
 import net.minecraft.network.PacketByteBuf;
 
 public final class GSTrackEntry {
 
 	public static final GSETrackEntryType DEFAULT_ENTRY_TYPE = GSETrackEntryType.EVENT_BOTH;
-	public static final GSBlockEventTime DEFAULT_TIME = new GSBlockEventTime(0L, 0);
+	public static final GSPlaybackTime DEFAULT_TIME = new GSPlaybackTime(0L, 0);
 	
 	private final UUID entryUUID;
 	
-	private GSBlockEventTime startTime;
-	private GSBlockEventTime endTime;
+	private GSPlaybackTime startTime;
+	private GSPlaybackTime endTime;
 	
 	private GSETrackEntryType type;
 
@@ -25,7 +25,7 @@ public final class GSTrackEntry {
 		this(entryUUID, DEFAULT_TIME, DEFAULT_TIME);
 	}
 
-	GSTrackEntry(UUID entryUUID, GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	GSTrackEntry(UUID entryUUID, GSPlaybackTime startTime, GSPlaybackTime endTime) {
 		if (entryUUID == null)
 			throw new NullPointerException("entryUUID is null");
 		
@@ -56,16 +56,16 @@ public final class GSTrackEntry {
 		setType(other.getType());
 	}
 	
-	private void validateTimespan(GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	private void validateTimespan(GSPlaybackTime startTime, GSPlaybackTime endTime) {
 		if (startTime.isAfter(endTime))
 			throw new IllegalArgumentException("Start time is after end time!");
 		if (owner != null && owner.isOverlappingEntries(startTime, endTime, this))
 			throw new IllegalArgumentException("Timespan is overlapping other track entries!");
 	}
 	
-	public void setTimespan(GSBlockEventTime startTime, GSBlockEventTime endTime) {
-		GSBlockEventTime oldStartTime = this.startTime;
-		GSBlockEventTime oldEndTime = this.endTime;
+	public void setTimespan(GSPlaybackTime startTime, GSPlaybackTime endTime) {
+		GSPlaybackTime oldStartTime = this.startTime;
+		GSPlaybackTime oldEndTime = this.endTime;
 		if (!oldStartTime.isEqual(startTime) || !oldEndTime.isEqual(endTime)) {
 			validateTimespan(startTime, endTime);
 
@@ -81,27 +81,27 @@ public final class GSTrackEntry {
 		return endTime.getGametick() - startTime.getGametick();
 	}
 
-	public void setStartTime(GSBlockEventTime startTime) {
+	public void setStartTime(GSPlaybackTime startTime) {
 		if (startTime.isAfter(endTime))
 			throw new IllegalArgumentException("Start time is after current end time!");
 		setTimespan(startTime, this.endTime);
 	}
 	
-	public GSBlockEventTime getStartTime() {
+	public GSPlaybackTime getStartTime() {
 		return startTime;
 	}
 
-	public void setEndTime(GSBlockEventTime endTime) {
+	public void setEndTime(GSPlaybackTime endTime) {
 		if (endTime.isBefore(startTime))
 			throw new IllegalArgumentException("End time is before current start time!");
 		setTimespan(this.startTime, endTime);
 	}
 	
-	public boolean isOverlapping(GSBlockEventTime startTime, GSBlockEventTime endTime) {
+	public boolean isOverlapping(GSPlaybackTime startTime, GSPlaybackTime endTime) {
 		return !startTime.isAfter(this.endTime) && !endTime.isBefore(this.startTime);
 	}
 	
-	public boolean containsTimestamp(GSBlockEventTime time, boolean includeBlockEventDelay) {
+	public boolean containsTimestamp(GSPlaybackTime time, boolean includeBlockEventDelay) {
 		if (includeBlockEventDelay)
 			return !startTime.isAfter(time) && !endTime.isBefore(time);
 		
@@ -109,7 +109,7 @@ public final class GSTrackEntry {
 		       time.getGametick() <= endTime.getGametick();
 	}
 	
-	public GSBlockEventTime getEndTime() {
+	public GSPlaybackTime getEndTime() {
 		return endTime;
 	}
 	
@@ -137,8 +137,8 @@ public final class GSTrackEntry {
 	public static GSTrackEntry read(PacketByteBuf buf) throws IOException {
 		GSTrackEntry entry = new GSTrackEntry(buf.readUuid());
 
-		GSBlockEventTime startTime = GSBlockEventTime.read(buf);
-		GSBlockEventTime endTime = GSBlockEventTime.read(buf);
+		GSPlaybackTime startTime = GSPlaybackTime.read(buf);
+		GSPlaybackTime endTime = GSPlaybackTime.read(buf);
 		entry.setTimespan(startTime, endTime);
 		
 		GSETrackEntryType type = GSETrackEntryType.fromIndex(buf.readInt());
@@ -152,8 +152,8 @@ public final class GSTrackEntry {
 	public static void write(PacketByteBuf buf, GSTrackEntry entry) throws IOException {
 		buf.writeUuid(entry.getEntryUUID());
 		
-		GSBlockEventTime.write(buf, entry.getStartTime());
-		GSBlockEventTime.write(buf, entry.getEndTime());
+		GSPlaybackTime.write(buf, entry.getStartTime());
+		GSPlaybackTime.write(buf, entry.getEndTime());
 
 		buf.writeInt(entry.getType().getIndex());
 	}

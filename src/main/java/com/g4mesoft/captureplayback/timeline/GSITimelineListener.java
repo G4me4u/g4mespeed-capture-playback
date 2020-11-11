@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.timeline;
 
-import com.g4mesoft.captureplayback.common.GSBlockEventTime;
+import com.g4mesoft.captureplayback.common.GSPlaybackTime;
 
 public interface GSITimelineListener {
 
@@ -25,7 +25,7 @@ public interface GSITimelineListener {
 	default public void entryRemoved(GSTrackEntry entry) {
 	}
 
-	default public void entryTimeChanged(GSTrackEntry entry, GSBlockEventTime oldStart, GSBlockEventTime oldEnd) {
+	default public void entryTimeChanged(GSTrackEntry entry, GSPlaybackTime oldStart, GSPlaybackTime oldEnd) {
 	}
 
 	default public void entryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {

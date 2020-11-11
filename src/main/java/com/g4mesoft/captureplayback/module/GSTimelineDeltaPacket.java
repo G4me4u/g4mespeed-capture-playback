@@ -38,7 +38,7 @@ public class GSTimelineDeltaPacket implements GSIPacket {
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		buf.writeInt(extension.getDeltaRegistry().getIdFromElement(delta.getClass()));
+		buf.writeInt(extension.getDeltaRegistry().getIdentifier(delta));
 		delta.write(buf);
 	}
 	

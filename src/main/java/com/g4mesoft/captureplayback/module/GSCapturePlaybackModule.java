@@ -69,6 +69,10 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read active timeline!");
 			}
 		});
+		
+		manager.runOnClient((clientManager) -> {
+			clientManager.addRenderable(new GSTimelinePositionRenderable(activeTimeline));
+		});
 	}
 	
 	@Override
