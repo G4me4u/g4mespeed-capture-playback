@@ -11,38 +11,38 @@ import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 public class GSPlaybackStream implements GSIReadableStream<GSISignalFrame> {
 
 	private final GSBlockRegion blockRegion;
-	private final PriorityQueue<GSSignalEvent> events;
+	private final PriorityQueue<GSPlaybackEntry> entries;
 	
-	private long playbackFrameIndex;
+	private long playbackTime;
 	
-	public GSPlaybackStream(GSBlockRegion blockRegion, Collection<GSSignalEvent> events) {
+	public GSPlaybackStream(GSBlockRegion blockRegion, Collection<GSPlaybackEntry> entries) {
 		this.blockRegion = blockRegion;
-		this.events = new PriorityQueue<GSSignalEvent>(events);
+		this.entries = new PriorityQueue<GSPlaybackEntry>(entries);
 	
-		playbackFrameIndex = 0L;
+		playbackTime = 0L;
 	}
 	
 	@Override
 	public GSISignalFrame read() {
 		GSISignalFrame frame = GSISignalFrame.EMPTY;
 
-		if (!isClosed() && isEventInFrame(events.peek())) {
+		if (!isClosed() && isEntryInFrame(entries.peek())) {
 			List<GSSignalEvent> frameEvents = new ArrayList<>();
 	
 			do {
-				frameEvents.add(events.poll());
-			} while (!isClosed() && isEventInFrame(events.peek()));
+				frameEvents.add(entries.poll().getEvent());
+			} while (!isClosed() && isEntryInFrame(entries.peek()));
 
 			frame = new GSBasicSignalFrame(frameEvents);
 		}
 
-		playbackFrameIndex++;
+		playbackTime++;
 		
 		return frame;
 	}
 	
-	private boolean isEventInFrame(GSSignalEvent event) {
-		return (event.getTime().getGametick() <= playbackFrameIndex);
+	private boolean isEntryInFrame(GSPlaybackEntry entry) {
+		return (entry.getPlaybackTime() <= playbackTime);
 	}
 	
 	@Override
@@ -52,6 +52,6 @@ public class GSPlaybackStream implements GSIReadableStream<GSISignalFrame> {
 
 	@Override
 	public boolean isClosed() {
-		return events.isEmpty();
+		return entries.isEmpty();
 	}
 }

@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.timeline.delta;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.common.GSPlaybackTime;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 
@@ -11,8 +11,8 @@ import net.minecraft.util.PacketByteBuf;
 
 public class GSEntryAddedDelta extends GSEntryDelta {
 
-	private GSSignalTime startTime;
-	private GSSignalTime endTime;
+	private GSPlaybackTime startTime;
+	private GSPlaybackTime endTime;
 
 	public GSEntryAddedDelta() {
 	}
@@ -22,7 +22,7 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 				entry.getStartTime(), entry.getEndTime());
 	}
 	
-	public GSEntryAddedDelta(UUID trackUUID, UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
+	public GSEntryAddedDelta(UUID trackUUID, UUID entryUUID, GSPlaybackTime startTime, GSPlaybackTime endTime) {
 		super(trackUUID, entryUUID);
 		
 		this.startTime = startTime;
@@ -43,15 +43,15 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 	public void read(PacketByteBuf buf) throws IOException {
 		super.read(buf);
 		
-		startTime = GSSignalTime.read(buf);
-		endTime = GSSignalTime.read(buf);
+		startTime = GSPlaybackTime.read(buf);
+		endTime = GSPlaybackTime.read(buf);
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
 		super.write(buf);
 
-		GSSignalTime.write(buf, startTime);
-		GSSignalTime.write(buf, endTime);
+		GSPlaybackTime.write(buf, startTime);
+		GSPlaybackTime.write(buf, endTime);
 	}
 }

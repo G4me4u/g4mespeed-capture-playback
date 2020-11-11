@@ -8,7 +8,7 @@ import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.stream.GSBlockRegion;
-import com.g4mesoft.captureplayback.stream.GSSignalEvent;
+import com.g4mesoft.captureplayback.stream.GSPlaybackEntry;
 import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
@@ -50,7 +50,7 @@ public final class GSPlaybackCommand {
 	}
 
 	private static GSPlaybackStream createPlaybackStream(GSTimeline timeline) {
-		List<GSSignalEvent> events = new ArrayList<>();
+		List<GSPlaybackEntry> entries = new ArrayList<>();
 
 		int x0 = Integer.MAX_VALUE;
 		int y0 = Integer.MAX_VALUE;
@@ -80,13 +80,13 @@ public final class GSPlaybackCommand {
 			for (GSTrackEntry entry : track.getEntries()) {
 				GSETrackEntryType type = entry.getType();
 				if (type == GSETrackEntryType.EVENT_BOTH || type == GSETrackEntryType.EVENT_START)
-					events.add(new GSSignalEvent(pos, entry.getStartTime(), GSESignalEdge.RISING_EDGE));
+					entries.add(new GSPlaybackEntry(entry.getStartTime(), GSESignalEdge.RISING_EDGE, pos));
 				if (type == GSETrackEntryType.EVENT_BOTH || type == GSETrackEntryType.EVENT_END)
-					events.add(new GSSignalEvent(pos, entry.getEndTime(), GSESignalEdge.FALLING_EDGE));
+					entries.add(new GSPlaybackEntry(entry.getEndTime(), GSESignalEdge.FALLING_EDGE, pos));
 			}
 		}
 		
 		GSBlockRegion blockRegion = new GSBlockRegion(x0, y0, z0, x1, y1, z1);
-		return new GSPlaybackStream(blockRegion, events);
+		return new GSPlaybackStream(blockRegion, entries);
 	}
 }

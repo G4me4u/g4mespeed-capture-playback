@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.gui.timeline;
 
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.common.GSPlaybackTime;
 import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
 import com.g4mesoft.captureplayback.gui.GSITrackProvider;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
@@ -287,7 +287,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 
 	@Override
-	public void entryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
+	public void entryTimeChanged(GSTrackEntry entry, GSPlaybackTime oldStart, GSPlaybackTime oldEnd) {
 		initModelView();
 	}
 
