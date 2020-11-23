@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 import java.util.Iterator;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSPlaybackTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
@@ -13,10 +13,10 @@ import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.g4mesoft.gui.GSPanel;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSIRenderer2D;
 
-public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener, GSITimelineModelViewListener,
-                                                             GSIMouseListener {
+public class GSTimelineContentPanel extends GSPanel implements GSITimelineListener, GSITimelineModelViewListener,
+                                                               GSIMouseListener {
 
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
 	
@@ -41,16 +41,16 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	
 	private int clickedMouseX;
 	private int clickedMouseY;
-	private GSPlaybackTime clickedMouseTime;
+	private GSSignalTime clickedMouseTime;
 	
 	private GSTrackEntry draggingEntry;
 	private GSEDraggingType draggingType;
-	private GSPlaybackTime draggingStartTime;
-	private GSPlaybackTime draggingEndTime;
+	private GSSignalTime draggingStartTime;
+	private GSSignalTime draggingEndTime;
 	
 	private boolean editable;
 	
-	public GSTimelineContentGUI(GSTimeline timeline, GSExpandedColumnModel expandedColumnModel, GSTimelineModelView modelView) {
+	public GSTimelineContentPanel(GSTimeline timeline, GSExpandedColumnModel expandedColumnModel, GSTimelineModelView modelView) {
 		this.timeline = timeline;
 		this.expandedColumnModel = expandedColumnModel;
 		this.modelView = modelView;
@@ -111,8 +111,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		renderer.fillRect(cx, 0, cw, height, getColumnColor(columnIndex));
 	
 		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
-			renderer.drawVLine(cx, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-			renderer.drawVLine(cx + cw - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+			renderer.drawVLine(cx, 0, height, GSTimelineColumnHeaderPanel.COLUMN_LINE_COLOR);
+			renderer.drawVLine(cx + cw - 1, 0, height, GSTimelineColumnHeaderPanel.COLUMN_LINE_COLOR);
 		}
 		
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
@@ -120,17 +120,17 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 
 			for (int mt = 1; mt < duration; mt++) {
 				int x = modelView.getMicrotickColumnX(columnIndex, mt);
-				int y = GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING / 2;
+				int y = GSTimelineColumnHeaderPanel.DOTTED_LINE_SPACING / 2;
 			
-				renderer.drawDottedVLine(x, y, height, GSTimelineColumnHeaderGUI.DOTTED_LINE_LENGTH, 
-						GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING, GSTimelineColumnHeaderGUI.MT_COLUMN_LINE_COLOR);
+				renderer.drawDottedVLine(x, y, height, GSTimelineColumnHeaderPanel.DOTTED_LINE_LENGTH, 
+						GSTimelineColumnHeaderPanel.DOTTED_LINE_SPACING, GSTimelineColumnHeaderPanel.MT_COLUMN_LINE_COLOR);
 			}
 		}
 	}
 	
 	protected int getColumnColor(int columnIndex) {
-		return ((columnIndex & 0x1) != 0) ? GSTimelineColumnHeaderGUI.DARK_COLUMN_COLOR : 
-		                                    GSTimelineColumnHeaderGUI.COLUMN_COLOR;
+		return ((columnIndex & 0x1) != 0) ? GSTimelineColumnHeaderPanel.DARK_COLUMN_COLOR : 
+		                                    GSTimelineColumnHeaderPanel.COLUMN_COLOR;
 	}
 	
 	protected void renderTracks(GSIRenderer2D renderer) {
@@ -146,14 +146,14 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		int th = modelView.getTrackHeight();
 		
 		if (track.getTrackUUID().equals(hoveredTrackUUID))
-			renderer.fillRect(0, ty, width, th, GSTimelineTrackHeaderGUI.TRACK_HOVER_COLOR);
+			renderer.fillRect(0, ty, width, th, GSTimelineTrackHeaderPanel.TRACK_HOVER_COLOR);
 
 		for (GSTrackEntry entry : track.getEntries())
 			renderTrackEntry(renderer, entry, getTrackColor(track));
 		renderMultiCells(renderer, track.getTrackUUID(), ty);
 		
 		renderer.fillRect(0, ty + th, width, modelView.getTrackSpacing(), 
-				GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+				GSTimelineTrackHeaderPanel.TRACK_SPACING_COLOR);
 	}
 	
 	protected int getTrackColor(GSTrack track) {
@@ -198,8 +198,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		int columnIndex = multiCellInfo.getColumnIndex();
 		int xc = modelView.getColumnX(columnIndex) + modelView.getColumnWidth(columnIndex) / 2;
-		int ty = y + (modelView.getTrackHeight() - renderer.getFontHeight() + 1) / 2;
-		renderer.drawCenteredString(infoText, xc, ty, TEXT_COLOR);
+		int ty = y + (modelView.getTrackHeight() - renderer.getTextHeight() + 1) / 2;
+		renderer.drawCenteredText(infoText, xc, ty, TEXT_COLOR);
 	}
 
 	protected String formatMultiCellInfo(GSMultiCellInfo multiCellInfo) {
@@ -264,7 +264,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		
 		if (hoveredTrackUUID != null) {
 			GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
-			GSPlaybackTime hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
+			GSSignalTime hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
 			
 			if (hoveredTrack != null && hoveredTime != null) {
 				int columnIndex = modelView.getColumnIndex(hoveredTime);
@@ -435,7 +435,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 	}
 	
 	private boolean dragSelectedEntry(int mouseX, int mouseY) {
-		GSPlaybackTime draggedTime = modelView.getDraggedTime(mouseX, mouseY);
+		GSSignalTime draggedTime = modelView.getDraggedTime(mouseX, mouseY);
 		
 		if (draggedTime != null) {
 			switch (draggingType) {
@@ -454,7 +454,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return false;
 	}
 
-	private boolean moveDraggedEntry(GSPlaybackTime mouseTime) {
+	private boolean moveDraggedEntry(GSSignalTime mouseTime) {
 		long dgt = 0L;
 		int dmt = 0;
 		
@@ -469,41 +469,41 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		if (draggingEndTime.getGametick() + dgt < 0L || draggingEndTime.getMicrotick() + dmt < 0)
 			return false;
 		
-		GSPlaybackTime startTime = draggingStartTime.offsetCopy(dgt, dmt);
-		GSPlaybackTime endTime = draggingEndTime.offsetCopy(dgt, dmt);
+		GSSignalTime startTime = draggingStartTime.offsetCopy(dgt, dmt);
+		GSSignalTime endTime = draggingEndTime.offsetCopy(dgt, dmt);
 
 		return moveEntry(draggingEntry, startTime, endTime);
 	}
 	
-	private boolean isValidDraggedTime(GSPlaybackTime currentTime, GSPlaybackTime mouseTime) {
+	private boolean isValidDraggedTime(GSSignalTime currentTime, GSSignalTime mouseTime) {
 		int c0 = modelView.getColumnIndex(currentTime);
 		int c1 = modelView.getColumnIndex(mouseTime);
 		return isColumnModifiable(c1) && isColumnModifiable(c0);
 	}
 	
-	private boolean changeDraggedStart(GSPlaybackTime mouseTime) {
+	private boolean changeDraggedStart(GSSignalTime mouseTime) {
 		if (isValidDraggedTime(draggingEntry.getStartTime(), mouseTime)) {
-			GSPlaybackTime startTime = offsetDraggedTime(draggingEntry.getStartTime(), mouseTime);
+			GSSignalTime startTime = offsetDraggedTime(draggingEntry.getStartTime(), mouseTime);
 			return moveEntry(draggingEntry, startTime, draggingEntry.getEndTime());
 		}
 		
 		return false;
 	}
 
-	private boolean changeDraggedEnd(GSPlaybackTime mouseTime) {
+	private boolean changeDraggedEnd(GSSignalTime mouseTime) {
 		if (isValidDraggedTime(draggingEntry.getEndTime(), mouseTime)) {
-			GSPlaybackTime endTime = offsetDraggedTime(draggingEntry.getEndTime(), mouseTime);
+			GSSignalTime endTime = offsetDraggedTime(draggingEntry.getEndTime(), mouseTime);
 			return moveEntry(draggingEntry, draggingEntry.getStartTime(), endTime);
 		}
 		
 		return false;
 	}
 	
-	private GSPlaybackTime offsetDraggedTime(GSPlaybackTime t0, GSPlaybackTime t1) {
-		return expandedColumnModel.hasExpandedColumn() ? t1 : new GSPlaybackTime(t1.getGametick(), t0.getMicrotick());
+	private GSSignalTime offsetDraggedTime(GSSignalTime t0, GSSignalTime t1) {
+		return expandedColumnModel.hasExpandedColumn() ? t1 : new GSSignalTime(t1.getGametick(), t0.getMicrotick());
 	}
 	
-	private boolean moveEntry(GSTrackEntry entry, GSPlaybackTime startTime, GSPlaybackTime endTime) {
+	private boolean moveEntry(GSTrackEntry entry, GSSignalTime startTime, GSSignalTime endTime) {
 		if (!canMoveEntry(startTime, endTime, draggingEntry))
 			return false;
 		
@@ -512,7 +512,7 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		return true;
 	}
 	
-	private boolean canMoveEntry(GSPlaybackTime startTime, GSPlaybackTime endTime, GSTrackEntry entry) {
+	private boolean canMoveEntry(GSSignalTime startTime, GSSignalTime endTime, GSTrackEntry entry) {
 		// The model has not changed. No reason to move it.
 		if (entry.getStartTime().isEqual(startTime) && entry.getEndTime().isEqual(endTime))
 			return false;
@@ -537,12 +537,12 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 		GSTrack hoveredTrack = timeline.getTrack(hoveredTrackUUID);
 		
 		if (hoveredTrack != null) {
-			GSPlaybackTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
-			GSPlaybackTime t1 = modelView.getDraggedTime(mouseX, mouseY);
+			GSSignalTime t0 = modelView.getDraggedTime(clickedMouseX, clickedMouseY);
+			GSSignalTime t1 = modelView.getDraggedTime(mouseX, mouseY);
 	
 			if (t0 != null && t1 != null) {
 				if (t0.isAfter(t1)) {
-					GSPlaybackTime tmp = t0;
+					GSSignalTime tmp = t0;
 					t0 = t1;
 					t1 = tmp;
 				}
@@ -553,8 +553,8 @@ public class GSTimelineContentGUI extends GSPanel implements GSITimelineListener
 					if (c0 != c1 || !isColumnModifiable(c0))
 						return false;
 				} else {
-					t0 = new GSPlaybackTime(t0.getGametick(), 0);
-					t1 = new GSPlaybackTime(t1.getGametick(), 0);
+					t0 = new GSSignalTime(t0.getGametick(), 0);
+					t1 = new GSSignalTime(t1.getGametick(), 0);
 				}
 				
 				GSTrackEntry entry = hoveredTrack.tryAddEntry(t0, t1);

@@ -10,7 +10,7 @@ import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.gui.GSCapturePlaybackGUI;
+import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.delta.GSITimelineDelta;
 import com.g4mesoft.captureplayback.timeline.delta.GSITimelineDeltaListener;
@@ -121,7 +121,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	@Override
 	@Environment(EnvType.CLIENT)
 	public void initGUI(GSTabbedGUI tabbedGUI) {
-		tabbedGUI.addTab(GUI_TAB_TITLE, new GSCapturePlaybackGUI(this));
+		tabbedGUI.addTab(GUI_TAB_TITLE, new GSCapturePlaybackPanel(this));
 	}
 	
 	@Override
@@ -145,9 +145,12 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	
 	public void onTimelineReceived(GSTimeline timeline) {
 		manager.runOnClient(managerClient -> {
-			transformer.setEnabled(false);
-			activeTimeline.set(timeline);
-			transformer.setEnabled(true);
+			try {
+				transformer.setEnabled(false);
+				activeTimeline.set(timeline);
+			} finally {
+				transformer.setEnabled(true);
+			}
 		});
 	}
 	
@@ -160,27 +163,31 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 
 	public void onClientDeltaReceived(GSITimelineDelta delta, ServerPlayerEntity player) {
 		manager.runOnServer(managerServer -> {
-			transformer.setEnabled(false);
 			try {
+				transformer.setEnabled(false);
 				delta.applyDelta(activeTimeline);
 				
 				managerServer.sendPacketToAllExcept(new GSTimelineDeltaPacket(delta), player);
-			} catch (GSTimelineDeltaException e) {
+			} catch (GSTimelineDeltaException ignore) {
+				// The delta could not be applied. Probably because of a de-sync, or
+				// because multiple users are changing the same part of the timeline.
 				managerServer.sendPacket(new GSTimelinePacket(activeTimeline), player);	
+			} finally {
+				transformer.setEnabled(true);
 			}
-			transformer.setEnabled(true);
 		});
 	}
 
 	@Environment(EnvType.CLIENT)
 	public void onServerDeltaReceived(GSITimelineDelta delta) {
 		manager.runOnClient(managerClient -> {
-			transformer.setEnabled(false);
 			try {
+				transformer.setEnabled(false);
 				delta.applyDelta(activeTimeline);
 			} catch (GSTimelineDeltaException ignore) {
+			} finally {
+				transformer.setEnabled(true);
 			}
-			transformer.setEnabled(true);
 		});
 	}
 

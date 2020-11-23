@@ -7,16 +7,16 @@ import com.g4mesoft.gui.GSPanel;
 import com.g4mesoft.gui.event.GSEvent;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSIRenderer2D;
 
-public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListener {
+public class GSTimelineColumnHeaderPanel extends GSPanel implements GSIMouseListener {
 
 	public static final int COLUMN_HEADER_COLOR = 0x60000000;
 	public static final int HEADER_TEXT_COLOR = 0xFFFFFFFF;
 	public static final int DARK_HEADER_TEXT_COLOR = 0xFFB2B2B2;
 	
-	public static final int COLUMN_COLOR = 0x60202020;
-	public static final int DARK_COLUMN_COLOR = 0x60000000;
+	public static final int COLUMN_COLOR = 0xDA181818;
+	public static final int DARK_COLUMN_COLOR = 0xDA0A0A0A;
 	
 	public static final int COLUMN_LINE_COLOR = 0x30B2B2B2;
 	public static final int MT_COLUMN_LINE_COLOR = 0x30FEFEFE;
@@ -27,7 +27,7 @@ public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListen
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSTimelineModelView modelView;
 	
-	public GSTimelineColumnHeaderGUI(GSTimeline timeline, GSExpandedColumnModel expandedColumnModel, GSTimelineModelView modelView) {
+	public GSTimelineColumnHeaderPanel(GSTimeline timeline, GSExpandedColumnModel expandedColumnModel, GSTimelineModelView modelView) {
 		this.expandedColumnModel = expandedColumnModel;
 		this.modelView = modelView;
 		
@@ -42,7 +42,7 @@ public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListen
 		
 		renderColumnHeaders(renderer);
 
-		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderPanel.TRACK_SPACING_COLOR);
 	}
 	
 	private void renderColumnHeaders(GSIRenderer2D renderer) {
@@ -70,15 +70,15 @@ public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListen
 		int color = HEADER_TEXT_COLOR;
 		
 		if (expanded) {
-			ty = (height / 2 - renderer.getFontHeight() + 1) / 2;
+			ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
 		} else {
 			if (expandedColumnModel.hasExpandedColumn())
 				color = DARK_HEADER_TEXT_COLOR;
-			ty = (height - renderer.getFontHeight() + 1) / 2;
+			ty = (height - renderer.getTextHeight() + 1) / 2;
 		}
 
 		String title = getColumnTitle(columnIndex);
-		renderer.drawCenteredString(title, cx + cw / 2, ty, color);
+		renderer.drawCenteredText(title, cx + cw / 2, ty, color);
 		
 		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
 			renderer.drawVLine(cx, 0, height, COLUMN_LINE_COLOR);
@@ -91,17 +91,17 @@ public class GSTimelineColumnHeaderGUI extends GSPanel implements GSIMouseListen
 	
 	private void renderMicrotickLabels(GSIRenderer2D renderer, int expandedColumnIndex) {
 		int duration = modelView.getColumnDuration(expandedColumnIndex);
-		int y = height * 3 / 4 - renderer.getFontHeight() / 2;
+		int y = height * 3 / 4 - renderer.getTextHeight() / 2;
 		
 		for (int mt = 0; mt < duration; mt++) {
 			int x = modelView.getMicrotickColumnX(expandedColumnIndex, mt);
 			int w = modelView.getMicrotickColumnWidth(expandedColumnIndex, mt);
 
 			String title = getMicrotickHeaderTitle(mt);
-			renderer.drawCenteredString(title, x + w / 2, y, HEADER_TEXT_COLOR);
+			renderer.drawCenteredText(title, x + w / 2, y, HEADER_TEXT_COLOR);
 		
 			if (mt != 0) {
-				int ly = height / 2 + GSTimelineColumnHeaderGUI.DOTTED_LINE_SPACING / 2;
+				int ly = height / 2 + GSTimelineColumnHeaderPanel.DOTTED_LINE_SPACING / 2;
 				renderer.drawDottedVLine(x, ly, height, DOTTED_LINE_LENGTH, 
 						DOTTED_LINE_SPACING, MT_COLUMN_LINE_COLOR);
 			}

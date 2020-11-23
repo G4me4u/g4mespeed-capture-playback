@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.gui.timeline;
 
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSPlaybackTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
 import com.g4mesoft.captureplayback.gui.GSITrackProvider;
 import com.g4mesoft.captureplayback.timeline.GSITimelineListener;
@@ -15,15 +15,15 @@ import com.g4mesoft.gui.event.GSIKeyListener;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSKeyEvent;
 import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.renderer.GSIRenderer2D;
 import com.google.common.base.Objects;
 
-public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, 
-                                                            GSITimelineListener, GSIExpandedColumnModelListener,
-                                                            GSIMouseListener, GSIKeyListener {
+public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, 
+                                                              GSITimelineListener, GSIExpandedColumnModelListener,
+                                                              GSIMouseListener, GSIKeyListener {
 
 	private static final int TRACK_HEADER_WIDTH = 100;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
@@ -36,11 +36,11 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSTimelineModelView modelView;
 	
-	private final GSTimelineContentGUI timelineContent;
-	private final GSTimelineTrackHeaderGUI trackHeader;
-	private final GSTimelineColumnHeaderGUI columnHeader;
+	private final GSTimelineContentPanel timelineContent;
+	private final GSTimelineTrackHeaderPanel trackHeader;
+	private final GSTimelineColumnHeaderPanel columnHeader;
 	
-	private final GSTimelineInfoPanelGUI infoPanel;
+	private final GSTimelineInfoPanel infoPanel;
 	
 	private final GSScrollBar verticalScrollBar;
 	private final GSScrollBar horizontalScrollBar;
@@ -55,18 +55,18 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	private int hoveredMouseY;
 	private UUID hoveredTrackUUID;
 	
-	public GSTimelineGUI(GSTimeline timeline, GSITrackProvider trackProvider) {
+	public GSTimelinePanel(GSTimeline timeline, GSITrackProvider trackProvider) {
 		this.timeline = timeline;
 		this.trackProvider = trackProvider;
 
 		expandedColumnModel = new GSExpandedColumnModel();
 		modelView = new GSTimelineModelView(timeline, expandedColumnModel);
 		
-		timelineContent = new GSTimelineContentGUI(timeline, expandedColumnModel, modelView);
-		trackHeader = new GSTimelineTrackHeaderGUI(timeline, modelView);
-		columnHeader = new GSTimelineColumnHeaderGUI(timeline, expandedColumnModel, modelView);
+		timelineContent = new GSTimelineContentPanel(timeline, expandedColumnModel, modelView);
+		trackHeader = new GSTimelineTrackHeaderPanel(timeline, modelView);
+		columnHeader = new GSTimelineColumnHeaderPanel(timeline, expandedColumnModel, modelView);
 		
-		infoPanel = new GSTimelineInfoPanelGUI(timeline);
+		infoPanel = new GSTimelineInfoPanel(timeline);
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
 			@Override
@@ -173,10 +173,11 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 		int cx = width - sw;
 		int cy = height - sh;
 		
+		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, CORNER_SQUARE_COLOR);
 		renderer.fillRect(cx, cy, sw, sh, CORNER_SQUARE_COLOR);
 		
-		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderGUI.COLUMN_HEADER_COLOR);
-		renderer.fillRect(0, cy, TRACK_HEADER_WIDTH, sh, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderPanel.COLUMN_HEADER_COLOR);
+		renderer.fillRect(0, cy, TRACK_HEADER_WIDTH, sh, GSTimelineTrackHeaderPanel.TRACK_HEADER_COLOR);
 	}
 	
 	@Override
@@ -287,7 +288,7 @@ public class GSTimelineGUI extends GSParentPanel implements GSIScrollableViewpor
 	}
 
 	@Override
-	public void entryTimeChanged(GSTrackEntry entry, GSPlaybackTime oldStart, GSPlaybackTime oldEnd) {
+	public void entryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		initModelView();
 	}
 

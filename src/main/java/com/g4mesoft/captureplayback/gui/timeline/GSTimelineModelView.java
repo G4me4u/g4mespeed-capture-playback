@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSPlaybackTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.g4mesoft.gui.GSElementContext;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSMathUtils;
 
 public class GSTimelineModelView {
@@ -40,8 +40,8 @@ public class GSTimelineModelView {
 	
 	private int minimumNumColumns;
 	
-	private GSPlaybackTime modelStartTime;
-	private GSPlaybackTime modelEndTime;
+	private GSSignalTime modelStartTime;
+	private GSSignalTime modelEndTime;
 	
 	private int lookupSize;
 	private int[] durationLookup;
@@ -60,7 +60,7 @@ public class GSTimelineModelView {
 		this.model = model;
 		this.expandedColumnModel = expandedColumnModel;
 		
-		modelStartTime = modelEndTime = GSPlaybackTime.ZERO;
+		modelStartTime = modelEndTime = GSSignalTime.ZERO;
 		
 		lookupSize = 0;
 		durationLookup = new int[0];
@@ -78,7 +78,7 @@ public class GSTimelineModelView {
 	
 	public void updateModelView() {
 		GSIRenderer2D renderer = GSElementContext.getRenderer();
-		setTrackHeight(renderer.getFontHeight() + TRACK_LABEL_PADDING * 2);
+		setTrackHeight(renderer.getTextHeight() + TRACK_LABEL_PADDING * 2);
 		
 		updateBoundLookup();
 		updateDurationLookup();
@@ -87,8 +87,8 @@ public class GSTimelineModelView {
 	}
 	
 	private void updateBoundLookup() {
-		modelStartTime = GSPlaybackTime.INFINITY;
-		modelEndTime = GSPlaybackTime.ZERO;
+		modelStartTime = GSSignalTime.INFINITY;
+		modelEndTime = GSSignalTime.ZERO;
 		
 		for (GSTrack track : model.getTracks()) {
 			for (GSTrackEntry entry : track.getEntries()) {
@@ -100,7 +100,7 @@ public class GSTimelineModelView {
 		}
 		
 		if (modelStartTime.isAfter(modelEndTime))
-			modelStartTime = GSPlaybackTime.ZERO;
+			modelStartTime = GSSignalTime.ZERO;
 		
 		lookupSize = (int)(modelEndTime.getGametick() - modelStartTime.getGametick()) + 1;
 
@@ -120,7 +120,7 @@ public class GSTimelineModelView {
 		}
 	}
 	
-	private void updateGameTickDuration(GSPlaybackTime time) {
+	private void updateGameTickDuration(GSSignalTime time) {
 		int lookupOffset = getLookupOffset(time);
 		if (time.getMicrotick() >= durationLookup[lookupOffset])
 			durationLookup[lookupOffset] = time.getMicrotick() + 1;
@@ -202,7 +202,7 @@ public class GSTimelineModelView {
 		return new GSMultiCellIterator(multiCellCounts.entrySet().iterator());
 	}
 	
-	private int getLookupOffset(GSPlaybackTime time) {
+	private int getLookupOffset(GSSignalTime time) {
 		return getLookupOffset(getColumnIndex(time));
 	}
 	
@@ -276,7 +276,7 @@ public class GSTimelineModelView {
 			dest.width = MINIMUM_ENTRY_WIDTH;
 		}
 		
-		if (entry.getStartTime().isEqual(GSPlaybackTime.ZERO) && entry.getType() == GSETrackEntryType.EVENT_END) {
+		if (entry.getStartTime().isEqual(GSSignalTime.ZERO) && entry.getType() == GSETrackEntryType.EVENT_END) {
 			int x0 = getColumnX(0);
 			dest.width += dest.x - x0;
 			dest.x = x0;
@@ -285,7 +285,7 @@ public class GSTimelineModelView {
 		return dest;
 	}
 	
-	private int getTimeViewX(UUID trackUUID, GSPlaybackTime time, boolean endTime) {
+	private int getTimeViewX(UUID trackUUID, GSSignalTime time, boolean endTime) {
 		int columnIndex = getColumnIndex(time);
 		
 		int x = getColumnX(columnIndex);
@@ -350,7 +350,7 @@ public class GSTimelineModelView {
 		return getTrackY(trackUUID) + (trackHeight - ENTRY_HEIGHT) / 2;
 	}
 
-	public int getColumnIndex(GSPlaybackTime time) {
+	public int getColumnIndex(GSSignalTime time) {
 		return getColumnIndex(time.getGametick());
 	}
 	
@@ -368,7 +368,7 @@ public class GSTimelineModelView {
 	
 	/* ******************** VIEW TO MODEL methods ******************** */
 	
-	public GSPlaybackTime viewToModel(int x, int y) {
+	public GSSignalTime viewToModel(int x, int y) {
 		int columnIndex = getColumnIndexFromView(x);
 		if (columnIndex == -1)
 			return null;
@@ -426,7 +426,7 @@ public class GSTimelineModelView {
 		return trackIndexToUUID.get(Integer.valueOf(trackIndex));
 	}
 	
-	public GSPlaybackTime getDraggedTime(int x, int y) {
+	public GSSignalTime getDraggedTime(int x, int y) {
 		if (expandedColumnModel.isSingleExpandedColumn()) {
 			int minIndex = expandedColumnModel.getMinColumnIndex();
 			int maxIndex = expandedColumnModel.getMaxColumnIndex();
@@ -445,8 +445,8 @@ public class GSTimelineModelView {
 		return (long)columnIndex;
 	}
 	
-	public GSPlaybackTime getColumnTime(int columnIndex, int mt) {
-		return new GSPlaybackTime(getColumnGametick(columnIndex), mt);
+	public GSSignalTime getColumnTime(int columnIndex, int mt) {
+		return new GSSignalTime(getColumnGametick(columnIndex), mt);
 	}
 	
 	/* ******************** GETTER & SETTER methods ******************** */

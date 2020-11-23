@@ -5,11 +5,11 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.gui.GSPanel;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.util.math.BlockPos;
 
-public class GSTimelineInfoPanelGUI extends GSPanel {
+public class GSTimelineInfoPanel extends GSPanel {
 
 	private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
 	
@@ -17,7 +17,7 @@ public class GSTimelineInfoPanelGUI extends GSPanel {
 	
 	private String infoText;
 	
-	public GSTimelineInfoPanelGUI(GSTimeline timeline) {
+	public GSTimelineInfoPanel(GSTimeline timeline) {
 		this.timeline = timeline;
 	
 		infoText = null;
@@ -27,14 +27,14 @@ public class GSTimelineInfoPanelGUI extends GSPanel {
 	public void render(GSIRenderer2D renderer) {
 		super.render(renderer);
 		
-		renderer.fillRect(0, 0, width, height, GSTimelineTrackHeaderGUI.TRACK_HEADER_COLOR);
+		renderer.fillRect(0, 0, width, height, GSTimelineTrackHeaderPanel.TRACK_HEADER_COLOR);
 
-		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
-		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderGUI.TRACK_SPACING_COLOR);
+		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderPanel.COLUMN_LINE_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSTimelineTrackHeaderPanel.TRACK_SPACING_COLOR);
 		
 		if (infoText != null) {
-			int ty = (height - renderer.getFontHeight() + 1) / 2;
-			renderer.drawCenteredString(infoText, width / 2, ty, INFO_TEXT_COLOR);
+			int ty = (height - renderer.getTextHeight() + 1) / 2;
+			renderer.drawCenteredText(infoText, width / 2, ty, INFO_TEXT_COLOR);
 		}
 	}
 	

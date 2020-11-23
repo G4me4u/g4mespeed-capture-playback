@@ -5,11 +5,11 @@ import java.awt.Rectangle;
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
-import com.g4mesoft.gui.renderer.GSTexture;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSTexture;
 
 import net.minecraft.util.Identifier;
 

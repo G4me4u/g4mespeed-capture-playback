@@ -17,16 +17,16 @@ import com.g4mesoft.gui.event.GSIKeyListener;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSKeyEvent;
 import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.renderer.GSIRenderer2D;
 import com.g4mesoft.gui.text.GSETextAlignment;
 import com.g4mesoft.gui.text.GSITextCaret;
 import com.g4mesoft.gui.text.GSITextModel;
 import com.g4mesoft.gui.text.GSTextField;
+import com.g4mesoft.renderer.GSIRenderer2D;
 
-public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimelineListener, GSITimelineModelViewListener,
-                                                                       GSIMouseListener, GSIKeyListener {
+public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITimelineListener, GSITimelineModelViewListener,
+                                                                         GSIMouseListener, GSIKeyListener {
 
-	public static final int TRACK_HEADER_COLOR = 0x60000000;
+	public static final int TRACK_HEADER_COLOR = 0xDA0A0A0A;
 	
 	public static final int TRACK_HOVER_COLOR = 0x30FFFFFF;
 	public static final int TRACK_SPACING_COLOR = 0xFF444444;
@@ -41,7 +41,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	private boolean editable;
 	private UUID editingTrackUUID;
 	
-	public GSTimelineTrackHeaderGUI(GSTimeline timeline, GSTimelineModelView modelView) {
+	public GSTimelineTrackHeaderPanel(GSTimeline timeline, GSTimelineModelView modelView) {
 		this.timeline = timeline;
 		this.modelView = modelView;
 	
@@ -98,7 +98,7 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 	@Override
 	public void render(GSIRenderer2D renderer) {
 		renderer.fillRect(0, 0, width, height, TRACK_HEADER_COLOR);
-		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderGUI.COLUMN_LINE_COLOR);
+		renderer.drawVLine(width - 1, 0, height, GSTimelineColumnHeaderPanel.COLUMN_LINE_COLOR);
 		
 		renderTrackLabels(renderer);
 
@@ -128,9 +128,9 @@ public class GSTimelineTrackHeaderGUI extends GSParentPanel implements GSITimeli
 		
 		if (!track.getTrackUUID().equals(editingTrackUUID)) {
 			String name = renderer.trimString(track.getInfo().getName(), width);
-			int xt = (width - (int)Math.ceil(renderer.getStringWidth(name))) / 2;
-			int yt = y + (modelView.getTrackHeight() - renderer.getFontHeight() + 1) / 2;
-			renderer.drawString(name, xt, yt, getTrackColor(track));
+			int xt = (width - (int)Math.ceil(renderer.getTextWidth(name))) / 2;
+			int yt = y + (modelView.getTrackHeight() - renderer.getTextHeight() + 1) / 2;
+			renderer.drawText(name, xt, yt, getTrackColor(track));
 		}
 
 		renderer.fillRect(0, y + th, width, modelView.getTrackSpacing(), TRACK_SPACING_COLOR);

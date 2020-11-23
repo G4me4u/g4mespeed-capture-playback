@@ -1,9 +1,9 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.gui.renderer.GSTexture;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.renderer.GSTexture;
 
 import net.minecraft.util.Identifier;
 

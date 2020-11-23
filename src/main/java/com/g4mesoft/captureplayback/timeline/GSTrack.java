@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSPlaybackTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 
 import net.minecraft.util.PacketByteBuf;
@@ -61,9 +61,7 @@ public class GSTrack {
 			GSTrackEntry entryCopy = new GSTrackEntry(entry.getEntryUUID());
 			entryCopy.set(entry);
 			addEntrySilent(entryCopy);
-			
-			if (owner != null)
-				owner.onEntryAdded(entryCopy);
+			dispatchEntryAdded(entryCopy);
 		}
 	}
 	
@@ -73,16 +71,15 @@ public class GSTrack {
 			GSTrackEntry entry = itr.next();
 			itr.remove();
 			
-			if (owner != null)
-				owner.onEntryRemoved(entry);
+			dispatchEntryRemoved(entry);
 		}
 	}
 
-	public GSTrackEntry tryAddEntry(GSPlaybackTime startTime, GSPlaybackTime endTime) {
+	public GSTrackEntry tryAddEntry(GSSignalTime startTime, GSSignalTime endTime) {
 		return tryAddEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), startTime, endTime);
 	}
 	
-	public GSTrackEntry tryAddEntry(UUID entryUUID, GSPlaybackTime startTime, GSPlaybackTime endTime) {
+	public GSTrackEntry tryAddEntry(UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
 		if (entryUUID == null || hasEntryUUID(entryUUID))
 			return null;
 		if (isOverlappingEntries(startTime, endTime, null))
@@ -91,8 +88,7 @@ public class GSTrack {
 		GSTrackEntry entry = new GSTrackEntry(entryUUID, startTime, endTime);
 		addEntrySilent(entry);
 		
-		if (owner != null)
-			owner.onEntryAdded(entry);
+		dispatchEntryAdded(entry);
 		
 		return entry;
 	}
@@ -110,15 +106,14 @@ public class GSTrack {
 	public boolean removeEntry(UUID entryUUID) {
 		GSTrackEntry entry = entries.remove(entryUUID);
 		if (entry != null) {
-			if (owner != null)
-				owner.onEntryRemoved(entry);
+			dispatchEntryRemoved(entry);
 			return true;
 		}
 		
 		return false;
 	}
 	
-	public boolean isOverlappingEntries(GSPlaybackTime startTime, GSPlaybackTime endTime, GSTrackEntry ignoreEntry) {
+	public boolean isOverlappingEntries(GSSignalTime startTime, GSSignalTime endTime, GSTrackEntry ignoreEntry) {
 		if (startTime.isAfter(endTime))
 			return false;
 		
@@ -129,7 +124,7 @@ public class GSTrack {
 		return false;
 	}
 	
-	public GSTrackEntry getEntryAt(GSPlaybackTime time, boolean preciseSearch) {
+	public GSTrackEntry getEntryAt(GSSignalTime time, boolean preciseSearch) {
 		for (GSTrackEntry entry : entries.values()) {
 			if (entry.containsTimestamp(time, preciseSearch))
 				return entry;
@@ -138,16 +133,6 @@ public class GSTrack {
 		return null;
 	}
 
-	void onEntryTimeChanged(GSTrackEntry entry, GSPlaybackTime oldStart, GSPlaybackTime oldEnd) {
-		if (owner != null)
-			owner.onEntryTimeChanged(entry, oldStart, oldEnd);
-	}
-	
-	void onEntryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
-		if (owner != null)
-			owner.onEntryTypeChanged(entry, oldType);
-	}
-	
 	public void setInfo(GSTrackInfo info) {
 		if (info == null)
 			throw new NullPointerException("Info must not be null!");
@@ -156,8 +141,7 @@ public class GSTrack {
 		if (!oldInfo.equals(info)) {
 			this.info = info;
 			
-			if (owner != null)
-				owner.onTrackInfoChanged(this, oldInfo);
+			dispatchTrackInfoChanged(this, oldInfo);
 		}
 	}
 	
@@ -170,8 +154,7 @@ public class GSTrack {
 		if (oldDisabled != disabled) {
 			this.disabled = disabled;
 			
-			if (owner != null)
-				owner.onTrackDisabledChanged(this, oldDisabled);
+			dispatchTrackDisabledChanged(this, oldDisabled);
 		}
 	}
 	
@@ -201,6 +184,34 @@ public class GSTrack {
 
 	public Collection<GSTrackEntry> getEntries() {
 		return Collections.unmodifiableCollection(entries.values());
+	}
+	
+	private void dispatchTrackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
+		if (owner != null) {
+			for (GSITimelineListener listener : owner.getListeners())
+				listener.trackInfoChanged(track, oldInfo);
+		}
+	}
+
+	private void dispatchTrackDisabledChanged(GSTrack track, boolean oldDisabled) {
+		if (owner != null) {
+			for (GSITimelineListener listener : owner.getListeners())
+				listener.trackDisabledChanged(track, oldDisabled);
+		}
+	}
+	
+	private void dispatchEntryAdded(GSTrackEntry entry) {
+		if (owner != null) {
+			for (GSITimelineListener listener : owner.getListeners())
+				listener.entryAdded(entry);
+		}
+	}
+	
+	private void dispatchEntryRemoved(GSTrackEntry entry) {
+		if (owner != null) {
+			for (GSITimelineListener listener : owner.getListeners())
+				listener.entryRemoved(entry);
+		}
 	}
 	
 	public static GSTrack read(PacketByteBuf buf) throws IOException {
