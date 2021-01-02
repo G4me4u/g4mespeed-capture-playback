@@ -5,6 +5,7 @@ import java.util.TreeSet;
 
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
+import com.g4mesoft.captureplayback.timeline.GSTrackInfo;
 import com.g4mesoft.renderer.GSERenderPhase;
 import com.g4mesoft.renderer.GSIRenderable3D;
 import com.g4mesoft.renderer.GSIRenderer3D;
@@ -45,7 +46,8 @@ public class GSTimelinePositionRenderable implements GSIRenderable3D {
 		renderer.build(GSIRenderer3D.QUADS, VertexFormats.POSITION_COLOR);
 
 		for (GSCubeEntry cube : cubes) {
-			BlockPos pos = cube.track.getInfo().getPos();
+			GSTrackInfo trackInfo = cube.track.getInfo();
+			BlockPos pos = trackInfo.getPos();
 			
 			float x0 = pos.getX() - SURFACE_OFFSET;
 			float y0 = pos.getY() - SURFACE_OFFSET;
@@ -55,14 +57,12 @@ public class GSTimelinePositionRenderable implements GSIRenderable3D {
 			float y1 = pos.getY() + 1.0f + SURFACE_OFFSET;
 			float z1 = pos.getZ() + 1.0f + SURFACE_OFFSET;
 
-			renderer.fillCuboid(x0, y0, z0, x1, y1, z1, getTrackColor(cube.track));
+			int color = (trackInfo.getColor() & 0x00FFFFFF) | (COLOR_ALPHA << 24);
+			
+			renderer.fillCuboid(x0, y0, z0, x1, y1, z1, color);
 		}
 		
 		renderer.finish();
-	}
-	
-	private int getTrackColor(GSTrack track) {
-		return (track.getInfo().getColor() & 0x00FFFFFF) | (COLOR_ALPHA << 24);
 	}
 	
 	@Override

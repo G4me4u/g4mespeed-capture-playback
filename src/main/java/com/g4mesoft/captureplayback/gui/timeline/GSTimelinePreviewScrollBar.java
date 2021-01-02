@@ -1,10 +1,9 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
-import java.awt.Rectangle;
-
 import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
+import com.g4mesoft.gui.GSRectangle;
 import com.g4mesoft.gui.scroll.GSIScrollListener;
 import com.g4mesoft.gui.scroll.GSIScrollableViewport;
 import com.g4mesoft.gui.scroll.GSScrollBar;
@@ -35,7 +34,7 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	private final GSTimeline timeline;
 	private final GSTimelineModelView modelView;
 	
-	private final Rectangle tmpEntryRect;
+	private final GSRectangle tmpEntryRect;
 	
 	public GSTimelinePreviewScrollBar(GSTimeline timeline, GSTimelineModelView modelView, GSIScrollableViewport parent, GSIScrollListener listener) {
 		super(parent, listener);
@@ -43,7 +42,7 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		this.timeline = timeline;
 		this.modelView = modelView;
 	
-		tmpEntryRect = new Rectangle();
+		tmpEntryRect = new GSRectangle();
 	}
 	
 	@Override
@@ -100,21 +99,17 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private void renderTrackPreview(GSIRenderer2D renderer, GSTrack track, int x, int y, int width, int height) {
-		int color = renderer.darkenColor(getTrackColor(track));
+		int color = renderer.darkenColor(track.getInfo().getColor());
 		
 		for (GSTrackEntry entry : track.getEntries()) {
-			Rectangle bounds = getMappedEntryBounds(entry);
+			GSRectangle bounds = getMappedEntryBounds(entry);
 			
 			if (bounds != null && clampEntryBounds(bounds, x, y, width, height))
 				renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, color);
 		}
 	}
 	
-	private int getTrackColor(GSTrack track) {
-		return (0xFF << 24) | track.getInfo().getColor();
-	}
-	
-	private boolean clampEntryBounds(Rectangle bounds, int x, int y, int width, int height) {
+	private boolean clampEntryBounds(GSRectangle bounds, int x, int y, int width, int height) {
 		// Clamp left, top, right, bottom
 		if (bounds.x < x) {
 			bounds.width += bounds.x - x;
@@ -144,12 +139,12 @@ public class GSTimelinePreviewScrollBar extends GSScrollBar {
 		return KNOB_COLOR;
 	}
 	
-	private Rectangle getMappedEntryBounds(GSTrackEntry entry) {
-		Rectangle bounds = modelView.modelToView(entry, tmpEntryRect);
+	private GSRectangle getMappedEntryBounds(GSTrackEntry entry) {
+		GSRectangle bounds = modelView.modelToView(entry, tmpEntryRect);
 		return (bounds == null) ? null : mapEntryBounds(bounds);
 	}
 	
-	private Rectangle mapEntryBounds(Rectangle bounds) {
+	private GSRectangle mapEntryBounds(GSRectangle bounds) {
 		if (bounds.width <= 0 || bounds.height <= 0)
 			return null;
 		

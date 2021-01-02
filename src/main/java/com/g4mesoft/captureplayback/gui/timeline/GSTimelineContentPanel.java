@@ -1,6 +1,5 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
-import java.awt.Rectangle;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -11,6 +10,7 @@ import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.gui.GSRectangle;
 import com.g4mesoft.gui.event.GSIMouseListener;
 import com.g4mesoft.gui.event.GSMouseEvent;
 import com.g4mesoft.renderer.GSIRenderer2D;
@@ -32,7 +32,7 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSTimelineModelView modelView;
 	
-	private final Rectangle tmpRenderRect;
+	private final GSRectangle tmpRenderRect;
 	
 	private int currentMouseX;
 	private int currentMouseY;
@@ -55,11 +55,14 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 		this.expandedColumnModel = expandedColumnModel;
 		this.modelView = modelView;
 		
-		tmpRenderRect = new Rectangle();
+		tmpRenderRect = new GSRectangle();
 		
 		draggingType = GSEDraggingType.NOT_DRAGGING;
 		
 		addMouseEventListener(this);
+		
+		// Editable by default
+		editable = true;
 	}
 	
 	@Override
@@ -149,22 +152,18 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 			renderer.fillRect(0, ty, width, th, GSTimelineTrackHeaderPanel.TRACK_HOVER_COLOR);
 
 		for (GSTrackEntry entry : track.getEntries())
-			renderTrackEntry(renderer, entry, getTrackColor(track));
+			renderTrackEntry(renderer, entry, track.getInfo().getColor());
 		renderMultiCells(renderer, track.getTrackUUID(), ty);
 		
 		renderer.fillRect(0, ty + th, width, modelView.getTrackSpacing(), 
 				GSTimelineTrackHeaderPanel.TRACK_SPACING_COLOR);
 	}
 	
-	protected int getTrackColor(GSTrack track) {
-		return (0xFF << 24) | track.getInfo().getColor();
-	}
-	
 	protected void renderTrackEntry(GSIRenderer2D renderer, GSTrackEntry entry, int color) {
 		if (draggingEntry == entry || hoveredEntry == entry)
 			color = renderer.darkenColor(color);
 
-		Rectangle rect = modelView.modelToView(entry, tmpRenderRect);
+		GSRectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
 			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, renderer.darkenColor(color));
@@ -233,7 +232,7 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 	}
 	
 	private void renderResizeArea(GSIRenderer2D renderer, GSTrackEntry entry, GSEResizeArea resizeArea) {
-		Rectangle rect = modelView.modelToView(entry, tmpRenderRect);
+		GSRectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
 			if (resizeArea == GSEResizeArea.HOVERING_END) {
@@ -273,7 +272,7 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 				hoveredEntry = hoveredTrack.getEntryAt(hoveredTime, precise);
 
 				if (hoveredEntry != null) {
-					Rectangle rect = modelView.modelToView(hoveredEntry);
+					GSRectangle rect = modelView.modelToView(hoveredEntry);
 				
 					if (rect == null || !rect.contains(currentMouseX, currentMouseY))
 						hoveredEntry = null;
@@ -384,12 +383,12 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 	
 	private void removeEntry(UUID trackUUID, GSTrackEntry entry) {
 		GSTrack track = timeline.getTrack(trackUUID);
-		if (track == entry.getOwnerTrack())
+		if (track == entry.getParent())
 			track.removeEntry(entry);
 	}
 	
 	private GSEResizeArea getHoveredResizeArea(GSTrackEntry entry, int mouseX, int mouseY) {
-		Rectangle r = modelView.modelToView(entry);
+		GSRectangle r = modelView.modelToView(entry);
 		
 		if (r == null || !r.contains(mouseX, mouseY))
 			return null;
@@ -528,7 +527,7 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 			return false;
 		
 		// Lastly ensure we do not overlap other entries.
-		GSTrack track = entry.getOwnerTrack();
+		GSTrack track = entry.getParent();
 		
 		return !track.isOverlappingEntries(startTime, endTime, entry);
 	}
@@ -580,7 +579,7 @@ public class GSTimelineContentPanel extends GSPanel implements GSITimelineListen
 		UUID trackUUID = track.getTrackUUID();
 		
 		if (draggingEntry != null) {
-			GSTrack draggingTrack = draggingEntry.getOwnerTrack();
+			GSTrack draggingTrack = draggingEntry.getParent();
 			
 			if (trackUUID.equals(draggingTrack.getTrackUUID()))
 				stopDragging();

@@ -40,15 +40,15 @@ public final class GSTrackEntry {
 		
 		validateTimespan(startTime, endTime);
 	}
-	
-	public void setOwnerTrack(GSTrack owner) {
-		if (this.owner != null)
-			throw new IllegalStateException("Entry already has an owner");
-		this.owner = owner;
+
+	public GSTrack getParent() {
+		return owner;
 	}
 	
-	public GSTrack getOwnerTrack() {
-		return owner;
+	void setParent(GSTrack parent) {
+		if (this.owner != null)
+			throw new IllegalStateException("Entry already has a parent");
+		this.owner = parent;
 	}
 	
 	public void set(GSTrackEntry other) {
@@ -133,15 +133,15 @@ public final class GSTrackEntry {
 	}
 
 	private void dispatchEntryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
-		if (owner != null && owner.getOwnerTimeline() != null) {
-			for (GSITimelineListener listener : owner.getOwnerTimeline().getListeners())
+		if (owner != null && owner.getParent() != null) {
+			for (GSITimelineListener listener : owner.getParent().getListeners())
 				listener.entryTimeChanged(entry, oldStart, oldEnd);
 		}
 	}
 	
 	private void dispatchEntryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
-		if (owner != null && owner.getOwnerTimeline() != null) {
-			for (GSITimelineListener listener : owner.getOwnerTimeline().getListeners())
+		if (owner != null && owner.getParent() != null) {
+			for (GSITimelineListener listener : owner.getParent().getListeners())
 				listener.entryTypeChanged(entry, oldType);
 		}
 	}

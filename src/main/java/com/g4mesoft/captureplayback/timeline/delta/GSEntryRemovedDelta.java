@@ -20,7 +20,7 @@ public class GSEntryRemovedDelta extends GSEntryDelta {
 	}
 
 	public GSEntryRemovedDelta(GSTrackEntry entry) {
-		this(entry.getOwnerTrack().getTrackUUID(), entry.getEntryUUID(),
+		this(entry.getParent().getTrackUUID(), entry.getEntryUUID(),
 				entry.getStartTime(), entry.getEndTime(), entry.getType());
 	}
 	

@@ -1,6 +1,5 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -57,7 +56,7 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 		trackNameField.addFocusEventListener(new GSIFocusEventListener() {
 			@Override
 			public void focusLost(GSFocusEvent event) {
-				setCurrentEditingTrack(hoveredTrackUUID, false);
+				resetNameFieldCaret();
 			}
 		});
 		
@@ -108,19 +107,16 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 	protected void renderTrackLabels(GSIRenderer2D renderer) {
 		renderer.pushClip(0, 0, width, height);
 		
-		for (Map.Entry<UUID, GSTrack> trackEntry : timeline.getTrackEntries()) {
-			UUID trackUUID = trackEntry.getKey();
-			GSTrack track = trackEntry.getValue();
-			
-			int ty = modelView.getTrackY(trackUUID);
+		for (GSTrack track : timeline.getTracks()) {
+			int ty = modelView.getTrackY(track.getTrackUUID());
 			if (ty + modelView.getTrackHeight() > 0 && ty < height)
-				renderTrackLabel(renderer, track, trackUUID, ty);
+				renderTrackLabel(renderer, track, ty);
 		}
 
 		renderer.popClip();
 	}
 	
-	private void renderTrackLabel(GSIRenderer2D renderer, GSTrack track, UUID trackUUID, int y) {
+	private void renderTrackLabel(GSIRenderer2D renderer, GSTrack track, int y) {
 		int th = modelView.getTrackHeight();
 		
 		if (track.getTrackUUID().equals(hoveredTrackUUID))
@@ -130,14 +126,10 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 			String name = renderer.trimString(track.getInfo().getName(), width);
 			int xt = (width - (int)Math.ceil(renderer.getTextWidth(name))) / 2;
 			int yt = y + (modelView.getTrackHeight() - renderer.getTextHeight() + 1) / 2;
-			renderer.drawText(name, xt, yt, getTrackColor(track));
+			renderer.drawText(name, xt, yt, track.getInfo().getColor());
 		}
 
 		renderer.fillRect(0, y + th, width, modelView.getTrackSpacing(), TRACK_SPACING_COLOR);
-	}
-	
-	private int getTrackColor(GSTrack track) {
-		return (0xFF << 24) | track.getInfo().getColor();
 	}
 	
 	@Override
@@ -176,30 +168,35 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 				event.consume();
 				break;
 			case GSKeyEvent.KEY_TAB:
-				editNextTrack(event, true, event.isModifierHeld(GSEvent.MODIFIER_SHIFT));
+				if (editNextTrack(true, event.isModifierHeld(GSEvent.MODIFIER_SHIFT)))
+					event.consume();
 				break;
 			case GSKeyEvent.KEY_DOWN:
-				editNextTrack(event, false, false);
+				if (editNextTrack(false, false))
+					event.consume();
 				break;
 			case GSKeyEvent.KEY_UP:
-				editNextTrack(event, false, true);
+				if (editNextTrack(false, true))
+					event.consume();
 				break;
 			}
 		}
 	}
 	
-	private void editNextTrack(GSKeyEvent event, boolean select, boolean descending) {
+	private boolean editNextTrack(boolean selectAll, boolean descending) {
 		if (trackNameField.isFocused() && editingTrackUUID != null) {
 			UUID nextTrackUUID = modelView.getNextTrackUUID(editingTrackUUID, descending);
 			
 			updateTrackNameInfo();
 			setCurrentEditingTrack(nextTrackUUID, true);
 
-			if (select && nextTrackUUID != null)
+			if (selectAll && nextTrackUUID != null)
 				selectAllNameFieldText();
-			
-			event.consume();
+
+			return true;
 		}
+		
+		return false;
 	}
 
 	private void setCurrentEditingTrack(UUID trackUUID, boolean autoFocus) {
@@ -214,7 +211,13 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 				
 				updateNameFieldBounds();
 			} else if (trackNameField.isAdded()) {
+				boolean wasFocused = trackNameField.isFocused();
 				remove(trackNameField);
+				
+				if (wasFocused) {
+					// Ensure that the user can still trigger hotkeys.
+					requestFocus();
+				}
 			}
 		}
 		
@@ -242,25 +245,22 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 	private void resetNameFieldText() {
 		GSTrack editingTrack = timeline.getTrack(editingTrackUUID);
 		if (editingTrack != null) {
-			trackNameField.setText(editingTrack.getInfo().getName());
-			
-			int textColor = getTrackColor(editingTrack);
-			trackNameField.setEditableTextColor(textColor);
-			trackNameField.setUneditableTextColor(textColor);
+			GSTrackInfo editingInfo = editingTrack.getInfo();
+			trackNameField.setText(editingInfo.getName());
+			trackNameField.setEditableTextColor(editingInfo.getColor());
+			trackNameField.setUneditableTextColor(editingInfo.getColor());
 		}
 	}
 	
 	private void resetNameFieldCaret() {
 		GSITextModel textModel = trackNameField.getTextModel();
 		GSITextCaret caret = trackNameField.getCaret();
-		
 		caret.setCaretLocation(textModel.getLength());
 	}
 	
 	private void selectAllNameFieldText() {
 		GSITextModel textModel = trackNameField.getTextModel();
 		GSITextCaret caret = trackNameField.getCaret();
-		
 		caret.setCaretDot(textModel.getLength());
 		caret.setCaretMark(0);
 	}
@@ -290,10 +290,12 @@ public class GSTimelineTrackHeaderPanel extends GSParentPanel implements GSITime
 	@Override
 	public void trackRemoved(GSTrack track) {
 		if (track.getTrackUUID().equals(editingTrackUUID)) {
-			// Make sure to unfocus the track name field. This is
-			// to ensure that it is no longer focused in case the
-			// hoveredTrackUUID has not been updated yet.
-			trackNameField.unfocus();
+			if (trackNameField.isFocused()) {
+				// Make sure to unfocus the track name field. This is
+				// to ensure that it is no longer focused in case the
+				// hoveredTrackUUID has not been updated yet.
+				requestFocus();
+			}
 			
 			setCurrentEditingTrack(hoveredTrackUUID, false);
 		} else {

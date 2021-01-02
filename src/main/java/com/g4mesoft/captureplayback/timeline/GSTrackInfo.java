@@ -17,7 +17,7 @@ public final class GSTrackInfo {
 	public GSTrackInfo(String name, BlockPos pos, int color) {
 		this.name = name;
 		this.pos = pos.toImmutable();
-		this.color = color;
+		this.color = color | 0xFF000000;
 	}
 
 	public String getName() {
@@ -64,7 +64,9 @@ public final class GSTrackInfo {
 	public static GSTrackInfo read(PacketByteBuf buf) throws IOException {
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
 		BlockPos pos = buf.readBlockPos();
-		int color = buf.readInt();
+		// Skip reserved byte
+		buf.readByte();
+		int color = buf.readUnsignedMedium();
 		
 		return new GSTrackInfo(name, pos, color);
 	}
@@ -72,6 +74,7 @@ public final class GSTrackInfo {
 	public static void write(PacketByteBuf buf, GSTrackInfo info) throws IOException {
 		buf.writeString(info.name);
 		buf.writeBlockPos(info.pos);
-		buf.writeInt(info.color);
+		buf.writeByte(0x00);
+		buf.writeMedium(info.color);
 	}
 }

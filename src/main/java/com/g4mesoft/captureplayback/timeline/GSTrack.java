@@ -24,13 +24,13 @@ public class GSTrack {
 
 	private final Map<UUID, GSTrackEntry> entries;
 
-	private GSTimeline owner;
+	private GSTimeline parent;
 
 	public GSTrack(UUID trackUUID, GSTrackInfo info) {
 		if (trackUUID == null)
-			throw new NullPointerException("Track UUID must not be null!");
+			throw new IllegalArgumentException("Track UUID must not be null!");
 		if (info == null)
-			throw new NullPointerException("Info must not be null!");
+			throw new IllegalArgumentException("Info must not be null!");
 
 		this.trackUUID = trackUUID;
 		this.info = info;
@@ -38,17 +38,17 @@ public class GSTrack {
 		
 		entries = new LinkedHashMap<>();
 
-		owner = null;
+		parent = null;
 	}
 	
-	void setOwnerTimeline(GSTimeline owner) {
-		if (this.owner != null)
-			throw new IllegalStateException("Track already has an owner.");
-		this.owner = owner;
+	public GSTimeline getParent() {
+		return parent;
 	}
-	
-	public GSTimeline getOwnerTimeline() {
-		return owner;
+
+	void setParent(GSTimeline parent) {
+		if (this.parent != null)
+			throw new IllegalStateException("Track already has a parent");
+		this.parent = parent;
 	}
 	
 	public void set(GSTrack other) {
@@ -94,7 +94,7 @@ public class GSTrack {
 	}
 	
 	private void addEntrySilent(GSTrackEntry entry) {
-		entry.setOwnerTrack(this);
+		entry.setParent(this);
 		
 		entries.put(entry.getEntryUUID(), entry);
 	}
@@ -174,10 +174,6 @@ public class GSTrack {
 		return entries.containsKey(entryUUID);
 	}
 	
-	public Set<Map.Entry<UUID, GSTrackEntry>> getEntryEntries() {
-		return Collections.unmodifiableSet(entries.entrySet());
-	}
-	
 	public Set<UUID> getEntryUUIDs() {
 		return Collections.unmodifiableSet(entries.keySet());
 	}
@@ -187,29 +183,29 @@ public class GSTrack {
 	}
 	
 	private void dispatchTrackInfoChanged(GSTrack track, GSTrackInfo oldInfo) {
-		if (owner != null) {
-			for (GSITimelineListener listener : owner.getListeners())
+		if (parent != null) {
+			for (GSITimelineListener listener : parent.getListeners())
 				listener.trackInfoChanged(track, oldInfo);
 		}
 	}
 
 	private void dispatchTrackDisabledChanged(GSTrack track, boolean oldDisabled) {
-		if (owner != null) {
-			for (GSITimelineListener listener : owner.getListeners())
+		if (parent != null) {
+			for (GSITimelineListener listener : parent.getListeners())
 				listener.trackDisabledChanged(track, oldDisabled);
 		}
 	}
 	
 	private void dispatchEntryAdded(GSTrackEntry entry) {
-		if (owner != null) {
-			for (GSITimelineListener listener : owner.getListeners())
+		if (parent != null) {
+			for (GSITimelineListener listener : parent.getListeners())
 				listener.entryAdded(entry);
 		}
 	}
 	
 	private void dispatchEntryRemoved(GSTrackEntry entry) {
-		if (owner != null) {
-			for (GSITimelineListener listener : owner.getListeners())
+		if (parent != null) {
+			for (GSITimelineListener listener : parent.getListeners())
 				listener.entryRemoved(entry);
 		}
 	}
@@ -221,8 +217,8 @@ public class GSTrack {
 
 		track.setDisabled(buf.readBoolean());
 		
-		int numEntries = buf.readInt();
-		while (numEntries-- != 0) {
+		int entryCount = buf.readInt();
+		while (entryCount-- != 0) {
 			GSTrackEntry entry = GSTrackEntry.read(buf);
 			if (track.hasEntryUUID(entry.getEntryUUID()))
 				throw new IOException("Duplicate entry UUID");

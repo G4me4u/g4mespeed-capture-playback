@@ -106,7 +106,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	@Override
 	public void entryTimeChanged(GSTrackEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		if (enabled) {
-			dispatchTimelineDeltaEvent(new GSEntryTimeDelta(entry.getOwnerTrack().getTrackUUID(),
+			dispatchTimelineDeltaEvent(new GSEntryTimeDelta(entry.getParent().getTrackUUID(),
 					entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), oldStart, oldEnd));
 		}
 	}
@@ -114,7 +114,7 @@ public class GSTimelineDeltaTransformer implements GSITimelineListener {
 	@Override
 	public void entryTypeChanged(GSTrackEntry entry, GSETrackEntryType oldType) {
 		if (enabled) {
-			dispatchTimelineDeltaEvent(new GSEntryTypeDelta(entry.getOwnerTrack().getTrackUUID(),
+			dispatchTimelineDeltaEvent(new GSEntryTypeDelta(entry.getParent().getTrackUUID(),
 					entry.getEntryUUID(), entry.getType(), oldType));
 		}
 	}

@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,16 +18,23 @@ import net.minecraft.util.PacketByteBuf;
 
 public class GSTimeline {
 
+	private final UUID timelineUUID;
 	private String name;
 	
 	private final Map<UUID, GSTrack> tracks;
 	private final List<GSITimelineListener> listeners;
 
-	public GSTimeline() {
-		this("");
+	public GSTimeline(UUID timelineUUID) {
+		this(timelineUUID, "");
 	}
-	
-	public GSTimeline(String name) {
+
+	public GSTimeline(UUID timelineUUID, String name) {
+		if (timelineUUID == null)
+			throw new IllegalArgumentException("timelineUUID is null");
+		if (name == null)
+			throw new IllegalArgumentException("name is null");
+		
+		this.timelineUUID = timelineUUID;
 		this.name = name;
 		
 		tracks = new LinkedHashMap<>();
@@ -43,7 +49,7 @@ public class GSTimeline {
 		for (GSTrack track : other.getTracks()) {
 			GSTrack trackCopy = new GSTrack(track.getTrackUUID(), track.getInfo());
 			trackCopy.set(track);
-			addTrackSilent(trackCopy);
+			addTrackInternal(trackCopy);
 			
 			dispatchTrackAdded(trackCopy);
 		}
@@ -68,15 +74,15 @@ public class GSTimeline {
 			throw new IllegalStateException("Duplicate track UUID");
 		
 		GSTrack track = new GSTrack(trackUUID, info);
-		addTrackSilent(track);
+		addTrackInternal(track);
 		
 		dispatchTrackAdded(track);
 		
 		return track;
 	}
 	
-	private void addTrackSilent(GSTrack track) {
-		track.setOwnerTimeline(this);
+	private void addTrackInternal(GSTrack track) {
+		track.setParent(this);
 		
 		tracks.put(track.getTrackUUID(), track);
 	}
@@ -91,17 +97,24 @@ public class GSTimeline {
 		return false;
 	}
 	
-	public void setName(String name) {
-		String oldName = this.name;
-		if (!Objects.equals(name, oldName)) {
-			this.name = name;
-			
-			dispatchTimelineNameChanged(oldName);
-		}
+	public UUID getTimelineUUID() {
+		return timelineUUID;
 	}
 	
 	public String getName() {
 		return name;
+	}
+
+	public void setName(String name) {
+		if (name == null)
+			throw new IllegalArgumentException("name is null");
+		
+		if (!name.equals(this.name)) {
+			String oldName = this.name;
+			this.name = name;
+			
+			dispatchTimelineNameChanged(oldName);
+		}
 	}
 
 	public GSTrack getTrack(UUID trackUUID) {
@@ -112,10 +125,6 @@ public class GSTimeline {
 		return tracks.containsKey(trackUUID);
 	}
 	
-	public Set<Map.Entry<UUID, GSTrack>> getTrackEntries() {
-		return Collections.unmodifiableSet(tracks.entrySet());
-	}
-
 	public Set<UUID> getTrackUUIDs() {
 		return Collections.unmodifiableSet(tracks.keySet());
 	}
@@ -132,8 +141,8 @@ public class GSTimeline {
 		listeners.remove(listener);
 	}
 	
-	/* To allow events from the tracks and entries */
-	List<GSITimelineListener> getListeners() {
+	/* Visible to allow events from the tracks and entries */
+	Iterable<GSITimelineListener> getListeners() {
 		return listeners;
 	}
 	
@@ -153,29 +162,30 @@ public class GSTimeline {
 	}
 	
 	public static GSTimeline read(PacketByteBuf buf) throws IOException {
-		GSTimeline timeline = new GSTimeline();
+		// Skip reserved byte
+		buf.readByte();
 
-		if (buf.readBoolean())
-			timeline.setName(buf.readString(GSBufferUtil.MAX_STRING_LENGTH));
-		
-		int numTracks = buf.readInt();
-		while (numTracks-- != 0) {
+		UUID timelineUUID = buf.readUuid();
+		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		GSTimeline timeline = new GSTimeline(timelineUUID, name);
+
+		int trackCount = buf.readInt();
+		while (trackCount-- != 0) {
 			GSTrack track = GSTrack.read(buf);
 			if (timeline.hasTrackUUID(track.getTrackUUID()))
 				throw new IOException("Duplicate track UUID.");
-			timeline.addTrackSilent(track);
+			timeline.addTrackInternal(track);
 		}
 
 		return timeline;
 	}
 
 	public static void write(PacketByteBuf buf, GSTimeline timeline) throws IOException {
-		if (timeline.getName() != null) {
-			buf.writeBoolean(true);
-			buf.writeString(timeline.getName());
-		} else {
-			buf.writeBoolean(false);
-		}
+		// Reserved for future use
+		buf.writeByte(0x00);
+		
+		buf.writeUuid(timeline.getTimelineUUID());
+		buf.writeString(timeline.getName());
 		
 		Collection<GSTrack> tracks = timeline.getTracks();
 		buf.writeInt(tracks.size());

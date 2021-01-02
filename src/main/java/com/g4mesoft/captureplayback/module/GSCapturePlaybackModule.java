@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
@@ -50,7 +51,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSITimelineDeltaListe
 	private GSKeyBinding expandedHoveredTabKey;
 	
 	public GSCapturePlaybackModule() {
-		activeTimeline = new GSTimeline();
+		activeTimeline = new GSTimeline(UUID.randomUUID());
 		
 		transformer = new GSTimelineDeltaTransformer();
 		transformer.addDeltaListener(this);

@@ -21,7 +21,7 @@ public class GSTimelinePacket implements GSIPacket {
 	}
 
 	public GSTimelinePacket(GSTimeline timeline) {
-		this.timeline = new GSTimeline();
+		this.timeline = new GSTimeline(timeline.getTimelineUUID());
 		this.timeline.set(timeline);
 	}
 	

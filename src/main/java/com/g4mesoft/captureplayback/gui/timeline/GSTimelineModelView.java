@@ -1,6 +1,5 @@
 package com.g4mesoft.captureplayback.gui.timeline;
 
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +15,7 @@ import com.g4mesoft.captureplayback.timeline.GSTimeline;
 import com.g4mesoft.captureplayback.timeline.GSTrack;
 import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.g4mesoft.gui.GSElementContext;
+import com.g4mesoft.gui.GSRectangle;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSMathUtils;
 
@@ -38,7 +38,7 @@ public class GSTimelineModelView {
 	private final GSTimeline model;
 	private final GSExpandedColumnModel expandedColumnModel;
 	
-	private int minimumNumColumns;
+	private int minimumColumnCount;
 	
 	private GSSignalTime modelStartTime;
 	private GSSignalTime modelEndTime;
@@ -104,7 +104,7 @@ public class GSTimelineModelView {
 		
 		lookupSize = (int)(modelEndTime.getGametick() - modelStartTime.getGametick()) + 1;
 
-		minimumNumColumns = getColumnIndex(modelEndTime) + 1;
+		minimumColumnCount = getColumnIndex(modelEndTime) + 1;
 	}
 	
 	private void updateDurationLookup() {
@@ -142,12 +142,9 @@ public class GSTimelineModelView {
 		int[] columnEntryCount = new int[lookupSize];
 		multiCellLookup.clear();
 		
-		for (Map.Entry<UUID, GSTrack> trackEntry : model.getTrackEntries()) {
+		for (GSTrack track : model.getTracks()) {
 			Arrays.fill(columnEntryCount, 0);
 
-			GSTrack track = trackEntry.getValue();
-			UUID trackUUID = trackEntry.getKey();
-			
 			for (GSTrackEntry entry : track.getEntries()) {
 				int startLookupOffset = getLookupOffset(entry.getStartTime());
 				int endLookupOffset = getLookupOffset(entry.getEndTime());
@@ -164,7 +161,7 @@ public class GSTimelineModelView {
 					multiCellCount.put(lookupIndex, entryCount);
 			}
 			
-			multiCellLookup.put(trackUUID, multiCellCount);
+			multiCellLookup.put(track.getTrackUUID(), multiCellCount);
 		}
 	}
 	
@@ -240,11 +237,11 @@ public class GSTimelineModelView {
 	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
-	public Rectangle modelToView(GSTrackEntry entry) {
+	public GSRectangle modelToView(GSTrackEntry entry) {
 		return modelToView(entry, null);
 	}
 	
-	public Rectangle modelToView(GSTrackEntry entry, Rectangle dest) {
+	public GSRectangle modelToView(GSTrackEntry entry, GSRectangle dest) {
 		int startColumnIndex = getColumnIndex(entry.getStartTime());
 		int endColumnIndex = getColumnIndex(entry.getEndTime());
 
@@ -252,7 +249,7 @@ public class GSTimelineModelView {
 		if (startColumnIndex < 0)
 			return null;
 		
-		UUID trackUUID = entry.getOwnerTrack().getTrackUUID();
+		UUID trackUUID = entry.getParent().getTrackUUID();
 		
 		boolean expanded = expandedColumnModel.isColumnExpanded(startColumnIndex);
 		if (!expanded && startColumnIndex == endColumnIndex && isMultiCell(trackUUID, startColumnIndex)) {
@@ -263,7 +260,7 @@ public class GSTimelineModelView {
 		}
 		
 		if (dest == null)
-			dest = new Rectangle();
+			dest = new GSRectangle();
 		
 		dest.y = getEntryY(trackUUID);
 		dest.height = ENTRY_HEIGHT;
@@ -314,9 +311,9 @@ public class GSTimelineModelView {
 				columnOffset += getColumnDuration(i) * MT_COLUMN_WIDTH;
 			
 			// We should not include the columnIndex itself.
-			int numTrailingColumns = columnIndex - maxIndex - 1;
-			if (numTrailingColumns > 0)
-				columnOffset += numTrailingColumns * GAMETICK_COLUMN_WIDTH;
+			int trailingColumnCount = columnIndex - maxIndex - 1;
+			if (trailingColumnCount > 0)
+				columnOffset += trailingColumnCount * GAMETICK_COLUMN_WIDTH;
 			
 			return columnOffset;
 		}
@@ -359,7 +356,7 @@ public class GSTimelineModelView {
 	}
 	
 	public int getMinimumWidth() {
-		return getColumnOffset(minimumNumColumns);
+		return getColumnOffset(minimumColumnCount);
 	}
 
 	public int getMinimumHeight() {

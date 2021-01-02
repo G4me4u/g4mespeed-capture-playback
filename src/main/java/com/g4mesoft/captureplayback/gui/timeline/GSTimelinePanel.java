@@ -41,6 +41,7 @@ public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewp
 	private final GSTimelineColumnHeaderPanel columnHeader;
 	
 	private final GSTimelineInfoPanel infoPanel;
+	private final GSTimelineButtonPanel buttonPanel;
 	
 	private final GSScrollBar verticalScrollBar;
 	private final GSScrollBar horizontalScrollBar;
@@ -67,6 +68,7 @@ public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewp
 		columnHeader = new GSTimelineColumnHeaderPanel(timeline, expandedColumnModel, modelView);
 		
 		infoPanel = new GSTimelineInfoPanel(timeline);
+		buttonPanel = new GSTimelineButtonPanel(timeline);
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
 			@Override
@@ -84,7 +86,8 @@ public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewp
 		add(trackHeader);
 		add(columnHeader);
 		add(infoPanel);
-	
+		add(buttonPanel);
+		
 		add(verticalScrollBar);
 		add(horizontalScrollBar);
 		
@@ -124,14 +127,17 @@ public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewp
 	}
 	
 	private void layoutPanels() {
-		int cw = Math.max(1, width - TRACK_HEADER_WIDTH - verticalScrollBar.getPreferredScrollBarWidth());
-		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - horizontalScrollBar.getPreferredScrollBarWidth());
+		int sw = verticalScrollBar.getPreferredScrollBarWidth();
+		int sh = horizontalScrollBar.getPreferredScrollBarWidth();
+		int cw = Math.max(1, width - TRACK_HEADER_WIDTH - sw);
+		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - sh);
 
 		timelineContent.setBounds(TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
 		trackHeader.setBounds(0, COLUMN_HEADER_HEIGHT, TRACK_HEADER_WIDTH, ch);
 		columnHeader.setBounds(TRACK_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
 		
 		infoPanel.setBounds(0, 0, TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT);
+		buttonPanel.setBounds(0, height - sh, TRACK_HEADER_WIDTH, sh);
 
 		verticalScrollBar.initVerticalRight(width, COLUMN_HEADER_HEIGHT, ch);
 		horizontalScrollBar.initHorizontalBottom(TRACK_HEADER_WIDTH, height, cw);
@@ -173,11 +179,10 @@ public class GSTimelinePanel extends GSParentPanel implements GSIScrollableViewp
 		int cx = width - sw;
 		int cy = height - sh;
 		
+		// Top right corner
 		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, CORNER_SQUARE_COLOR);
+		// Bottom right corner
 		renderer.fillRect(cx, cy, sw, sh, CORNER_SQUARE_COLOR);
-		
-		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSTimelineColumnHeaderPanel.COLUMN_HEADER_COLOR);
-		renderer.fillRect(0, cy, TRACK_HEADER_WIDTH, sh, GSTimelineTrackHeaderPanel.TRACK_HEADER_COLOR);
 	}
 	
 	@Override

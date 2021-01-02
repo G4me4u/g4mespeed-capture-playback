@@ -18,7 +18,7 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 	}
 
 	public GSEntryAddedDelta(GSTrackEntry entry) {
-		this(entry.getOwnerTrack().getTrackUUID(), entry.getEntryUUID(),
+		this(entry.getParent().getTrackUUID(), entry.getEntryUUID(),
 				entry.getStartTime(), entry.getEndTime());
 	}
 	

@@ -54,7 +54,7 @@ public abstract class GSEntryDelta extends GSTrackDelta {
 		GSTrackEntry entry = getEntry(timeline);
 		checkEntryTimespan(entry, startTime, endTime);
 		checkEntryType(entry, expectedType);
-		entry.getOwnerTrack().removeEntry(entryUUID);
+		entry.getParent().removeEntry(entryUUID);
 	}
 	
 	protected GSTrackEntry addEntry(GSTimeline timeline, UUID entryUUID, GSSignalTime startTime,
