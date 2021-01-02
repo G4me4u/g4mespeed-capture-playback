@@ -12,22 +12,22 @@ import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.util.PacketByteBuf;
 
-public class GSRocket {
+public class GSTrack {
 
-	private final UUID rocketUUID;
+	private final UUID trackUUID;
 	private String name;
 	
-	private final Map<UUID, GSRocketEntry> entries;
+	private final Map<UUID, GSTrackEntry> entries;
 	
 	private GSComposition parent;
 	
-	public GSRocket(UUID rocketUUID, String name) {
-		if (rocketUUID == null)
-			throw new IllegalArgumentException("rocketUUID is null");
+	public GSTrack(UUID trackUUID, String name) {
+		if (trackUUID == null)
+			throw new IllegalArgumentException("trackUUID is null");
 		if (name == null)
 			throw new IllegalArgumentException("name is null");
 		
-		this.rocketUUID = rocketUUID;
+		this.trackUUID = trackUUID;
 		this.name = name;
 		
 		entries = new LinkedHashMap<>();
@@ -41,12 +41,12 @@ public class GSRocket {
 
 	void setParent(GSComposition parent) {
 		if (this.parent != null)
-			throw new IllegalStateException("Rocket already has a parent");
+			throw new IllegalStateException("Track already has a parent");
 		this.parent = parent;
 	}
 	
-	public UUID getRocketUUID() {
-		return rocketUUID;
+	public UUID getTrackUUID() {
+		return trackUUID;
 	}
 	
 	public String getName() {
@@ -60,7 +60,7 @@ public class GSRocket {
 		this.name = name;
 	}
 	
-	public GSRocketEntry getEntry(UUID entryUUID) {
+	public GSTrackEntry getEntry(UUID entryUUID) {
 		return entries.get(entryUUID);
 	}
 	
@@ -72,7 +72,7 @@ public class GSRocket {
 		return Collections.unmodifiableSet(entries.keySet());
 	}
 
-	public Collection<GSRocketEntry> getEntries() {
+	public Collection<GSTrackEntry> getEntries() {
 		return Collections.unmodifiableCollection(entries.values());
 	}
 	
@@ -80,7 +80,7 @@ public class GSRocket {
 		if (parent == null)
 			return false;
 		
-		for (GSRocketEntry entry : getEntries()) {
+		for (GSTrackEntry entry : getEntries()) {
 			if (!parent.hasSequenceUUID(entry.getSequenceUUID()))
 				return false;
 		}
@@ -88,16 +88,16 @@ public class GSRocket {
 		return true;
 	}
 	
-	public static GSRocket read(PacketByteBuf buf) throws IOException {
-		UUID rocketUUID = buf.readUuid();
+	public static GSTrack read(PacketByteBuf buf) throws IOException {
+		UUID trackUUID = buf.readUuid();
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
-		GSRocket rocket = new GSRocket(rocketUUID, name);
+		GSTrack track = new GSTrack(trackUUID, name);
 		
-		return rocket;
+		return track;
 	}
 
-	public static void write(PacketByteBuf buf, GSRocket rocket) throws IOException {
-		buf.writeUuid(rocket.getRocketUUID());
-		buf.writeString(rocket.getName());
+	public static void write(PacketByteBuf buf, GSTrack track) throws IOException {
+		buf.writeUuid(track.getTrackUUID());
+		buf.writeString(track.getName());
 	}
 }

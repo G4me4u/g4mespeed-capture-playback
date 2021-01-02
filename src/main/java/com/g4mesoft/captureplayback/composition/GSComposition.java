@@ -19,7 +19,7 @@ public class GSComposition {
 	private String name;
 	
 	private final Map<UUID, GSSequence> sequences;
-	private final Map<UUID, GSRocket> rockets;
+	private final Map<UUID, GSTrack> tracks;
 
 	public GSComposition(UUID compositionUUID) {
 		this(compositionUUID, "");
@@ -35,17 +35,17 @@ public class GSComposition {
 		this.name = name;
 		
 		sequences = new LinkedHashMap<>();
-		rockets = new LinkedHashMap<>();
+		tracks = new LinkedHashMap<>();
 	}
 	
 	private void addSequenceInternal(GSSequence sequence) {
 		sequences.put(sequence.getSequenceUUID(), sequence);
 	}
 	
-	private void addRocketInternal(GSRocket rocket) {
-		rocket.setParent(this);
+	private void addTrackInternal(GSTrack track) {
+		track.setParent(this);
 		
-		rockets.put(rocket.getRocketUUID(), rocket);
+		tracks.put(track.getTrackUUID(), track);
 	}
 	
 	public UUID getCompositionUUID() {
@@ -72,12 +72,12 @@ public class GSComposition {
 		return sequences.containsKey(sequenceUUID);
 	}
 
-	public GSRocket getRocket(UUID rocketUUID) {
-		return rockets.get(rocketUUID);
+	public GSTrack getTrack(UUID trackUUID) {
+		return tracks.get(trackUUID);
 	}
 	
-	public boolean hasRocketUUID(UUID rocketUUID) {
-		return rockets.containsKey(rocketUUID);
+	public boolean hasTrackUUID(UUID trackUUID) {
+		return tracks.containsKey(trackUUID);
 	}
 	
 	public Collection<GSSequence> getSequences() {
@@ -88,17 +88,17 @@ public class GSComposition {
 		return Collections.unmodifiableSet(sequences.keySet());
 	}
 
-	public Collection<GSRocket> getRockets() {
-		return Collections.unmodifiableCollection(rockets.values());
+	public Collection<GSTrack> getTracks() {
+		return Collections.unmodifiableCollection(tracks.values());
 	}
 	
-	public Set<UUID> getRocketUUIDs() {
-		return Collections.unmodifiableSet(rockets.keySet());
+	public Set<UUID> getTrackUUIDs() {
+		return Collections.unmodifiableSet(tracks.keySet());
 	}
 	
 	public boolean isComplete() {
-		for (GSRocket rocket : getRockets()) {
-			if (!rocket.isComplete())
+		for (GSTrack track : getTracks()) {
+			if (!track.isComplete())
 				return false;
 		}
 		
@@ -121,12 +121,12 @@ public class GSComposition {
 			composition.addSequenceInternal(sequence);
 		}
 
-		int rocketCount = buf.readInt();
-		while (rocketCount-- != 0) {
-			GSRocket rocket = GSRocket.read(buf);
-			if (composition.hasRocketUUID(rocket.getRocketUUID()))
-				throw new IOException("Duplicate rocket UUID.");
-			composition.addRocketInternal(rocket);
+		int trackCount = buf.readInt();
+		while (trackCount-- != 0) {
+			GSTrack track = GSTrack.read(buf);
+			if (composition.hasTrackUUID(track.getTrackUUID()))
+				throw new IOException("Duplicate track UUID.");
+			composition.addTrackInternal(track);
 		}
 		
 		if (!composition.isComplete())
@@ -147,9 +147,9 @@ public class GSComposition {
 		for (GSSequence sequence : sequences)
 			GSSequence.write(buf, sequence);
 		
-		Collection<GSRocket> rockets = composition.getRockets();
-		buf.writeInt(rockets.size());
-		for (GSRocket rocket : rockets)
-			GSRocket.write(buf, rocket);
+		Collection<GSTrack> tracks = composition.getTracks();
+		buf.writeInt(tracks.size());
+		for (GSTrack track : tracks)
+			GSTrack.write(buf, track);
 	}
 }

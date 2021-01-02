@@ -2,13 +2,13 @@ package com.g4mesoft.captureplayback.composition;
 
 import java.util.UUID;
 
-public class GSRocketEntry {
+public class GSTrackEntry {
 
 	private final UUID entryUUID;
 	private final UUID sequenceUUID;
 	private long offset;
 	
-	public GSRocketEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
+	public GSTrackEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
 		this.entryUUID = entryUUID;
 		this.sequenceUUID = sequenceUUID;
 

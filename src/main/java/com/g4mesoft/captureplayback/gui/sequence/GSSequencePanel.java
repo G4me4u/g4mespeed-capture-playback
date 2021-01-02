@@ -271,13 +271,13 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollableViewp
 	}
 	
 	@Override
-	public void channelAdded(GSChannel track) {
+	public void channelAdded(GSChannel channel) {
 		initModelView();
 		updateHoveredChannel();
 	}
 
 	@Override
-	public void channelRemoved(GSChannel track) {
+	public void channelRemoved(GSChannel channel) {
 		initModelView();
 		updateHoveredChannel();
 	}
@@ -302,17 +302,17 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollableViewp
 		updateContentSize();
 	}
 	
-	public UUID getHoveredTrackUUID() {
+	public UUID getHoveredChannelUUID() {
 		return hoveredChannelUUID;
 	}
 	
-	private void setHoveredChannelUUID(UUID hoveredTrackUUID) {
-		if (!Objects.equal(hoveredTrackUUID, this.hoveredChannelUUID)) {
-			this.hoveredChannelUUID = hoveredTrackUUID;
+	private void setHoveredChannelUUID(UUID hoveredChannelUUID) {
+		if (!Objects.equal(hoveredChannelUUID, this.hoveredChannelUUID)) {
+			this.hoveredChannelUUID = hoveredChannelUUID;
 			
-			sequenceContent.setHoveredChannelUUID(hoveredTrackUUID);
-			channelHeader.setHoveredChannelUUID(hoveredTrackUUID);
-			infoPanel.setHoveredChannelUUID(hoveredTrackUUID);
+			sequenceContent.setHoveredChannelUUID(hoveredChannelUUID);
+			channelHeader.setHoveredChannelUUID(hoveredChannelUUID);
+			infoPanel.setHoveredChannelUUID(hoveredChannelUUID);
 		}
 	}
 	

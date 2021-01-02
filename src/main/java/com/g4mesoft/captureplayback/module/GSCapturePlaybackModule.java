@@ -170,7 +170,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 				
 				managerServer.sendPacketToAllExcept(new GSSequenceDeltaPacket(delta), player);
 			} catch (GSSequenceDeltaException ignore) {
-				// The delta could not be applied. Probably because of a desync, or
+				// The delta could not be applied. Probably because of a de-sync, or
 				// because multiple users are changing the same part of the sequence.
 				managerServer.sendPacket(new GSSequencePacket(activeSequence), player);	
 			} finally {

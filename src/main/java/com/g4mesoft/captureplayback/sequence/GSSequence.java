@@ -141,7 +141,7 @@ public class GSSequence {
 		listeners.remove(listener);
 	}
 	
-	/* Visible to allow events from the tracks and entries */
+	/* Visible to allow events from the channels and entries */
 	Iterable<GSISequenceListener> getListeners() {
 		return listeners;
 	}
@@ -151,9 +151,9 @@ public class GSSequence {
 			listener.sequenceNameChanged(oldName);
 	}
 
-	private void dispatchChannelAdded(GSChannel track) {
+	private void dispatchChannelAdded(GSChannel channel) {
 		for (GSISequenceListener listener : listeners)
-			listener.channelAdded(track);
+			listener.channelAdded(channel);
 	}
 
 	private void dispatchChannelRemoved(GSChannel channel) {
