@@ -11,6 +11,6 @@ hotkey.capture-playback.title=Capture & Playback
 hotkey.capture-playback.collapseTab=Collapse Expanded Tab
 hotkey.capture-playback.expandedHoveredTab=Expand Hovered Tab
 
-############ Timeline ############
+############ Sequence ############
 
-timeline.track.defaultname=New Track
+sequence.channel.defaultname=New Channel

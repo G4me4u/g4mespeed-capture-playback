@@ -81,7 +81,7 @@ public class GSRocket {
 			return false;
 		
 		for (GSRocketEntry entry : getEntries()) {
-			if (!parent.hasTimelineUUID(entry.getTimelineUUID()))
+			if (!parent.hasSequenceUUID(entry.getSequenceUUID()))
 				return false;
 		}
 		

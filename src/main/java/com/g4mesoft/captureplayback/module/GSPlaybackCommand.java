@@ -7,13 +7,13 @@ import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
+import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.sequence.GSChannel;
+import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.stream.GSBlockRegion;
 import com.g4mesoft.captureplayback.stream.GSPlaybackEntry;
 import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
-import com.g4mesoft.captureplayback.timeline.GSETrackEntryType;
-import com.g4mesoft.captureplayback.timeline.GSTimeline;
-import com.g4mesoft.captureplayback.timeline.GSTrack;
-import com.g4mesoft.captureplayback.timeline.GSTrackEntry;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 
@@ -39,17 +39,17 @@ public final class GSPlaybackCommand {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackModule module = extension.getServerModule();
 
-		GSTimeline timeline = module.getActiveTimeline();
+		GSSequence sequence = module.getActiveSequence();
 
 		ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-		((GSIServerWorldAccess)world).playStream(createPlaybackStream(timeline));
+		((GSIServerWorldAccess)world).playStream(createPlaybackStream(sequence));
 		
 		source.sendFeedback(new LiteralText("Playback has started."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static GSPlaybackStream createPlaybackStream(GSTimeline timeline) {
+	private static GSPlaybackStream createPlaybackStream(GSSequence sequence) {
 		List<GSPlaybackEntry> entries = new ArrayList<>();
 
 		int x0 = Integer.MAX_VALUE;
@@ -60,8 +60,8 @@ public final class GSPlaybackCommand {
 		int y1 = Integer.MIN_VALUE;
 		int z1 = Integer.MIN_VALUE;
 		
-		for (GSTrack track : timeline.getTracks()) {
-			BlockPos pos = track.getInfo().getPos();
+		for (GSChannel channel : sequence.getChannels()) {
+			BlockPos pos = channel.getInfo().getPos();
 			
 			if (pos.getX() < x0)
 				x0 = pos.getX();
@@ -77,11 +77,11 @@ public final class GSPlaybackCommand {
 			if (pos.getZ() > z1)
 				z1 = pos.getZ();
 			
-			for (GSTrackEntry entry : track.getEntries()) {
-				GSETrackEntryType type = entry.getType();
-				if (type == GSETrackEntryType.EVENT_BOTH || type == GSETrackEntryType.EVENT_START)
+			for (GSChannelEntry entry : channel.getEntries()) {
+				GSEChannelEntryType type = entry.getType();
+				if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_START)
 					entries.add(new GSPlaybackEntry(entry.getStartTime(), GSESignalEdge.RISING_EDGE, pos));
-				if (type == GSETrackEntryType.EVENT_BOTH || type == GSETrackEntryType.EVENT_END)
+				if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_END)
 					entries.add(new GSPlaybackEntry(entry.getEndTime(), GSESignalEdge.FALLING_EDGE, pos));
 			}
 		}

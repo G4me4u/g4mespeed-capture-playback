@@ -5,12 +5,12 @@ import java.util.UUID;
 public class GSRocketEntry {
 
 	private final UUID entryUUID;
-	private final UUID timelineUUID;
+	private final UUID sequenceUUID;
 	private long offset;
 	
-	public GSRocketEntry(UUID entryUUID, UUID timelineUUID, long offset) {
+	public GSRocketEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
 		this.entryUUID = entryUUID;
-		this.timelineUUID = timelineUUID;
+		this.sequenceUUID = sequenceUUID;
 
 		setOffset(offset);
 	}
@@ -19,8 +19,8 @@ public class GSRocketEntry {
 		return entryUUID;
 	}
 
-	public UUID getTimelineUUID() {
-		return timelineUUID;
+	public UUID getSequenceUUID() {
+		return sequenceUUID;
 	}
 	
 	public long getOffset() {

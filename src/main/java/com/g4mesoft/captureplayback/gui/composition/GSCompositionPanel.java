@@ -19,18 +19,18 @@ public class GSCompositionPanel extends GSParentPanel {
 		int x = 50;
 		int y = 20;
 		
-		drawTest(renderer, "Timeline #1", x, y, 100, 50, 0xFFBBEEAA);
-		drawTest(renderer, "Timeline #2", x + 101, y, 100, 50, 0xFFAABBCC);
-		drawTest(renderer, "Timeline #3", x + 222, y, 100, 50, 0xFFEE22EE);
+		drawTest(renderer, "Sequence #1", x, y, 100, 50, 0xFFBBEEAA);
+		drawTest(renderer, "Sequence #2", x + 101, y, 100, 50, 0xFFAABBCC);
+		drawTest(renderer, "Sequence #3", x + 222, y, 100, 50, 0xFFEE22EE);
 		
-		drawTest(renderer, "Timeline #3", x, y + 51, 100, 50, 0xFFEE22EE);
-		drawTest(renderer, "Timeline #2", x + 101, y + 51, 100, 50, 0xFFAABBCC);
+		drawTest(renderer, "Sequence #3", x, y + 51, 100, 50, 0xFFEE22EE);
+		drawTest(renderer, "Sequence #2", x + 101, y + 51, 100, 50, 0xFFAABBCC);
 
-		drawTest(renderer, "Timeline #4", x, y + 102, 150, 50, 0xFFEE8822);
-		drawTest(renderer, "Timeline #4", x + 151, y + 102, 150, 50, 0xFFEE8822);
-		drawTest(renderer, "Timeline #4", x + 302, y + 102, 150, 50, 0xFFEE8822);
+		drawTest(renderer, "Sequence #4", x, y + 102, 150, 50, 0xFFEE8822);
+		drawTest(renderer, "Sequence #4", x + 151, y + 102, 150, 50, 0xFFEE8822);
+		drawTest(renderer, "Sequence #4", x + 302, y + 102, 150, 50, 0xFFEE8822);
 		
-		drawTest(renderer, "Timeline #5", x + 50, y + 153, 300, 50, 0xFFFFFFFF);
+		drawTest(renderer, "Sequence #5", x + 50, y + 153, 300, 50, 0xFFFFFFFF);
 
 		super.render(renderer);
 	}

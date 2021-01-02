@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.timeline.GSTimeline;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.util.PacketByteBuf;
@@ -18,7 +18,7 @@ public class GSComposition {
 	private final UUID compositionUUID;
 	private String name;
 	
-	private final Map<UUID, GSTimeline> timelines;
+	private final Map<UUID, GSSequence> sequences;
 	private final Map<UUID, GSRocket> rockets;
 
 	public GSComposition(UUID compositionUUID) {
@@ -34,12 +34,12 @@ public class GSComposition {
 		this.compositionUUID = compositionUUID;
 		this.name = name;
 		
-		timelines = new LinkedHashMap<>();
+		sequences = new LinkedHashMap<>();
 		rockets = new LinkedHashMap<>();
 	}
 	
-	private void addTimelineInternal(GSTimeline timeline) {
-		timelines.put(timeline.getTimelineUUID(), timeline);
+	private void addSequenceInternal(GSSequence sequence) {
+		sequences.put(sequence.getSequenceUUID(), sequence);
 	}
 	
 	private void addRocketInternal(GSRocket rocket) {
@@ -64,12 +64,12 @@ public class GSComposition {
 			this.name = name;
 	}
 	
-	public GSTimeline getTimeline(UUID timelineUUID) {
-		return timelines.get(timelineUUID);
+	public GSSequence getSequence(UUID sequenceUUID) {
+		return sequences.get(sequenceUUID);
 	}
 	
-	public boolean hasTimelineUUID(UUID timelineUUID) {
-		return timelines.containsKey(timelineUUID);
+	public boolean hasSequenceUUID(UUID sequenceUUID) {
+		return sequences.containsKey(sequenceUUID);
 	}
 
 	public GSRocket getRocket(UUID rocketUUID) {
@@ -80,12 +80,12 @@ public class GSComposition {
 		return rockets.containsKey(rocketUUID);
 	}
 	
-	public Collection<GSTimeline> getTimelines() {
-		return Collections.unmodifiableCollection(timelines.values());
+	public Collection<GSSequence> getSequences() {
+		return Collections.unmodifiableCollection(sequences.values());
 	}
 
-	public Set<UUID> getTimelineUUIDs() {
-		return Collections.unmodifiableSet(timelines.keySet());
+	public Set<UUID> getSequenceUUIDs() {
+		return Collections.unmodifiableSet(sequences.keySet());
 	}
 
 	public Collection<GSRocket> getRockets() {
@@ -113,12 +113,12 @@ public class GSComposition {
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
 		GSComposition composition = new GSComposition(compositionUUID, name);
 
-		int timelineCount = buf.readInt();
-		while (timelineCount-- != 0) {
-			GSTimeline timeline = GSTimeline.read(buf);
-			if (composition.hasTimelineUUID(timeline.getTimelineUUID()))
-				throw new IOException("Duplicate timeline UUID.");
-			composition.addTimelineInternal(timeline);
+		int sequenceCount = buf.readInt();
+		while (sequenceCount-- != 0) {
+			GSSequence sequence = GSSequence.read(buf);
+			if (composition.hasSequenceUUID(sequence.getSequenceUUID()))
+				throw new IOException("Duplicate sequence UUID.");
+			composition.addSequenceInternal(sequence);
 		}
 
 		int rocketCount = buf.readInt();
@@ -142,10 +142,10 @@ public class GSComposition {
 		buf.writeUuid(composition.getCompositionUUID());
 		buf.writeString(composition.getName());
 
-		Collection<GSTimeline> timelines = composition.getTimelines();
-		buf.writeInt(timelines.size());
-		for (GSTimeline timeline : timelines)
-			GSTimeline.write(buf, timeline);
+		Collection<GSSequence> sequences = composition.getSequences();
+		buf.writeInt(sequences.size());
+		for (GSSequence sequence : sequences)
+			GSSequence.write(buf, sequence);
 		
 		Collection<GSRocket> rockets = composition.getRockets();
 		buf.writeInt(rockets.size());
