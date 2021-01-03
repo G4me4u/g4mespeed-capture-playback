@@ -19,7 +19,7 @@ public final class GSChannelEntry {
 	
 	private GSEChannelEntryType type;
 
-	private GSChannel owner;
+	private GSChannel parent;
 
 	GSChannelEntry(UUID entryUUID) {
 		this(entryUUID, DEFAULT_TIME, DEFAULT_TIME);
@@ -36,19 +36,19 @@ public final class GSChannelEntry {
 		
 		type = DEFAULT_ENTRY_TYPE;
 
-		owner = null;
+		parent = null;
 		
 		validateTimespan(startTime, endTime);
 	}
 
 	public GSChannel getParent() {
-		return owner;
+		return parent;
 	}
 	
 	void setParent(GSChannel parent) {
-		if (this.owner != null)
+		if (this.parent != null)
 			throw new IllegalStateException("Entry already has a parent");
-		this.owner = parent;
+		this.parent = parent;
 	}
 	
 	public void set(GSChannelEntry other) {
@@ -59,7 +59,7 @@ public final class GSChannelEntry {
 	private void validateTimespan(GSSignalTime startTime, GSSignalTime endTime) {
 		if (startTime.isAfter(endTime))
 			throw new IllegalArgumentException("Start time is after end time!");
-		if (owner != null && owner.isOverlappingEntries(startTime, endTime, this))
+		if (parent != null && parent.isOverlappingEntries(startTime, endTime, this))
 			throw new IllegalArgumentException("Timespan is overlapping other channel entries!");
 	}
 	
@@ -133,15 +133,15 @@ public final class GSChannelEntry {
 	}
 
 	private void dispatchEntryTimeChanged(GSChannelEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
-		if (owner != null && owner.getParent() != null) {
-			for (GSISequenceListener listener : owner.getParent().getListeners())
+		if (parent != null && parent.getParent() != null) {
+			for (GSISequenceListener listener : parent.getParent().getListeners())
 				listener.entryTimeChanged(entry, oldStart, oldEnd);
 		}
 	}
 	
 	private void dispatchEntryTypeChanged(GSChannelEntry entry, GSEChannelEntryType oldType) {
-		if (owner != null && owner.getParent() != null) {
-			for (GSISequenceListener listener : owner.getParent().getListeners())
+		if (parent != null && parent.getParent() != null) {
+			for (GSISequenceListener listener : parent.getParent().getListeners())
 				listener.entryTypeChanged(entry, oldType);
 		}
 	}

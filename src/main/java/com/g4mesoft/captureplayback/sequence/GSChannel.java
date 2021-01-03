@@ -60,7 +60,7 @@ public class GSChannel {
 		for (GSChannelEntry entry : other.getEntries()) {
 			GSChannelEntry entryCopy = new GSChannelEntry(entry.getEntryUUID());
 			entryCopy.set(entry);
-			addEntrySilent(entryCopy);
+			addEntryInternal(entryCopy);
 			dispatchEntryAdded(entryCopy);
 		}
 	}
@@ -86,14 +86,14 @@ public class GSChannel {
 			return null;
 		
 		GSChannelEntry entry = new GSChannelEntry(entryUUID, startTime, endTime);
-		addEntrySilent(entry);
+		addEntryInternal(entry);
 		
 		dispatchEntryAdded(entry);
 		
 		return entry;
 	}
 	
-	private void addEntrySilent(GSChannelEntry entry) {
+	private void addEntryInternal(GSChannelEntry entry) {
 		entry.setParent(this);
 		
 		entries.put(entry.getEntryUUID(), entry);
@@ -224,7 +224,7 @@ public class GSChannel {
 				throw new IOException("Duplicate entry UUID");
 			if (channel.isOverlappingEntries(entry.getStartTime(), entry.getEndTime(), null))
 				throw new IOException("Overlapping entry");
-			channel.addEntrySilent(entry);
+			channel.addEntryInternal(entry);
 		}
 		
 		return channel;

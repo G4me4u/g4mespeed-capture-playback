@@ -84,7 +84,7 @@ public abstract class GSAbstractEditPanel extends GSBasePanel {
 	
 	@Override
 	public void onBoundsChanged() {
-		contentPanel.setBounds(0, TITLE_HEIGHT, width, height - TITLE_HEIGHT);
+		contentPanel.setBounds(0, TITLE_HEIGHT, width, Math.max(height - TITLE_HEIGHT, 0));
 		
 		backButton.setPreferredBounds(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, BACK_BUTTON_WIDTH);
 		nameField.setBounds((width - MAXIMUM_TITLE_WIDTH) / 2, 0, MAXIMUM_TITLE_WIDTH, TITLE_HEIGHT);

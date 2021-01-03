@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.util.PacketByteBuf;
@@ -45,6 +46,40 @@ public class GSTrack {
 		this.parent = parent;
 	}
 	
+	public GSTrackEntry addEntry(UUID sequenceUUID, long offset) {
+		return addEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), sequenceUUID, offset);
+	}
+	
+	public GSTrackEntry addEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
+		if (hasEntryUUID(entryUUID))
+			throw new IllegalStateException("Duplicate entry UUID");
+		if (parent == null || !parent.hasSequenceUUID(sequenceUUID))
+			throw new IllegalStateException("Unknown sequence UUID");
+		
+		GSTrackEntry entry = new GSTrackEntry(entryUUID, sequenceUUID, offset);
+		addEntryInternal(entry);
+		
+		dispatchEntryAdded(entry);
+		
+		return entry;
+	}
+	
+	private void addEntryInternal(GSTrackEntry entry) {
+		entry.setParent(this);
+		
+		entries.put(entry.getEntryUUID(), entry);
+	}
+	
+	public boolean removeEntry(UUID entryUUID) {
+		GSTrackEntry entry = entries.remove(entryUUID);
+		if (entry != null) {
+			dispatchEntryRemoved(entry);
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public UUID getTrackUUID() {
 		return trackUUID;
 	}
@@ -57,7 +92,12 @@ public class GSTrack {
 		if (name == null)
 			throw new IllegalArgumentException("name is null");
 		
-		this.name = name;
+		if (!name.equals(this.name)) {
+			String oldName = this.name;
+			this.name = name;
+			
+			dispatchTrackNameChanged(oldName);
+		}
 	}
 	
 	public GSTrackEntry getEntry(UUID entryUUID) {
@@ -88,10 +128,39 @@ public class GSTrack {
 		return true;
 	}
 	
+	private void dispatchTrackNameChanged(String oldName) {
+		if (parent != null) {
+			for (GSICompositionListener listener : parent.getListeners())
+				listener.trackNameChanged(this, oldName);
+		}
+	}
+
+	private void dispatchEntryAdded(GSTrackEntry entry) {
+		if (parent != null) {
+			for (GSICompositionListener listener : parent.getListeners())
+				listener.entryAdded(entry);
+		}
+	}
+	
+	private void dispatchEntryRemoved(GSTrackEntry entry) {
+		if (parent != null) {
+			for (GSICompositionListener listener : parent.getListeners())
+				listener.entryRemoved(entry);
+		}
+	}
+	
 	public static GSTrack read(PacketByteBuf buf) throws IOException {
 		UUID trackUUID = buf.readUuid();
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
 		GSTrack track = new GSTrack(trackUUID, name);
+
+		int entryCount = buf.readInt();
+		while (entryCount-- != 0) {
+			GSTrackEntry entry = GSTrackEntry.read(buf);
+			if (track.hasEntryUUID(entry.getEntryUUID()))
+				throw new IOException("Duplicate entry UUID");
+			track.addEntryInternal(entry);
+		}
 		
 		return track;
 	}
@@ -99,5 +168,10 @@ public class GSTrack {
 	public static void write(PacketByteBuf buf, GSTrack track) throws IOException {
 		buf.writeUuid(track.getTrackUUID());
 		buf.writeString(track.getName());
+		
+		Collection<GSTrackEntry> entries = track.getEntries();
+		buf.writeInt(entries.size());
+		for (GSTrackEntry entry : entries)
+			GSTrackEntry.write(buf, entry);
 	}
 }

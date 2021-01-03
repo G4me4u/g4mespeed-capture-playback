@@ -59,19 +59,23 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Inject(method = "tick", at = @At("HEAD"))
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-		GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
-		
-		Iterator<GSPlaybackStream> streamItr = playbackStreams.iterator();
-		while (streamItr.hasNext()) {
-			GSPlaybackStream stream = streamItr.next();
-			if (stream.isClosed()) {
-				streamItr.remove();
-			} else {
-				mergedFrame.merge(stream.read());
+		if (playbackStreams.isEmpty()) {
+			signalFrame = GSISignalFrame.EMPTY;
+		} else {
+			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
+			
+			Iterator<GSPlaybackStream> streamItr = playbackStreams.iterator();
+			while (streamItr.hasNext()) {
+				GSPlaybackStream stream = streamItr.next();
+				if (stream.isClosed()) {
+					streamItr.remove();
+				} else {
+					mergedFrame.merge(stream.read());
+				}
 			}
+			
+			signalFrame = mergedFrame;
 		}
-		
-		signalFrame = mergedFrame;
 	}
 	
 	@Inject(method = "sendBlockActions", at = @At("RETURN"))

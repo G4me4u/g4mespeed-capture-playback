@@ -22,7 +22,7 @@ public class GSSequence {
 	private String name;
 	
 	private final Map<UUID, GSChannel> channels;
-	private final List<GSISequenceListener> listeners;
+	private List<GSISequenceListener> listeners;
 
 	public GSSequence(UUID sequenceUUID) {
 		this(sequenceUUID, "");
@@ -38,7 +38,8 @@ public class GSSequence {
 		this.name = name;
 		
 		channels = new LinkedHashMap<>();
-		listeners = new ArrayList<>();
+		// Lazily initialized when adding a listener
+		listeners = null;
 	}
 
 	public void set(GSSequence other) {
@@ -134,30 +135,33 @@ public class GSSequence {
 	}
 	
 	public void addSequenceListener(GSISequenceListener listener) {
+		if (listeners == null)
+			listeners = new ArrayList<>();
 		listeners.add(listener);
 	}
 
 	public void removeSequenceListener(GSISequenceListener listener) {
-		listeners.remove(listener);
+		if (listeners != null)
+			listeners.remove(listener);
 	}
 	
 	/* Visible to allow events from the channels and entries */
 	Iterable<GSISequenceListener> getListeners() {
-		return listeners;
+		return (listeners == null) ? Collections.emptyList() : listeners;
 	}
 	
 	private void dispatchSequenceNameChanged(String oldName) {
-		for (GSISequenceListener listener : listeners)
+		for (GSISequenceListener listener : getListeners())
 			listener.sequenceNameChanged(oldName);
 	}
 
 	private void dispatchChannelAdded(GSChannel channel) {
-		for (GSISequenceListener listener : listeners)
+		for (GSISequenceListener listener : getListeners())
 			listener.channelAdded(channel);
 	}
 
 	private void dispatchChannelRemoved(GSChannel channel) {
-		for (GSISequenceListener listener : listeners)
+		for (GSISequenceListener listener : getListeners())
 			listener.channelRemoved(channel);
 	}
 	
