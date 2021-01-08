@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.gui;
+package com.g4mesoft.captureplayback.panel.composition;
 
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;

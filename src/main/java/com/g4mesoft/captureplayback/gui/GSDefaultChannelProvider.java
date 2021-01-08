@@ -1,7 +1,7 @@
-package com.g4mesoft.captureplayback.gui.edit;
+package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.captureplayback.gui.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.util.GSColorUtil;

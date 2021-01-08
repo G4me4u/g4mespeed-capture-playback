@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.ArrayList;
 import java.util.List;

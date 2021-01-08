@@ -1,34 +1,33 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.Objects;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
-import com.g4mesoft.gui.GSECursorType;
-import com.g4mesoft.gui.GSParentPanel;
-import com.g4mesoft.gui.event.GSEvent;
-import com.g4mesoft.gui.event.GSFocusEvent;
-import com.g4mesoft.gui.event.GSIFocusEventListener;
-import com.g4mesoft.gui.event.GSIKeyListener;
-import com.g4mesoft.gui.event.GSIMouseListener;
-import com.g4mesoft.gui.event.GSKeyEvent;
-import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.text.GSETextAlignment;
-import com.g4mesoft.gui.text.GSITextCaret;
-import com.g4mesoft.gui.text.GSITextModel;
-import com.g4mesoft.gui.text.GSTextField;
+import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSECursorType;
+import com.g4mesoft.panel.GSParentPanel;
+import com.g4mesoft.panel.event.GSEvent;
+import com.g4mesoft.panel.event.GSFocusEvent;
+import com.g4mesoft.panel.event.GSIFocusEventListener;
+import com.g4mesoft.panel.event.GSIKeyListener;
+import com.g4mesoft.panel.event.GSIMouseListener;
+import com.g4mesoft.panel.event.GSKeyEvent;
+import com.g4mesoft.panel.event.GSMouseEvent;
+import com.g4mesoft.panel.text.GSETextAlignment;
+import com.g4mesoft.panel.text.GSITextCaret;
+import com.g4mesoft.panel.text.GSITextModel;
+import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSSequenceChannelHeaderPanel extends GSParentPanel implements GSISequenceListener, GSISequenceModelViewListener,
                                                                          GSIMouseListener, GSIKeyListener {
 
-	public static final int CHANNEL_HEADER_COLOR = 0xDA0A0A0A;
-	
+	public static final int CHANNEL_HEADER_COLOR = 0xFF171717;
 	public static final int CHANNEL_HOVER_COLOR = 0x30FFFFFF;
-	public static final int CHANNEL_SPACING_COLOR = 0xFF444444;
+	public static final int CHANNEL_SPACING_COLOR = 0xFF202020;
 	
 	private final GSSequence sequence;
 	private final GSSequenceModelView modelView;

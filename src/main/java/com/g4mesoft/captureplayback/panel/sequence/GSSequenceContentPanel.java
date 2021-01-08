@@ -1,24 +1,31 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.Iterator;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.sequence.GSChannel;
+import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.GSChannel;
-import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.gui.GSPanel;
-import com.g4mesoft.gui.GSRectangle;
-import com.g4mesoft.gui.event.GSIMouseListener;
-import com.g4mesoft.gui.event.GSMouseEvent;
+import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.panel.event.GSIMouseListener;
+import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSSequenceContentPanel extends GSPanel implements GSISequenceListener, GSISequenceModelViewListener,
                                                                GSIMouseListener {
 
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
+	
+//	public static final int COLUMN_COLOR = 0xDA181818;
+//	public static final int DARK_COLUMN_COLOR = 0xDA0A0A0A;
+	public static final int COLUMN_COLOR = 0xFF2E2E2E;
+	public static final int DARK_COLUMN_COLOR = 0xFF2A2A2A;
+
+	public static final int CHANNEL_SPACING_COLOR = 0xFF202020;
 	
 	private static final int ENTRY_BORDER_THICKNESS = 2;
 
@@ -112,11 +119,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	
 	protected void renderColumn(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
 		renderer.fillRect(cx, 0, cw, height, getColumnColor(columnIndex));
-	
-		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
-			renderer.drawVLine(cx, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
-			renderer.drawVLine(cx + cw - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
-		}
+		renderer.drawVLine(cx + cw - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
 		
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
 			int duration = modelView.getColumnDuration(columnIndex);
@@ -132,8 +135,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 	
 	protected int getColumnColor(int columnIndex) {
-		return ((columnIndex & 0x1) != 0) ? GSSequenceColumnHeaderPanel.DARK_COLUMN_COLOR : 
-		                                    GSSequenceColumnHeaderPanel.COLUMN_COLOR;
+		return ((columnIndex & 0x1) != 0) ? DARK_COLUMN_COLOR : COLUMN_COLOR;
 	}
 	
 	protected void renderChannels(GSIRenderer2D renderer) {
@@ -155,8 +157,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 			renderChannelEntry(renderer, entry, channel.getInfo().getColor());
 		renderMultiCells(renderer, channel.getChannelUUID(), ty);
 		
-		renderer.fillRect(0, ty + th, width, modelView.getChannelSpacing(), 
-				GSSequenceChannelHeaderPanel.CHANNEL_SPACING_COLOR);
+		renderer.fillRect(0, ty + th, width, modelView.getChannelSpacing(), CHANNEL_SPACING_COLOR);
 	}
 	
 	protected void renderChannelEntry(GSIRenderer2D renderer, GSChannelEntry entry, int color) {

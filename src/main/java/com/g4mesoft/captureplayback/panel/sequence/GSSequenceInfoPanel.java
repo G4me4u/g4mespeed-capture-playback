@@ -1,10 +1,10 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
-import com.g4mesoft.gui.GSPanel;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.util.math.BlockPos;
@@ -30,7 +30,7 @@ public class GSSequenceInfoPanel extends GSPanel {
 		renderer.fillRect(0, 0, width, height, GSSequenceChannelHeaderPanel.CHANNEL_HEADER_COLOR);
 
 		renderer.drawVLine(width - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
-		renderer.drawHLine(0, width, height - 1, GSSequenceChannelHeaderPanel.CHANNEL_SPACING_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSSequenceContentPanel.CHANNEL_SPACING_COLOR);
 		
 		if (infoText != null) {
 			int ty = (height - renderer.getTextHeight() + 1) / 2;

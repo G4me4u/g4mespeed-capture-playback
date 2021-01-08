@@ -1,6 +1,6 @@
-package com.g4mesoft.captureplayback.gui.edit;
+package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.captureplayback.gui.sequence.GSSequencePanel;
+import com.g4mesoft.captureplayback.panel.sequence.GSSequencePanel;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 public class GSSequenceEditPanel extends GSAbstractEditPanel {

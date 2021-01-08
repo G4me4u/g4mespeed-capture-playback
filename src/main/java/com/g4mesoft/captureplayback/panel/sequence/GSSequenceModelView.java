@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,12 +10,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
-import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.gui.GSElementContext;
-import com.g4mesoft.gui.GSRectangle;
+import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSPanelContext;
+import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSMathUtils;
 
@@ -77,7 +77,7 @@ public class GSSequenceModelView {
 	/* ******************** MODEL-VIEW initialization ******************** */
 	
 	public void updateModelView() {
-		GSIRenderer2D renderer = GSElementContext.getRenderer();
+		GSIRenderer2D renderer = GSPanelContext.getRenderer();
 		setChannelHeight(renderer.getTextHeight() + CHANNEL_LABEL_PADDING * 2);
 		
 		updateBoundLookup();

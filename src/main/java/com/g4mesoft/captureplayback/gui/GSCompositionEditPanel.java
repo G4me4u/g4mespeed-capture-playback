@@ -1,7 +1,7 @@
-package com.g4mesoft.captureplayback.gui.edit;
+package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.gui.composition.GSCompositionPanel;
+import com.g4mesoft.captureplayback.panel.composition.GSCompositionPanel;
 
 public class GSCompositionEditPanel extends GSAbstractEditPanel {
 

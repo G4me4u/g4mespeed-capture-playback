@@ -1,12 +1,12 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.gui.GSRectangle;
-import com.g4mesoft.gui.scroll.GSIScrollListener;
-import com.g4mesoft.gui.scroll.GSIScrollableViewport;
-import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.panel.scroll.GSIScrollListener;
+import com.g4mesoft.panel.scroll.GSIScrollable;
+import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
 
@@ -36,7 +36,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	
 	private final GSRectangle tmpEntryRect;
 	
-	public GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView, GSIScrollableViewport parent, GSIScrollListener listener) {
+	public GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView, GSIScrollable parent, GSIScrollListener listener) {
 		super(parent, listener);
 		
 		this.sequence = sequence;

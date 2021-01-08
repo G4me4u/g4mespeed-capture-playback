@@ -1,7 +1,7 @@
-package com.g4mesoft.captureplayback.gui.composition;
+package com.g4mesoft.captureplayback.panel.composition;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.gui.GSParentPanel;
+import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSCompositionPanel extends GSParentPanel {

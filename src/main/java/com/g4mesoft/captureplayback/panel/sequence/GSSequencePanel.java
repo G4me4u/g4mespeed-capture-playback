@@ -1,27 +1,27 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
-import com.g4mesoft.captureplayback.gui.GSDarkScrollBar;
-import com.g4mesoft.captureplayback.gui.GSIChannelProvider;
-import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.panel.GSDarkScrollBar;
+import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.gui.GSParentPanel;
-import com.g4mesoft.gui.event.GSEvent;
-import com.g4mesoft.gui.event.GSIKeyListener;
-import com.g4mesoft.gui.event.GSIMouseListener;
-import com.g4mesoft.gui.event.GSKeyEvent;
-import com.g4mesoft.gui.event.GSMouseEvent;
-import com.g4mesoft.gui.scroll.GSIScrollListener;
-import com.g4mesoft.gui.scroll.GSIScrollableViewport;
-import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSParentPanel;
+import com.g4mesoft.panel.event.GSEvent;
+import com.g4mesoft.panel.event.GSIKeyListener;
+import com.g4mesoft.panel.event.GSIMouseListener;
+import com.g4mesoft.panel.event.GSKeyEvent;
+import com.g4mesoft.panel.event.GSMouseEvent;
+import com.g4mesoft.panel.scroll.GSIScrollListener;
+import com.g4mesoft.panel.scroll.GSIScrollable;
+import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.google.common.base.Objects;
 
-public class GSSequencePanel extends GSParentPanel implements GSIScrollableViewport, GSIScrollListener, 
+public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSIScrollListener, 
                                                               GSISequenceListener, GSIExpandedColumnModelListener,
                                                               GSIMouseListener, GSIKeyListener {
 
@@ -254,7 +254,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollableViewp
 		if (leadingColumnIndex != -1 && alignedColumn >= 0)
 			return sign * modelView.getColumnX(alignedColumn);
 		
-		return GSIScrollableViewport.super.getIncrementalScrollX(sign);
+		return GSIScrollable.super.getIncrementalScrollX(sign);
 	}
 
 	@Override
@@ -267,7 +267,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollableViewp
 			return delta + sign * modelView.getChannelY(leadingChannelUUID);
 		}
 		
-		return GSIScrollableViewport.super.getIncrementalScrollY(sign);
+		return GSIScrollable.super.getIncrementalScrollY(sign);
 	}
 	
 	@Override

@@ -1,7 +1,7 @@
-package com.g4mesoft.captureplayback.gui.sequence;
+package com.g4mesoft.captureplayback.panel.sequence;
 
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.gui.GSParentPanel;
+import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSSequenceButtonPanel extends GSParentPanel {

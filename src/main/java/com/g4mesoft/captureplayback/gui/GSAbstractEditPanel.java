@@ -1,22 +1,20 @@
-package com.g4mesoft.captureplayback.gui.edit;
+package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.gui.GSBasePanel;
-import com.g4mesoft.gui.GSElementContext;
-import com.g4mesoft.gui.GSIElement;
-import com.g4mesoft.gui.GSPanel;
-import com.g4mesoft.gui.action.GSButtonPanel;
-import com.g4mesoft.gui.event.GSFocusEvent;
-import com.g4mesoft.gui.event.GSIFocusEventListener;
-import com.g4mesoft.gui.event.GSIKeyListener;
-import com.g4mesoft.gui.event.GSKeyEvent;
-import com.g4mesoft.gui.text.GSETextAlignment;
-import com.g4mesoft.gui.text.GSTextField;
+import com.g4mesoft.panel.GSClosableParentPanel;
+import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.event.GSFocusEvent;
+import com.g4mesoft.panel.event.GSIFocusEventListener;
+import com.g4mesoft.panel.event.GSIKeyListener;
+import com.g4mesoft.panel.event.GSKeyEvent;
+import com.g4mesoft.panel.legend.GSButtonPanel;
+import com.g4mesoft.panel.text.GSETextAlignment;
+import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
-public abstract class GSAbstractEditPanel extends GSBasePanel {
+public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 
 	private static final int TITLE_HEIGHT = 25;
 	private static final int MAXIMUM_TITLE_WIDTH = 250;
@@ -38,9 +36,7 @@ public abstract class GSAbstractEditPanel extends GSBasePanel {
 		
 		this.contentPanel = contentPanel;
 		
-		backButton = new GSButtonPanel(BACK_TEXT, () -> {
-			GSElementContext.setContent(null);
-		});
+		backButton = new GSButtonPanel(BACK_TEXT, this::close);
 		
 		nameField = new GSTextField();
 		nameField.setBackgroundColor(0x00000000);
@@ -76,7 +72,7 @@ public abstract class GSAbstractEditPanel extends GSBasePanel {
 	protected abstract void handleNameChanged(String name);
 	
 	@Override
-	public void onAdded(GSIElement parent) {
+	public void onAdded(GSPanel parent) {
 		super.onAdded(parent);
 
 		contentPanel.requestFocus();

@@ -1,8 +1,8 @@
-package com.g4mesoft.captureplayback.gui;
+package com.g4mesoft.captureplayback.panel;
 
-import com.g4mesoft.gui.scroll.GSIScrollListener;
-import com.g4mesoft.gui.scroll.GSIScrollableViewport;
-import com.g4mesoft.gui.scroll.GSScrollBar;
+import com.g4mesoft.panel.scroll.GSIScrollListener;
+import com.g4mesoft.panel.scroll.GSIScrollable;
+import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSTexture;
 
 import net.minecraft.util.Identifier;
@@ -19,7 +19,7 @@ public class GSDarkScrollBar extends GSScrollBar {
 	private static final int DARK_HOVERED_KNOB_COLOR = 0xFF7A7A7A;
 	private static final int DARK_DISABLED_KNOB_COLOR = 0xFF2B2A2B;
 	
-	public GSDarkScrollBar(GSIScrollableViewport parent, GSIScrollListener listener) {
+	public GSDarkScrollBar(GSIScrollable parent, GSIScrollListener listener) {
 		super(parent, listener);
 	}
 
