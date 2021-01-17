@@ -8,9 +8,15 @@ gui.tab.capture-playback=Capture & Playback
 ############ Hotkeys ############
 
 hotkey.capture-playback.title=Capture & Playback
-hotkey.capture-playback.collapseTab=Collapse Expanded Tab
-hotkey.capture-playback.expandedHoveredTab=Expand Hovered Tab
+hotkey.capture-playback.channelRenderingType=Toggle Channel Rendering
 
-############ Timeline ############
+############ Settings ############
+setting.capture-playback=Capture & Playback
+setting.capture-playback.channelRenderingType=Channel Rendering
+setting.capture-playback.channelRenderingType.0=Disabled
+setting.capture-playback.channelRenderingType.1=Depth
+setting.capture-playback.channelRenderingType.2=No Depth
 
-timeline.track.defaultname=New Track
+############ Sequence ############
+
+sequence.channel.defaultname=New Channel

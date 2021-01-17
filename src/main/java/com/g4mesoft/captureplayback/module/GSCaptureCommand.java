@@ -4,7 +4,7 @@ import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
+import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 
@@ -13,38 +13,38 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 
-public final class GSPlaybackCommand {
+public final class GSCaptureCommand {
 
-	private GSPlaybackCommand() {
+	private GSCaptureCommand() {
 	}
 	
 	public static void registerCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
-		dispatcher.register(CommandManager.literal("playback").then(CommandManager.literal("start").executes(context -> {
-			return startPlayback(context.getSource());
+		dispatcher.register(CommandManager.literal("capture").then(CommandManager.literal("start").executes(context -> {
+			return startCapture(context.getSource());
 		})).then(CommandManager.literal("stopAll").executes(context -> {
-			return stopAllPlaybacks(context.getSource());
+			return stopAllCaptures(context.getSource());
 		})));
 	}
 	
-	private static int startPlayback(ServerCommandSource source) {
+	private static int startCapture(ServerCommandSource source) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackModule module = extension.getServerModule();
 
 		GSSequence sequence = module.getActiveSequence();
-
-		ServerWorld world = source.getMinecraftServer().getOverworld();
-		((GSIServerWorldAccess)world).addPlaybackStream(sequence.getPlaybackStream());
 		
-		source.sendFeedback(new LiteralText("Playback has started."), true);
+		ServerWorld world = source.getMinecraftServer().getOverworld();
+		((GSIServerWorldAccess)world).addCaptureStream(sequence.getCaptureStream());
+		
+		source.sendFeedback(new LiteralText("Capture has started."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static int stopAllPlaybacks(ServerCommandSource source) {
+	private static int stopAllCaptures(ServerCommandSource source) {
 		ServerWorld world = source.getMinecraftServer().getOverworld();
-		((GSIServerWorldAccess)world).getPlaybackStreams().forEach(GSIPlaybackStream::close);
+		((GSIServerWorldAccess)world).getCaptureStreams().forEach(GSICaptureStream::close);
 		
-		source.sendFeedback(new LiteralText("All playbacks have stopped."), true);
+		source.sendFeedback(new LiteralText("All captures have stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}

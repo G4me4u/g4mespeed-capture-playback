@@ -4,6 +4,8 @@ public interface GSIStream {
 
 	public GSBlockRegion getBlockRegion();
 
+	public void close();
+	
 	public boolean isClosed();
 
 }

@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.stream;
 
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
-import com.g4mesoft.captureplayback.common.GSPlaybackTime;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 
 import net.minecraft.util.math.BlockPos;
 
@@ -11,14 +11,9 @@ public final class GSPlaybackEntry implements Comparable<GSPlaybackEntry> {
 	private final long playbackTime;
 	private final GSSignalEvent event;
 	
-	public GSPlaybackEntry(GSPlaybackTime time, GSESignalEdge edge, BlockPos pos) {
+	public GSPlaybackEntry(BlockPos pos, GSSignalTime time, int subordering, GSESignalEdge edge) {
 		playbackTime = time.getGametick();
-		event = new GSSignalEvent(GSETickPhase.BLOCK_EVENTS, time.getMicrotick(), 0, edge, pos);
-	}
-	
-	public GSPlaybackEntry(long playbackTime, GSSignalEvent event) {
-		this.playbackTime = playbackTime;
-		this.event = event;
+		event = new GSSignalEvent(GSETickPhase.BLOCK_EVENTS, time.getMicrotick(), subordering, edge, pos);
 	}
 	
 	public long getPlaybackTime() {

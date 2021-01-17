@@ -32,6 +32,10 @@ public final class GSBlockRegion {
 				other.z1 >= z0 && other.z0 <= z1);
 	}
 
+	public boolean contains(BlockPos pos) {
+		return contains(pos.getX(), pos.getY(), pos.getZ());
+	}
+	
 	public boolean contains(int x, int y, int z) {
 		return (x >= x0 && x <= x1 && 
 		        y >= y0 && y <= y1 && 

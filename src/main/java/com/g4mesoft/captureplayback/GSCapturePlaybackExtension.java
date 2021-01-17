@@ -7,21 +7,21 @@ import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
-import com.g4mesoft.captureplayback.module.GSTimelineDeltaPacket;
-import com.g4mesoft.captureplayback.module.GSTimelinePacket;
+import com.g4mesoft.captureplayback.module.GSSequenceDeltaPacket;
+import com.g4mesoft.captureplayback.module.GSSequencePacket;
+import com.g4mesoft.captureplayback.sequence.delta.GSEntryAddedDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSEntryRemovedDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSEntryTimeDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSEntryTypeDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSSequenceNameDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelAddedDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelDisabledDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelInfoDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelRemovedDelta;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSNoteBlockSignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPistonSignalEventHandler;
-import com.g4mesoft.captureplayback.timeline.delta.GSEntryAddedDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSEntryRemovedDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSEntryTimeDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSEntryTypeDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSITimelineDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSTimelineNameDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSTrackAddedDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSTrackDisabledDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSTrackInfoDelta;
-import com.g4mesoft.captureplayback.timeline.delta.GSTrackRemovedDelta;
 import com.g4mesoft.core.GSVersion;
 import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.core.server.GSControllerServer;
@@ -44,7 +44,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
 	
-	private GSSupplierRegistry<Integer, GSITimelineDelta> deltaRegistry;
+	private GSSupplierRegistry<Integer, GSISequenceDelta> deltaRegistry;
 	private Map<Block, GSISignalEventHandler> signalEventHandlerRegistry;
 	
 	@Environment(EnvType.CLIENT)
@@ -55,11 +55,11 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	public void init() {
 		deltaRegistry = new GSSupplierRegistry<>();
 		
-		deltaRegistry.register(0, GSTimelineNameDelta.class, GSTimelineNameDelta::new);
-		deltaRegistry.register(1, GSTrackAddedDelta.class, GSTrackAddedDelta::new);
-		deltaRegistry.register(2, GSTrackRemovedDelta.class, GSTrackRemovedDelta::new);
-		deltaRegistry.register(3, GSTrackInfoDelta.class, GSTrackInfoDelta::new);
-		deltaRegistry.register(4, GSTrackDisabledDelta.class, GSTrackDisabledDelta::new);
+		deltaRegistry.register(0, GSSequenceNameDelta.class, GSSequenceNameDelta::new);
+		deltaRegistry.register(1, GSChannelAddedDelta.class, GSChannelAddedDelta::new);
+		deltaRegistry.register(2, GSChannelRemovedDelta.class, GSChannelRemovedDelta::new);
+		deltaRegistry.register(3, GSChannelInfoDelta.class, GSChannelInfoDelta::new);
+		deltaRegistry.register(4, GSChannelDisabledDelta.class, GSChannelDisabledDelta::new);
 		deltaRegistry.register(5, GSEntryAddedDelta.class, GSEntryAddedDelta::new);
 		deltaRegistry.register(6, GSEntryRemovedDelta.class, GSEntryRemovedDelta::new);
 		deltaRegistry.register(7, GSEntryTimeDelta.class, GSEntryTimeDelta::new);
@@ -74,8 +74,8 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	@Override
 	public void registerPackets(GSSupplierRegistry<Integer, GSIPacket> registry) {
-		registry.register(0, GSTimelinePacket.class, GSTimelinePacket::new);
-		registry.register(1, GSTimelineDeltaPacket.class, GSTimelineDeltaPacket::new);
+		registry.register(0, GSSequencePacket.class, GSSequencePacket::new);
+		registry.register(1, GSSequenceDeltaPacket.class, GSSequenceDeltaPacket::new);
 	}
 	
 	@Override
@@ -111,7 +111,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		return serverModule;
 	}
 	
-	public GSSupplierRegistry<Integer, GSITimelineDelta> getDeltaRegistry() {
+	public GSSupplierRegistry<Integer, GSISequenceDelta> getDeltaRegistry() {
 		return deltaRegistry;
 	}
 	
