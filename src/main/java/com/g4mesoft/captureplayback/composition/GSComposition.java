@@ -57,12 +57,12 @@ public class GSComposition {
 		if (hasTrackUUID(trackUUID))
 			throw new IllegalStateException("Duplicate track UUID");
 		
-		GSTrack channel = new GSTrack(trackUUID, trackName);
-		addTrackInternal(channel);
+		GSTrack track = new GSTrack(trackUUID, trackName);
+		addTrackInternal(track);
 		
-		dispatchTrackAdded(channel);
+		dispatchTrackAdded(track);
 		
-		return channel;
+		return track;
 	}
 
 	private void addTrackInternal(GSTrack track) {

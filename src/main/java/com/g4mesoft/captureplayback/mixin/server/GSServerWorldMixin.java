@@ -1,7 +1,9 @@
 package com.g4mesoft.captureplayback.mixin.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -12,21 +14,30 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
-import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
+import com.g4mesoft.captureplayback.common.GSESignalEdge;
+import com.g4mesoft.captureplayback.common.GSETickPhase;
+import com.g4mesoft.captureplayback.stream.GSICaptureStream;
+import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
+import com.g4mesoft.captureplayback.stream.GSIStream;
 import com.g4mesoft.captureplayback.stream.GSSignalEvent;
+import com.g4mesoft.captureplayback.stream.frame.GSBasicSignalFrame;
 import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 import com.g4mesoft.captureplayback.stream.frame.GSMergedSignalFrame;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.core.server.GSControllerServer;
 
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.PistonBlock;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.BlockActionS2CPacket;
@@ -46,9 +57,17 @@ import net.minecraft.world.level.LevelProperties;
 public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSISignalEventContext {
 
 	@Shadow @Final private MinecraftServer server;
+	@Shadow @Final private ObjectLinkedOpenHashSet<BlockAction> pendingBlockActions;
 	
-	private final List<GSPlaybackStream> playbackStreams = new ArrayList<>();
+	private final List<GSIPlaybackStream> playbackStreams = new ArrayList<>();
+	private final List<GSICaptureStream> captureStreams = new ArrayList<>();
+	
+	private LinkedList<GSSignalEvent> capturedEvents = new LinkedList<>();
 	private GSISignalFrame signalFrame;
+	
+	private GSETickPhase phase = GSETickPhase.BLOCK_EVENTS;
+	private int blockEventCount = 0;
+	private int microtick = -1;
 	
 	protected GSServerWorldMixin(LevelProperties levelProperties, DimensionType dimensionType,
 			BiFunction<World, Dimension, ChunkManager> chunkManagerProvider, Profiler profiler, boolean isClient) {
@@ -64,44 +83,150 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		} else {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
-			Iterator<GSPlaybackStream> streamItr = playbackStreams.iterator();
-			while (streamItr.hasNext()) {
-				GSPlaybackStream stream = streamItr.next();
-				if (stream.isClosed()) {
-					streamItr.remove();
+			Iterator<GSIPlaybackStream> playbackStreamItr = playbackStreams.iterator();
+			while (playbackStreamItr.hasNext()) {
+				GSIPlaybackStream playbackStream = playbackStreamItr.next();
+				if (playbackStream.isClosed()) {
+					playbackStreamItr.remove();
 				} else {
-					mergedFrame.merge(stream.read());
+					mergedFrame.merge(playbackStream.read());
 				}
 			}
 			
 			signalFrame = mergedFrame;
 		}
+		
+		// Clean up closed capture streams
+		Iterator<GSICaptureStream> captureStreamItr = captureStreams.iterator();
+		while (captureStreamItr.hasNext()) {
+			GSICaptureStream captureStream = captureStreamItr.next();
+			if (captureStream.isClosed())
+				captureStreamItr.remove();
+		}
+
+		capturedEvents.clear();
+		signalFrame.mark();
+	}
+	
+	@Inject(method = "tick", at = @At("RETURN"))
+	public void onTickReturn(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+		if (!captureStreams.isEmpty()) {
+			signalFrame.reset();
+			
+			GSISignalFrame capturedFrame;
+			if (capturedEvents.isEmpty()) {
+				capturedFrame = signalFrame;
+			} else {
+				GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
+				mergedFrame.merge(signalFrame);
+				mergedFrame.merge(new GSBasicSignalFrame(capturedEvents));
+				capturedFrame = mergedFrame;
+			}
+			
+			for (GSICaptureStream captureStream : captureStreams)
+				captureStream.write(capturedFrame);
+		}
+	}
+
+	@Inject(method = "sendBlockActions", at = @At("RETURN"))
+	public void onBlockActionHead(CallbackInfo ci) {
+		phase = GSETickPhase.BLOCK_EVENTS;
+	}
+
+	@Inject(method = "sendBlockActions", at = @At(value = "INVOKE", shift = Shift.BEFORE,
+			target = "Lnet/minecraft/server/world/ServerWorld;method_14174(Lnet/minecraft/server/world/BlockAction;)Z"))
+	public void onBlockActionProcessing(CallbackInfo ci) {
+		if (blockEventCount == 0) {
+			// At this point we have already removed 1 block event.
+			blockEventCount = this.pendingBlockActions.size();
+			microtick++;
+		} else {
+			blockEventCount--;
+		}
+	
+		handleBlockEventPlayback(false);
+	}
+	
+	@Inject(method = "sendBlockActions", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(value = "INVOKE", shift = Shift.BEFORE,
+			target = "Lnet/minecraft/server/MinecraftServer;getPlayerManager()Lnet/minecraft/server/PlayerManager;"))
+	public void onBlockActionSuccess(CallbackInfo ci, BlockAction blockAction) {
+		if (isCapturePosition(blockAction.getPos())) {
+			Block block = blockAction.getBlock();
+			
+			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
+				// TODO: move this out of the world mixin
+				GSESignalEdge edge = (blockAction.getType() == 0) ? GSESignalEdge.RISING_EDGE :
+				                                                    GSESignalEdge.FALLING_EDGE;
+				handleCaptureEvent(edge, blockAction.getPos());
+			}
+		}
 	}
 	
 	@Inject(method = "sendBlockActions", at = @At("RETURN"))
 	public void onSendBlockActionsReturn(CallbackInfo ci) {
+		handleBlockEventPlayback(true);
+		// We are done with the block event phase
+		microtick = -1;
+	}
+	
+	private void handleBlockEventPlayback(boolean skipMicrotickCheck) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		Map<Block, GSISignalEventHandler> handlerRegistry = extension.getSignalEventHandlerRegistry();
 		
 		while (signalFrame.hasNext()) {
 			GSSignalEvent event = signalFrame.next();
-			BlockState state = getBlockState(event.getPos());
+			
+			if (skipMicrotickCheck || event.getMicrotick() == microtick) {
+				BlockState state = getBlockState(event.getPos());
 
-			GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
-			if (handler != null)
-				handler.handle(state, event, this);
+				GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
+				if (handler != null) {
+					microtick = event.getMicrotick();
+					handler.handle(state, event, this);
+				}
+			}
 		}
 	}
 	
 	@Override
-	public void playStream(GSPlaybackStream stream) {
-		if (!stream.isClosed())
-			playbackStreams.add(stream);
+	public void handleCaptureEvent(GSESignalEdge edge, BlockPos pos) {
+		capturedEvents.add(new GSSignalEvent(phase, microtick, capturedEvents.size(), edge, pos));
+	}
+	
+	@Override
+	public void addPlaybackStream(GSIPlaybackStream playbackStream) {
+		if (!playbackStream.isClosed())
+			playbackStreams.add(playbackStream);
+	}
+	
+	@Override
+	public List<GSIPlaybackStream> getPlaybackStreams() {
+		return Collections.unmodifiableList(playbackStreams);
+	}
+	
+	@Override
+	public void addCaptureStream(GSICaptureStream captureStream) {
+		if (!captureStream.isClosed())
+			captureStreams.add(captureStream);
+	}
+	
+	@Override
+	public List<GSICaptureStream> getCaptureStreams() {
+		return Collections.unmodifiableList(captureStreams);
 	}
 	
 	@Override
 	public boolean isPlaybackPosition(BlockPos pos) {
-		for (GSPlaybackStream stream : playbackStreams) {
+		return isPositionInStreams(playbackStreams, pos);
+	}
+	
+	@Override
+	public boolean isCapturePosition(BlockPos pos) {
+		return isPositionInStreams(captureStreams, pos);
+	}
+	
+	private boolean isPositionInStreams(List<? extends GSIStream> streams, BlockPos pos) {
+		for (GSIStream stream : streams) {
 			if (stream.getBlockRegion().contains(pos.getX(), pos.getY(), pos.getZ()))
 				return true;
 		}
@@ -130,5 +255,10 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public boolean setState0(BlockPos pos, BlockState state, int flags) {
+		return setBlockState(pos, state, flags);
 	}
 }

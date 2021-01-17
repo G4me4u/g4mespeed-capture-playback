@@ -20,8 +20,11 @@ import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 import com.g4mesoft.core.GSIModule;
 import com.g4mesoft.core.GSIModuleManager;
 import com.g4mesoft.gui.GSTabbedGUI;
-import com.g4mesoft.hotkey.GSKeyBinding;
+import com.g4mesoft.hotkey.GSEKeyEventType;
 import com.g4mesoft.hotkey.GSKeyManager;
+import com.g4mesoft.setting.GSSettingCategory;
+import com.g4mesoft.setting.GSSettingManager;
+import com.g4mesoft.setting.types.GSIntegerSetting;
 import com.g4mesoft.util.GSFileUtils;
 import com.mojang.brigadier.CommandDispatcher;
 
@@ -34,27 +37,32 @@ import net.minecraft.util.PacketByteBuf;
 
 public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListener {
 
-	private static final String GUI_TAB_TITLE = "gui.tab.capture-playback";
-	
-	public static final String KEY_CATEGORY = "capture-playback";
-	
 	public static final String SEQUENCE_FILE_NAME = "active_sequence.gsq";
+
+	private static final String GUI_TAB_TITLE = "gui.tab.capture-playback";
+	public static final String KEY_CATEGORY = "capture-playback";
+	public static final GSSettingCategory CAPTURE_PLAYBACK_CATEGORY = new GSSettingCategory("capture-playback");
+	
+	public static final int RENDERING_DISABLED = 0;
+	public static final int RENDERING_DEPTH    = 1;
+	public static final int RENDERING_NO_DEPTH = 2;
 	
 	private final GSSequence activeSequence;
 	private final GSSequenceDeltaTransformer transformer;
 
 	private GSIModuleManager manager;
-	
-	@Environment(EnvType.CLIENT)
-	private GSKeyBinding collapseTabKey;
-	@Environment(EnvType.CLIENT)
-	private GSKeyBinding expandedHoveredTabKey;
+
+	public final GSIntegerSetting cChannelRenderingType;
 	
 	public GSCapturePlaybackModule() {
 		activeSequence = new GSSequence(UUID.randomUUID());
 		
 		transformer = new GSSequenceDeltaTransformer();
 		transformer.addDeltaListener(this);
+		
+		manager = null;
+		
+		cChannelRenderingType = new GSIntegerSetting("channelRenderingType", RENDERING_DISABLED, 0, 2);
 	}
 	
 	@Override
@@ -72,7 +80,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		});
 		
 		manager.runOnClient((clientManager) -> {
-			clientManager.addRenderable(new GSSequencePositionRenderable(activeSequence));
+			clientManager.addRenderable(new GSSequencePositionRenderable(this, activeSequence));
 		});
 	}
 	
@@ -128,13 +136,23 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	@Override
 	@Environment(EnvType.CLIENT)
 	public void registerHotkeys(GSKeyManager keyManager) {
-		collapseTabKey = keyManager.registerKey("collapseTab", KEY_CATEGORY, GLFW.GLFW_KEY_T);
-		expandedHoveredTabKey = keyManager.registerKey("expandedHoveredTab", KEY_CATEGORY, GLFW.GLFW_KEY_T);
+		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, null, ignore -> {
+			int newValue = cChannelRenderingType.getValue() + 1;
+			if (newValue > cChannelRenderingType.getMaxValue())
+				newValue = cChannelRenderingType.getMinValue();
+			cChannelRenderingType.setValue(newValue);
+		}, GSEKeyEventType.PRESS);
+	}
+	
+	@Override
+	public void registerClientSettings(GSSettingManager settings) {
+		settings.registerSetting(CAPTURE_PLAYBACK_CATEGORY, cChannelRenderingType);
 	}
 	
 	@Override
 	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
 		GSPlaybackCommand.registerCommand(dispatcher);
+		GSCaptureCommand.registerCommand(dispatcher);
 	}
 	
 	@Override
@@ -159,6 +177,9 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onSequenceDelta(GSISequenceDelta delta) {
 		manager.runOnClient(managerClient -> {
 			managerClient.sendPacket(new GSSequenceDeltaPacket(delta));
+		});
+		manager.runOnServer(managerServer -> {
+			managerServer.sendPacketToAll(new GSSequenceDeltaPacket(delta));
 		});
 	}
 
@@ -194,16 +215,6 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 
 	private File getSequenceFile() {
 		return new File(manager.getCacheFile(), SEQUENCE_FILE_NAME);
-	}
-	
-	@Environment(EnvType.CLIENT)
-	public GSKeyBinding getCollapseTabKey() {
-		return collapseTabKey;
-	}
-
-	@Environment(EnvType.CLIENT)
-	public GSKeyBinding getExpandHoveredTabKey() {
-		return expandedHoveredTabKey;
 	}
 	
 	public GSSequence getActiveSequence() {

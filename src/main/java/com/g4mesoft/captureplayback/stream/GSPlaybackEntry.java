@@ -11,14 +11,9 @@ public final class GSPlaybackEntry implements Comparable<GSPlaybackEntry> {
 	private final long playbackTime;
 	private final GSSignalEvent event;
 	
-	public GSPlaybackEntry(GSSignalTime time, GSESignalEdge edge, BlockPos pos) {
+	public GSPlaybackEntry(BlockPos pos, GSSignalTime time, int subordering, GSESignalEdge edge) {
 		playbackTime = time.getGametick();
-		event = new GSSignalEvent(GSETickPhase.BLOCK_EVENTS, time.getMicrotick(), 0, edge, pos);
-	}
-	
-	public GSPlaybackEntry(long playbackTime, GSSignalEvent event) {
-		this.playbackTime = playbackTime;
-		this.event = event;
+		event = new GSSignalEvent(GSETickPhase.BLOCK_EVENTS, time.getMicrotick(), subordering, edge, pos);
 	}
 	
 	public long getPlaybackTime() {

@@ -1,13 +1,28 @@
 package com.g4mesoft.captureplayback.access;
 
-import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
+import java.util.List;
+
+import com.g4mesoft.captureplayback.common.GSESignalEdge;
+import com.g4mesoft.captureplayback.stream.GSICaptureStream;
+import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 
 import net.minecraft.util.math.BlockPos;
 
 public interface GSIServerWorldAccess {
 
-	public void playStream(GSPlaybackStream playbackStream);
+	public void handleCaptureEvent(GSESignalEdge edge, BlockPos pos);
+
+	public List<GSIPlaybackStream> getPlaybackStreams();
+	
+	public void addPlaybackStream(GSIPlaybackStream playbackStream);
+
+	public List<GSICaptureStream> getCaptureStreams();
+	
+	public void addCaptureStream(GSICaptureStream captureStream);
 
 	public boolean isPlaybackPosition(BlockPos pos);
+
+	public boolean isCapturePosition(BlockPos pos);
+
 	
 }

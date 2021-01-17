@@ -3,12 +3,13 @@ package com.g4mesoft.captureplayback.module;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.renderer.GSERenderPhase;
 import com.g4mesoft.renderer.GSIRenderable3D;
 import com.g4mesoft.renderer.GSIRenderer3D;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.VertexFormats;
@@ -20,14 +21,33 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	private static final int COLOR_ALPHA = 0x80;
 	private static final float SURFACE_OFFSET = 1.0e-3f;
 	
+	private final GSCapturePlaybackModule module;
 	private final GSSequence sequence;
 	
-	public GSSequencePositionRenderable(GSSequence sequence) {
+	public GSSequencePositionRenderable(GSCapturePlaybackModule module, GSSequence sequence) {
+		this.module = module;
 		this.sequence = sequence;
 	}
 	
 	@Override
 	public void render(GSIRenderer3D renderer) {
+		switch(module.cChannelRenderingType.getValue()) {
+		case GSCapturePlaybackModule.RENDERING_DEPTH:
+			renderCubes(renderer);
+			break;
+		case GSCapturePlaybackModule.RENDERING_NO_DEPTH:
+			RenderSystem.disableDepthTest();
+			renderCubes(renderer);
+			RenderSystem.enableDepthTest();
+			break;
+		case GSCapturePlaybackModule.RENDERING_DISABLED:
+		default:
+			// Skip rendering in this case
+			break;
+		}
+	}
+	
+	private void renderCubes(GSIRenderer3D renderer) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
 		

@@ -11,7 +11,7 @@ public final class GSSignalTime {
 	
 	private final long gametick;
 	private final int microtick;
-	
+
 	public GSSignalTime(long gametick, int microtick) {
 		if (gametick < 0L || microtick < 0)
 			throw new IllegalArgumentException("Ticks must be non-negative!");

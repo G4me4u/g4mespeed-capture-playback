@@ -46,7 +46,7 @@ public final class GSChannelEntry {
 	}
 	
 	void setParent(GSChannel parent) {
-		if (this.parent != null)
+		if (parent != null && this.parent != null)
 			throw new IllegalStateException("Entry already has a parent");
 		this.parent = parent;
 	}

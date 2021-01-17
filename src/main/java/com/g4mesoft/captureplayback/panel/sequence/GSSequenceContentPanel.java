@@ -385,7 +385,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	private void removeEntry(UUID channelUUID, GSChannelEntry entry) {
 		GSChannel channel = sequence.getChannel(channelUUID);
 		if (channel == entry.getParent())
-			channel.removeEntry(entry);
+			channel.removeEntry(entry.getEntryUUID());
 	}
 	
 	private GSEResizeArea getHoveredResizeArea(GSChannelEntry entry, int mouseX, int mouseY) {

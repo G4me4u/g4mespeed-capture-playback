@@ -46,7 +46,7 @@ public class GSChannel {
 	}
 
 	void setParent(GSSequence parent) {
-		if (this.parent != null)
+		if (parent != null && this.parent != null)
 			throw new IllegalStateException("Channel already has a parent");
 		this.parent = parent;
 	}
@@ -70,8 +70,7 @@ public class GSChannel {
 		while (itr.hasNext()) {
 			GSChannelEntry entry = itr.next();
 			itr.remove();
-			
-			dispatchEntryRemoved(entry);
+			onEntryRemoved(entry);
 		}
 	}
 
@@ -99,18 +98,21 @@ public class GSChannel {
 		entries.put(entry.getEntryUUID(), entry);
 	}
 	
-	public boolean removeEntry(GSChannelEntry entry) {
-		return removeEntry(entry.getEntryUUID());
-	}
-	
 	public boolean removeEntry(UUID entryUUID) {
 		GSChannelEntry entry = entries.remove(entryUUID);
 		if (entry != null) {
-			dispatchEntryRemoved(entry);
+			onEntryRemoved(entry);
 			return true;
 		}
 		
 		return false;
+	}
+	
+	private void onEntryRemoved(GSChannelEntry entry) {
+		dispatchEntryRemoved(entry);
+		// Ensure that events are no longer heard by
+		// the registered listeners.
+		entry.setParent(null);
 	}
 	
 	public boolean isOverlappingEntries(GSSignalTime startTime, GSSignalTime endTime, GSChannelEntry ignoreEntry) {

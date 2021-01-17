@@ -11,10 +11,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.stream.GSBlockRegion;
+import com.g4mesoft.captureplayback.stream.GSICaptureStream;
+import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.util.PacketByteBuf;
+import net.minecraft.util.math.BlockPos;
 
 public class GSSequence {
 
@@ -61,8 +65,7 @@ public class GSSequence {
 		while (itr.hasNext()) {
 			GSChannel channel = itr.next();
 			itr.remove();
-			
-			dispatchChannelRemoved(channel);
+			onChannelRemoved(channel);
 		}
 	}
 	
@@ -91,11 +94,18 @@ public class GSSequence {
 	public boolean removeChannel(UUID channelUUID) {
 		GSChannel channel = channels.remove(channelUUID);
 		if (channel != null) {
-			dispatchChannelRemoved(channel);
+			onChannelRemoved(channel);
 			return true;
 		}
 		
 		return false;
+	}
+	
+	private void onChannelRemoved(GSChannel channel) {
+		dispatchChannelRemoved(channel);
+		// Ensure that changes to the channel are no longer
+		// heard by the registered listeners.
+		channel.setParent(null);
 	}
 	
 	public UUID getSequenceUUID() {
@@ -195,5 +205,44 @@ public class GSSequence {
 		buf.writeInt(channels.size());
 		for (GSChannel channel : channels)
 			GSChannel.write(buf, channel);
+	}
+	
+	public GSIPlaybackStream getPlaybackStream() {
+		return new GSSequencePlaybackStream(this);
+	}
+
+	public GSICaptureStream getCaptureStream() {
+		return new GSSequenceCaptureStream(this);
+	}
+	
+	/* Method visible for play-back & capture streams */
+	GSBlockRegion getBlockRegion() {
+		int x0 = Integer.MAX_VALUE;
+		int y0 = Integer.MAX_VALUE;
+		int z0 = Integer.MAX_VALUE;
+
+		int x1 = Integer.MIN_VALUE;
+		int y1 = Integer.MIN_VALUE;
+		int z1 = Integer.MIN_VALUE;
+		
+		for (GSChannel channel : getChannels()) {
+			BlockPos pos = channel.getInfo().getPos();
+			
+			if (pos.getX() < x0)
+				x0 = pos.getX();
+			if (pos.getY() < y0)
+				y0 = pos.getY();
+			if (pos.getZ() < z0)
+				z0 = pos.getZ();
+
+			if (pos.getX() > x1)
+				x1 = pos.getX();
+			if (pos.getY() > y1)
+				y1 = pos.getY();
+			if (pos.getZ() > z1)
+				z1 = pos.getZ();
+		}
+		
+		return new GSBlockRegion(x0, y0, z0, x1, y1, z1);
 	}
 }
