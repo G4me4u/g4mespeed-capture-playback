@@ -5,6 +5,13 @@
 
 gui.tab.capture-playback=Capture & Playback
 
+############ Panels ############
+
+panel.sequencecolumnheader.expand=Expand
+panel.sequencecolumnheader.collapse=Collapse
+panel.sequencecolumnheader.expandall=Expand All
+panel.sequencecolumnheader.collapseall=Collapse All
+
 ############ Hotkeys ############
 
 hotkey.capture-playback.title=Capture & Playback

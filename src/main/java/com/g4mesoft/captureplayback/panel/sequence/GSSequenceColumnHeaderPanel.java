@@ -5,7 +5,12 @@ import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
+import com.g4mesoft.panel.popup.GSDropdown;
+import com.g4mesoft.panel.popup.GSDropdownAction;
 import com.g4mesoft.renderer.GSIRenderer2D;
+
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
 public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseListener {
 
@@ -18,6 +23,11 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	
 	public static final int DOTTED_LINE_LENGTH = 4;
 	public static final int DOTTED_LINE_SPACING = 3;
+	
+	private static final Text EXPAND_TEXT = new TranslatableText("panel.sequencecolumnheader.expand");
+	private static final Text COLLAPSE_TEXT = new TranslatableText("panel.sequencecolumnheader.collapse");
+	private static final Text EXPAND_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.expandall");
+	private static final Text COLLAPSE_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.collapseall");
 	
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSSequenceModelView modelView;
@@ -97,6 +107,35 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 		int ex = modelView.getColumnX(expandedColumnIndex);
 		int ew = modelView.getColumnWidth(expandedColumnIndex);
 		renderer.fillRect(ex, height / 2 - 1, ew, 1, MT_COLUMN_LINE_COLOR);
+	}
+	
+	@Override
+	public GSDropdown getRightClickMenu(int x, int y) {
+		int hoveredColumn = modelView.getColumnIndexFromView(x);
+		if (hoveredColumn != -1) {
+			GSDropdown dropdown = new GSDropdown();
+		
+			GSDropdownAction collapseAction;
+			dropdown.addItem(new GSDropdownAction(EXPAND_TEXT, () -> {
+				expandedColumnModel.setExpandedColumn(hoveredColumn);
+			}));
+			dropdown.addItem(collapseAction = new GSDropdownAction(COLLAPSE_TEXT, () -> {
+				expandedColumnModel.toggleExpandedColumn(hoveredColumn);
+			}));
+			dropdown.addSeperator();
+			dropdown.addItem(new GSDropdownAction(EXPAND_ALL_TEXT, () -> {
+				expandedColumnModel.setExpandedColumnRange(0, Integer.MAX_VALUE);
+			}));
+			dropdown.addItem(new GSDropdownAction(COLLAPSE_ALL_TEXT, () -> {
+				expandedColumnModel.clearExpandedColumns();
+			}));
+			
+			collapseAction.setEnabled(expandedColumnModel.isColumnExpanded(hoveredColumn));
+			
+			return dropdown;
+		}
+		
+		return super.getRightClickMenu(x, y);
 	}
 	
 	@Override

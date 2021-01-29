@@ -1,10 +1,18 @@
 package com.g4mesoft.captureplayback.composition;
 
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+
 public interface GSICompositionListener {
 
-	default public void sequenceNameChanged(String oldName) {
+	default public void compositionNameChanged(String oldName) {
 	}
 
+	default public void sequenceAdded(GSSequence sequence) {
+	}
+
+	default public void sequenceRemoved(GSSequence sequence) {
+	}
+	
 	default public void trackAdded(GSTrack track) {
 	}
 
@@ -12,6 +20,9 @@ public interface GSICompositionListener {
 	}
 
 	default public void trackNameChanged(GSTrack track, String oldName) {
+	}
+
+	default public void trackColorChanged(GSTrack gsTrack, int oldColor) {
 	}
 	
 	default public void entryAdded(GSTrackEntry entry) {
