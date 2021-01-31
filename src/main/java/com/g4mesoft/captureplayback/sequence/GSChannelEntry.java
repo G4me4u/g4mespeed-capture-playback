@@ -151,6 +151,8 @@ public final class GSChannelEntry {
 
 		GSSignalTime startTime = GSSignalTime.read(buf);
 		GSSignalTime endTime = GSSignalTime.read(buf);
+		if (startTime.isAfter(endTime))
+			throw new IOException("Invalid entry time-span");
 		entry.setTimespan(startTime, endTime);
 		
 		GSEChannelEntryType type = GSEChannelEntryType.fromIndex(buf.readInt());

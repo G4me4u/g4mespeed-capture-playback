@@ -11,7 +11,7 @@ import net.minecraft.util.math.BlockPos;
 
 public class GSSequenceInfoPanel extends GSPanel {
 
-	private static final int INFO_TEXT_COLOR = 0xFFFFFFFF;
+	private static final int INFO_TEXT_COLOR = 0xFFE0E0E0;
 	
 	private final GSSequence sequence;
 	

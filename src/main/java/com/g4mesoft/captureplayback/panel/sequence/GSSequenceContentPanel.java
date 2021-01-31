@@ -9,11 +9,19 @@ import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSColoredIcon;
+import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.panel.dropdown.GSDropdown;
+import com.g4mesoft.panel.dropdown.GSDropdownAction;
+import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.renderer.GSIRenderer2D;
+
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
 public class GSSequenceContentPanel extends GSPanel implements GSISequenceListener, GSISequenceModelViewListener,
                                                                GSIMouseListener {
@@ -34,6 +42,15 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	private static final int DRAGGING_AREA_SIZE = 6;
 	private static final int DRAGGING_PADDING = 2;
 	private static final int DRAGGING_AREA_COLOR = 0x40FFFFFF;
+	
+	private static final int DOTTED_LINE_LENGTH  = GSSequenceColumnHeaderPanel.DOTTED_LINE_LENGTH;
+	private static final int DOTTED_LINE_SPACING = GSSequenceColumnHeaderPanel.DOTTED_LINE_SPACING;
+	private static final int DOTTED_LINE_COLOR   = GSSequenceColumnHeaderPanel.DOTTED_LINE_COLOR;
+	
+	private static final GSIcon TYPE_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
+	private static final Text CREATE_ENTRY_TEXT = new TranslatableText("panel.sequencecontent.createentry");
+	private static final Text ENTRY_TYPE_TEXT   = new TranslatableText("panel.sequencecontent.entrytype");
+	private static final Text DELETE_ENTRY_TEXT = new TranslatableText("panel.sequencecontent.deleteentry");
 	
 	private final GSSequence sequence;
 	private final GSExpandedColumnModel expandedColumnModel;
@@ -125,11 +142,11 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 			int duration = modelView.getColumnDuration(columnIndex);
 
 			for (int mt = 1; mt < duration; mt++) {
+				int offset = modelView.getYOffset() % (DOTTED_LINE_LENGTH + DOTTED_LINE_SPACING);
+
 				int x = modelView.getMicrotickColumnX(columnIndex, mt);
-				int y = GSSequenceColumnHeaderPanel.DOTTED_LINE_SPACING / 2;
-			
-				renderer.drawDottedVLine(x, y, height, GSSequenceColumnHeaderPanel.DOTTED_LINE_LENGTH, 
-						GSSequenceColumnHeaderPanel.DOTTED_LINE_SPACING, GSSequenceColumnHeaderPanel.MT_COLUMN_LINE_COLOR);
+				int y = DOTTED_LINE_SPACING / 2 + offset;
+				renderer.drawDottedVLine(x, y, height, DOTTED_LINE_LENGTH, DOTTED_LINE_SPACING, DOTTED_LINE_COLOR);
 			}
 		}
 	}
@@ -252,6 +269,47 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 	
 	@Override
+	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
+		UUID channelUUID = hoveredChannelUUID;
+		GSChannelEntry entry = hoveredEntry;
+		
+		dropdown.addItemSeparator();
+		dropdown.addItem(new GSDropdownAction(CREATE_ENTRY_TEXT, () -> {
+			GSSignalTime time = modelView.viewToModel(x, y);
+			GSChannel channel = sequence.getChannel(channelUUID);
+			
+			if (time != null && channel != null)
+				channel.tryAddEntry(time, time.offsetCopy(1L, 0));
+		}));
+		dropdown.addItemSeparator();
+		GSDropdown entryTypeMenu = new GSDropdown();
+		if (entry != null) {
+			for (GSEChannelEntryType type : GSEChannelEntryType.TYPES) {
+				GSIcon icon = (entry.getType() == type) ? TYPE_SELECTED_ICON : null;
+				Text text = new TranslatableText(type.getName());
+				entryTypeMenu.addItem(new GSDropdownAction(icon, text, () -> {
+					entry.setType(type);
+				}));
+			}
+		}
+		GSDropdownSubMenu entryType;
+		dropdown.addItem(entryType = new GSDropdownSubMenu(ENTRY_TYPE_TEXT, entryTypeMenu));
+		GSDropdownAction deleteEntry;
+		dropdown.addItem(deleteEntry = new GSDropdownAction(DELETE_ENTRY_TEXT, () ->  {
+			removeEntry(channelUUID, entry);
+		}));
+		
+		entryType.setEnabled(entry != null);
+		deleteEntry.setEnabled(entry != null);
+		
+		GSPanel parent = getParent();
+		if (parent != null) {
+			// Populate right click menu from parent
+			parent.createRightClickMenu(dropdown, this.x + x, this.y + y);
+		}
+	}
+	
+	@Override
 	public void mouseMoved(GSMouseEvent event) {
 		currentMouseX = event.getX();
 		currentMouseY = event.getY();
@@ -260,28 +318,29 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 	
 	private void updateHoveredEntry() {
-		GSChannelEntry hoveredEntry = null;
+		hoveredEntry = (hoveredChannelUUID != null) ? 
+				getEntryAt(hoveredChannelUUID, currentMouseX, currentMouseY) : null;
+	}
+	
+	private GSChannelEntry getEntryAt(UUID channelUUID, int x, int y) {
+		GSChannel hoveredChannel = sequence.getChannel(channelUUID);
+		GSSignalTime hoveredTime = modelView.viewToModel(x, y);
 		
-		if (hoveredChannelUUID != null) {
-			GSChannel hoveredChannel = sequence.getChannel(hoveredChannelUUID);
-			GSSignalTime hoveredTime = modelView.viewToModel(currentMouseX, currentMouseY);
+		if (hoveredChannel != null && hoveredTime != null) {
+			int columnIndex = modelView.getColumnIndex(hoveredTime);
 			
-			if (hoveredChannel != null && hoveredTime != null) {
-				int columnIndex = modelView.getColumnIndex(hoveredTime);
-				
-				boolean precise = shouldUsePreciseHovering(hoveredChannelUUID, columnIndex);
-				hoveredEntry = hoveredChannel.getEntryAt(hoveredTime, precise);
+			boolean precise = shouldUsePreciseHovering(channelUUID, columnIndex);
+			GSChannelEntry entry = hoveredChannel.getEntryAt(hoveredTime, precise);
 
-				if (hoveredEntry != null) {
-					GSRectangle rect = modelView.modelToView(hoveredEntry);
-				
-					if (rect == null || !rect.contains(currentMouseX, currentMouseY))
-						hoveredEntry = null;
-				}
+			if (entry != null) {
+				GSRectangle rect = modelView.modelToView(entry);
+			
+				if (rect != null && rect.contains(x, y))
+					return entry;
 			}
 		}
 		
-		this.hoveredEntry = hoveredEntry;
+		return null;
 	}
 	
 	private boolean shouldUsePreciseHovering(UUID channelUUID, int columnIndex) {
@@ -294,33 +353,24 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	
 	@Override
 	public void mousePressed(GSMouseEvent event) {
-		switch (event.getButton()) {
-		case GSMouseEvent.BUTTON_LEFT:
+		if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
 			clickedMouseX = event.getX();
 			clickedMouseY = event.getY();
 			clickedMouseTime = modelView.viewToModel(event.getX(), event.getY());
-			
+
 			if (editable && hoveredEntry != null) {
-				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
-				
-				if (startDragging(hoveredEntry, resizeAreaToDraggingType(resizeArea)))
-					event.consume();
-			}
-			
-			break;
-		case GSMouseEvent.BUTTON_RIGHT:
-			if (editable && hoveredEntry != null) {
-				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
-				
-				if (resizeArea != null) {
-					toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
-					event.consume();
-				} else if (draggingType == GSEDraggingType.NOT_DRAGGING) {
-					removeEntry(hoveredChannelUUID, hoveredEntry);
-					event.consume();
+				if (event.isModifierHeld(GSMouseEvent.MODIFIER_CONTROL)) {
+					if (draggingType == GSEDraggingType.NOT_DRAGGING) {
+						removeEntry(hoveredChannelUUID, hoveredEntry);
+						event.consume();
+					}
+				} else {
+					GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
+					
+					if (startDragging(hoveredEntry, resizeAreaToDraggingType(resizeArea)))
+						event.consume();
 				}
 			}
-			break;
 		}
 	}
 
@@ -372,16 +422,6 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		return GSEDraggingType.DRAGGING;
 	}
 	
-	private GSEChannelEntryType resizeAreaToEntryType(GSEResizeArea resizeArea) {
-		if (resizeArea == GSEResizeArea.HOVERING_START)
-			return GSEChannelEntryType.EVENT_END;
-		return GSEChannelEntryType.EVENT_START;
-	}
-	
-	private void toggleEntryEdge(GSChannelEntry entry, GSEChannelEntryType type) {
-		entry.setType((type == entry.getType()) ? GSEChannelEntryType.EVENT_BOTH : type);
-	}
-	
 	private void removeEntry(UUID channelUUID, GSChannelEntry entry) {
 		GSChannel channel = sequence.getChannel(channelUUID);
 		if (channel == entry.getParent())
@@ -408,9 +448,30 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	@Override
 	public void mouseReleased(GSMouseEvent event) {
 		if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
-			stopDragging();
-			event.consume();
+			if (draggingType != GSEDraggingType.NOT_DRAGGING) {
+				stopDragging();
+				event.consume();
+			}
+
+			if (currentMouseX == clickedMouseX && currentMouseY == clickedMouseY && hoveredEntry != null) {
+				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
+				
+				if (resizeArea != null) {
+					toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
+					event.consume();
+				}
+			}
 		}
+	}
+	
+	private GSEChannelEntryType resizeAreaToEntryType(GSEResizeArea resizeArea) {
+		if (resizeArea == GSEResizeArea.HOVERING_START)
+			return GSEChannelEntryType.EVENT_END;
+		return GSEChannelEntryType.EVENT_START;
+	}
+	
+	private void toggleEntryEdge(GSChannelEntry entry, GSEChannelEntryType type) {
+		entry.setType((type == entry.getType()) ? GSEChannelEntryType.EVENT_BOTH : type);
 	}
 
 	@Override

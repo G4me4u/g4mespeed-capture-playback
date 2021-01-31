@@ -2,11 +2,11 @@ package com.g4mesoft.captureplayback.panel.sequence;
 
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.dropdown.GSDropdown;
+import com.g4mesoft.panel.dropdown.GSDropdownAction;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.popup.GSDropdown;
-import com.g4mesoft.panel.popup.GSDropdownAction;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
@@ -14,14 +14,14 @@ import net.minecraft.text.TranslatableText;
 
 public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseListener {
 
-	public static final int COLUMN_HEADER_COLOR = 0xFF202020;
-	public static final int HEADER_TEXT_COLOR = 0xFFFFFFFF;
-	public static final int DARK_HEADER_TEXT_COLOR = 0xFFB2B2B2;
+	public static final int COLUMN_HEADER_COLOR    = 0xFF202020;
+	public static final int HEADER_TEXT_COLOR      = 0xFFE0E0E0;
+	public static final int DARK_HEADER_TEXT_COLOR = 0xFFA0A0A0;
 	
 	public static final int COLUMN_LINE_COLOR = 0xFF202020;
-	public static final int MT_COLUMN_LINE_COLOR = 0xFF404040;
+	public static final int DOTTED_LINE_COLOR = 0xFF404040;
 	
-	public static final int DOTTED_LINE_LENGTH = 4;
+	public static final int DOTTED_LINE_LENGTH  = 4;
 	public static final int DOTTED_LINE_SPACING = 3;
 	
 	private static final Text EXPAND_TEXT = new TranslatableText("panel.sequencecolumnheader.expand");
@@ -79,7 +79,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 		renderer.drawText(Long.toString(gametick), cx + 2, ty, color, false);
 		
 		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
-			renderer.drawVLine(cx, 0, height, COLUMN_LINE_COLOR);
+			renderer.drawVLine(cx - 1, 0, height, COLUMN_LINE_COLOR);
 			renderer.drawVLine(cx + cw - 1, 0, height, COLUMN_LINE_COLOR);
 		}
 		
@@ -100,29 +100,28 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 			if (mt != 0) {
 				int ly = height / 2 + GSSequenceColumnHeaderPanel.DOTTED_LINE_SPACING / 2;
 				renderer.drawDottedVLine(x, ly, height, DOTTED_LINE_LENGTH, 
-						DOTTED_LINE_SPACING, MT_COLUMN_LINE_COLOR);
+						DOTTED_LINE_SPACING, DOTTED_LINE_COLOR);
 			}
 		}
 		
 		int ex = modelView.getColumnX(expandedColumnIndex);
 		int ew = modelView.getColumnWidth(expandedColumnIndex);
-		renderer.fillRect(ex, height / 2 - 1, ew, 1, MT_COLUMN_LINE_COLOR);
+		renderer.fillRect(ex, height / 2 - 1, ew, 1, DOTTED_LINE_COLOR);
 	}
 	
 	@Override
-	public GSDropdown getRightClickMenu(int x, int y) {
+	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
 		int hoveredColumn = modelView.getColumnIndexFromView(x);
 		if (hoveredColumn != -1) {
-			GSDropdown dropdown = new GSDropdown();
-		
-			GSDropdownAction collapseAction;
+			dropdown.addItemSeparator();
 			dropdown.addItem(new GSDropdownAction(EXPAND_TEXT, () -> {
 				expandedColumnModel.setExpandedColumn(hoveredColumn);
 			}));
+			GSDropdownAction collapseAction;
 			dropdown.addItem(collapseAction = new GSDropdownAction(COLLAPSE_TEXT, () -> {
 				expandedColumnModel.toggleExpandedColumn(hoveredColumn);
 			}));
-			dropdown.addSeperator();
+			dropdown.addItemSeparator();
 			dropdown.addItem(new GSDropdownAction(EXPAND_ALL_TEXT, () -> {
 				expandedColumnModel.setExpandedColumnRange(0, Integer.MAX_VALUE);
 			}));
@@ -131,11 +130,13 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 			}));
 			
 			collapseAction.setEnabled(expandedColumnModel.isColumnExpanded(hoveredColumn));
-			
-			return dropdown;
 		}
 		
-		return super.getRightClickMenu(x, y);
+		GSPanel parent = getParent();
+		if (parent != null) {
+			// Populate right click menu from parent
+			parent.createRightClickMenu(dropdown, this.x + x, this.y + y);
+		}
 	}
 	
 	@Override

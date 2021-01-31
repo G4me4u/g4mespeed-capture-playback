@@ -41,18 +41,27 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 		nameField.addFocusEventListener(new GSIFocusEventListener() {
 			@Override
 			public void focusLost(GSFocusEvent event) {
-				handleNameChanged(nameField.getText());
-				nameField.getCaret().setCaretLocation(0);
-				event.consume();
+				if (!nameField.hasPopupVisible()) {
+					handleNameChanged(nameField.getText());
+					nameField.getCaret().setCaretLocation(0);
+					event.consume();
+				}
 			}
 		});
 		
 		nameField.addKeyEventListener(new GSIKeyListener() {
 			@Override
 			public void keyPressed(GSKeyEvent event) {
-				if (!event.isRepeating() && event.getKeyCode() == GSKeyEvent.KEY_ENTER) {
-					handleNameChanged(nameField.getText());
-					event.consume();
+				if (!event.isRepeating()) {
+					switch (event.getKeyCode()) {
+					case GSKeyEvent.KEY_ENTER:
+						handleNameChanged(nameField.getText());
+					case GSKeyEvent.KEY_ESCAPE:
+						nameField.unfocus();
+						event.consume();
+					default:
+						break;
+					}
 				}
 			}
 		});
