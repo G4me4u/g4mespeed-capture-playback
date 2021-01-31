@@ -23,7 +23,7 @@ import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSSequenceChannelHeaderPanel extends GSParentPanel implements GSISequenceListener, GSISequenceModelViewListener,
-                                                                         GSIMouseListener, GSIKeyListener {
+                                                                           GSIMouseListener, GSIKeyListener {
 
 	public static final int CHANNEL_HEADER_COLOR = 0xFF171717;
 	public static final int CHANNEL_HOVER_COLOR = 0x30FFFFFF;
@@ -55,7 +55,8 @@ public class GSSequenceChannelHeaderPanel extends GSParentPanel implements GSISe
 		channelNameField.addFocusEventListener(new GSIFocusEventListener() {
 			@Override
 			public void focusLost(GSFocusEvent event) {
-				resetNameFieldCaret();
+				if (!channelNameField.hasPopupVisible())
+					resetNameFieldCaret();
 			}
 		});
 		
@@ -322,7 +323,7 @@ public class GSSequenceChannelHeaderPanel extends GSParentPanel implements GSISe
 	void setHoveredChannelUUID(UUID hoveredChannelUUID) {
 		this.hoveredChannelUUID = hoveredChannelUUID;
 		
-		if (!channelNameField.isFocused())
+		if (!channelNameField.isFocused() && !channelNameField.hasPopupVisible())
 			setCurrentEditingChannel(hoveredChannelUUID, false);
 	}
 	

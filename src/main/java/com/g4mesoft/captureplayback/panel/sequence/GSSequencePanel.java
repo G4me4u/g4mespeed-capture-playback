@@ -9,7 +9,12 @@ import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSColoredIcon;
+import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSParentPanel;
+import com.g4mesoft.panel.dropdown.GSDropdown;
+import com.g4mesoft.panel.dropdown.GSDropdownAction;
+import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
@@ -21,6 +26,9 @@ import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.google.common.base.Objects;
 
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
+
 public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSIScrollListener, 
                                                               GSISequenceListener, GSIExpandedColumnModelListener,
                                                               GSIMouseListener, GSIKeyListener {
@@ -29,6 +37,9 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 	
 	private static final int CORNER_SQUARE_COLOR = 0xFF000000;
+	
+	private static final GSIcon OPACITY_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
+	private static final Text OPACITY_TEXT = new TranslatableText("panel.sequence.opacity");
 	
 	private final GSSequence sequence;
 	private final GSIChannelProvider channelProvider;
@@ -53,8 +64,12 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private int contentWidth;
 	private int contentHeight;
 	
+	private int hoveredMouseX;
 	private int hoveredMouseY;
+	private int hoveredColumnIndex;
 	private UUID hoveredChannelUUID;
+	
+	private GSESequenceOpacity opacity;
 	
 	public GSSequencePanel(GSSequence sequence, GSIChannelProvider channelProvider) {
 		this.sequence = sequence;
@@ -81,6 +96,8 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	
 		// Editable by default
 		editable = true;
+		// Fully opaque by default
+		opacity = GSESequenceOpacity.FULLY_OPAQUE;
 		
 		add(sequenceContent);
 		add(channelHeader);
@@ -103,7 +120,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		expandedColumnModel.addModelListener(this);
 		
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
@@ -113,7 +130,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		sequence.removeSequenceListener(this);
 		expandedColumnModel.removeModelListener(this);
 	
-		setHoveredChannelUUID(null);
+		setHoveredCell(-1, null);
 	}
 	
 	@Override
@@ -172,6 +189,9 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	
 	@Override
 	public void render(GSIRenderer2D renderer) {
+		float oldOpacity = renderer.getOpacity();
+		renderer.setOpacity(opacity.getOpacity());
+		
 		super.render(renderer);
 
 		int sw = verticalScrollBar.getWidth();
@@ -183,17 +203,22 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, CORNER_SQUARE_COLOR);
 		// Bottom right corner
 		renderer.fillRect(cx, cy, sw, sh, CORNER_SQUARE_COLOR);
+		
+		renderer.setOpacity(oldOpacity);
 	}
 	
 	@Override
 	public void mouseMoved(GSMouseEvent event) {
+		hoveredMouseX = event.getX() - sequenceContent.getX();
 		hoveredMouseY = event.getY() - sequenceContent.getY();
 		
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 	
-	private void updateHoveredChannel() {
-		setHoveredChannelUUID(modelView.getChannelUUIDFromView(hoveredMouseY));
+	private void updateHoveredCell() {
+		int columnIndex = modelView.getColumnIndexFromView(hoveredMouseX);
+		UUID channelUUID = modelView.getChannelUUIDFromView(hoveredMouseY);
+		setHoveredCell(columnIndex, channelUUID);
 	}
 	
 	@Override
@@ -215,6 +240,22 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 			
 			event.consume();
 		}
+	}
+	
+	@Override
+	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
+		dropdown.addItemSeparator();
+		GSDropdown opacityMenu = new GSDropdown();
+		for (GSESequenceOpacity opacity : GSESequenceOpacity.OPACITIES) {
+			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
+			Text text = new TranslatableText(opacity.getName());
+			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
+				setOpacity(opacity);
+			}));
+		}
+		dropdown.addItem(new GSDropdownSubMenu(OPACITY_TEXT, opacityMenu));
+		
+		super.createRightClickMenu(dropdown, x, y);
 	}
 	
 	@Override
@@ -273,13 +314,13 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	@Override
 	public void channelAdded(GSChannel channel) {
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
 	public void channelRemoved(GSChannel channel) {
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
@@ -300,19 +341,18 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	@Override
 	public void onExpandedColumnChanged(int minExpandedColumnIndex, int maxExpandedColumnIndex) {
 		updateContentSize();
+		updateHoveredCell();
 	}
 	
-	public UUID getHoveredChannelUUID() {
-		return hoveredChannelUUID;
-	}
-	
-	private void setHoveredChannelUUID(UUID hoveredChannelUUID) {
-		if (!Objects.equal(hoveredChannelUUID, this.hoveredChannelUUID)) {
-			this.hoveredChannelUUID = hoveredChannelUUID;
+	private void setHoveredCell(int columnIndex, UUID channelUUID) {
+		if (columnIndex != hoveredColumnIndex || !Objects.equal(channelUUID, hoveredChannelUUID)) {
+			hoveredChannelUUID = channelUUID;
+			hoveredColumnIndex = columnIndex;
 			
-			sequenceContent.setHoveredChannelUUID(hoveredChannelUUID);
-			channelHeader.setHoveredChannelUUID(hoveredChannelUUID);
-			infoPanel.setHoveredChannelUUID(hoveredChannelUUID);
+			sequenceContent.setHoveredCell(columnIndex, channelUUID);
+			channelHeader.setHoveredChannelUUID(channelUUID);
+			columnHeader.setHoveredColumn(columnIndex);
+			infoPanel.setHoveredChannelUUID(channelUUID);
 		}
 	}
 	
@@ -325,5 +365,15 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		
 		channelHeader.setEditable(editable);
 		sequenceContent.setEditable(editable);
+	}
+	
+	public GSESequenceOpacity getOpacity() {
+		return opacity;
+	}
+	
+	public void setOpacity(GSESequenceOpacity opacity) {
+		if (opacity == null)
+			throw new IllegalArgumentException("opacity is null");
+		this.opacity = opacity;
 	}
 }

@@ -17,12 +17,13 @@ public class GSTrack {
 
 	private final UUID trackUUID;
 	private String name;
+	private int color;
 	
 	private final Map<UUID, GSTrackEntry> entries;
 	
 	private GSComposition parent;
 	
-	public GSTrack(UUID trackUUID, String name) {
+	public GSTrack(UUID trackUUID, String name, int color) {
 		if (trackUUID == null)
 			throw new IllegalArgumentException("trackUUID is null");
 		if (name == null)
@@ -30,6 +31,7 @@ public class GSTrack {
 		
 		this.trackUUID = trackUUID;
 		this.name = name;
+		this.color = color | 0xFF000000;
 		
 		entries = new LinkedHashMap<>();
 		
@@ -100,6 +102,22 @@ public class GSTrack {
 		}
 	}
 	
+	public int getColor() {
+		return color;
+	}
+	
+	public void setColor(int color) {
+		// Ensure alpha channel is 255
+		color |= 0xFF000000;
+		
+		if (color != this.color) {
+			int oldColor = this.color;
+			this.color = color;
+			
+			dispatchTrackColorChanged(oldColor);
+		}
+	}
+	
 	public GSTrackEntry getEntry(UUID entryUUID) {
 		return entries.get(entryUUID);
 	}
@@ -135,6 +153,13 @@ public class GSTrack {
 		}
 	}
 
+	private void dispatchTrackColorChanged(int oldColor) {
+		if (parent != null) {
+			for (GSICompositionListener listener : parent.getListeners())
+				listener.trackColorChanged(this, oldColor);
+		}
+	}
+
 	private void dispatchEntryAdded(GSTrackEntry entry) {
 		if (parent != null) {
 			for (GSICompositionListener listener : parent.getListeners())
@@ -152,7 +177,8 @@ public class GSTrack {
 	public static GSTrack read(PacketByteBuf buf) throws IOException {
 		UUID trackUUID = buf.readUuid();
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
-		GSTrack track = new GSTrack(trackUUID, name);
+		int color = buf.readMedium();
+		GSTrack track = new GSTrack(trackUUID, name, color);
 
 		int entryCount = buf.readInt();
 		while (entryCount-- != 0) {
@@ -168,6 +194,7 @@ public class GSTrack {
 	public static void write(PacketByteBuf buf, GSTrack track) throws IOException {
 		buf.writeUuid(track.getTrackUUID());
 		buf.writeString(track.getName());
+		buf.writeMedium(track.getColor());
 		
 		Collection<GSTrackEntry> entries = track.getEntries();
 		buf.writeInt(entries.size());

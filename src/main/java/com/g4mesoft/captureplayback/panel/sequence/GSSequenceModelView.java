@@ -45,7 +45,7 @@ public class GSSequenceModelView {
 	
 	private int lookupSize;
 	private int[] durationLookup;
-	private final Map<UUID, Integer> channelUUIDtoIndex;
+	private final Map<UUID, Integer> channelUUIDToIndex;
 	private final Map<Integer, UUID> channelIndexToUUID;
 	private final Map<UUID, Map<Integer, Integer>> multiCellLookup;
 	
@@ -64,7 +64,7 @@ public class GSSequenceModelView {
 		
 		lookupSize = 0;
 		durationLookup = new int[0];
-		channelUUIDtoIndex = new HashMap<>();
+		channelUUIDToIndex = new HashMap<>();
 		channelIndexToUUID = new HashMap<>();
 		multiCellLookup = new HashMap<>();
 		
@@ -127,12 +127,12 @@ public class GSSequenceModelView {
 	}
 	
 	private void updateChannelIndexLookup() {
-		channelUUIDtoIndex.clear();
+		channelUUIDToIndex.clear();
 		channelIndexToUUID.clear();
 		
 		int channelIndex = 0;
 		for (UUID channelUUID : model.getChannelUUIDs()) {
-			channelUUIDtoIndex.put(channelUUID, channelIndex);
+			channelUUIDToIndex.put(channelUUID, channelIndex);
 			channelIndexToUUID.put(channelIndex, channelUUID);
 			channelIndex++;
 		}
@@ -215,7 +215,7 @@ public class GSSequenceModelView {
 	}
 	
 	public UUID getNextChannelUUID(UUID channelUUID, boolean descending) {
-		Integer channelIndex = channelUUIDtoIndex.get(channelUUID);
+		Integer channelIndex = channelUUIDToIndex.get(channelUUID);
 		if (channelIndex == null)
 			return null;
 		
@@ -224,11 +224,11 @@ public class GSSequenceModelView {
 			nextIndex--;
 			
 			if (nextIndex < 0)
-				nextIndex = channelUUIDtoIndex.size() - 1;
+				nextIndex = channelUUIDToIndex.size() - 1;
 		} else {
 			nextIndex++;
 		
-			if (nextIndex >= channelUUIDtoIndex.size())
+			if (nextIndex >= channelUUIDToIndex.size())
 				nextIndex = 0;
 		}
 		
@@ -262,11 +262,11 @@ public class GSSequenceModelView {
 		if (dest == null)
 			dest = new GSRectangle();
 		
-		dest.y = getEntryY(channelUUID);
-		dest.height = ENTRY_HEIGHT;
-		
 		dest.x = getTimeViewX(channelUUID, entry.getStartTime(), false);
 		dest.width = getTimeViewX(channelUUID, entry.getEndTime(), true) - dest.x;
+
+		dest.y = getEntryY(channelUUID);
+		dest.height = ENTRY_HEIGHT;
 		
 		if (dest.width < MINIMUM_ENTRY_WIDTH) {
 			dest.x -= (MINIMUM_ENTRY_WIDTH - dest.width) / 2;
@@ -336,7 +336,7 @@ public class GSSequenceModelView {
 	}
 	
 	public int getChannelY(UUID channelUUID) {
-		Integer channelIndex = channelUUIDtoIndex.get(channelUUID);
+		Integer channelIndex = channelUUIDToIndex.get(channelUUID);
 		if (channelIndex == null)
 			return -1;
 		

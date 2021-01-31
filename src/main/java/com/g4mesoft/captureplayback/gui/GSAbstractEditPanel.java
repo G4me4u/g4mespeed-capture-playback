@@ -1,7 +1,6 @@
 package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.panel.GSClosableParentPanel;
-import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSFocusEvent;
 import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
@@ -26,16 +25,10 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 	
 	private static final Text BACK_TEXT = new LiteralText("< BACK");
 	
-	protected final GSPanel contentPanel;
 	protected final GSButtonPanel backButton;
 	protected final GSTextField nameField;
 
-	public GSAbstractEditPanel(GSPanel contentPanel) {
-		if (contentPanel == null)
-			throw new IllegalArgumentException("contentPanel is null");
-		
-		this.contentPanel = contentPanel;
-		
+	public GSAbstractEditPanel() {
 		backButton = new GSButtonPanel(BACK_TEXT, this::close);
 		
 		nameField = new GSTextField();
@@ -48,23 +41,31 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 		nameField.addFocusEventListener(new GSIFocusEventListener() {
 			@Override
 			public void focusLost(GSFocusEvent event) {
-				handleNameChanged(nameField.getText());
-				nameField.getCaret().setCaretLocation(0);
-				event.consume();
+				if (!nameField.hasPopupVisible()) {
+					handleNameChanged(nameField.getText());
+					nameField.getCaret().setCaretLocation(0);
+					event.consume();
+				}
 			}
 		});
 		
 		nameField.addKeyEventListener(new GSIKeyListener() {
 			@Override
 			public void keyPressed(GSKeyEvent event) {
-				if (!event.isRepeating() && event.getKeyCode() == GSKeyEvent.KEY_ENTER) {
-					handleNameChanged(nameField.getText());
-					event.consume();
+				if (!event.isRepeating()) {
+					switch (event.getKeyCode()) {
+					case GSKeyEvent.KEY_ENTER:
+						handleNameChanged(nameField.getText());
+					case GSKeyEvent.KEY_ESCAPE:
+						nameField.unfocus();
+						event.consume();
+					default:
+						break;
+					}
 				}
 			}
 		});
 		
-		add(contentPanel);
 		add(backButton);
 		add(nameField);
 	}
@@ -72,19 +73,14 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 	protected abstract void handleNameChanged(String name);
 	
 	@Override
-	public void onAdded(GSPanel parent) {
-		super.onAdded(parent);
-
-		contentPanel.requestFocus();
-	}
-	
-	@Override
 	public void onBoundsChanged() {
-		contentPanel.setBounds(0, TITLE_HEIGHT, width, Math.max(height - TITLE_HEIGHT, 0));
+		layoutContent(0, TITLE_HEIGHT, width, Math.max(height - TITLE_HEIGHT, 0));
 		
 		backButton.setPreferredBounds(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, BACK_BUTTON_WIDTH);
 		nameField.setBounds((width - MAXIMUM_TITLE_WIDTH) / 2, 0, MAXIMUM_TITLE_WIDTH, TITLE_HEIGHT);
 	}
+	
+	protected abstract void layoutContent(int x, int y, int width, int height);
 
 	@Override
 	public void render(GSIRenderer2D renderer) {

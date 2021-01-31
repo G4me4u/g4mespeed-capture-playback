@@ -45,19 +45,38 @@ public class GSComposition {
 		listeners = null;
 	}
 
+	public void addSequence(GSSequence sequence) {
+		if (hasSequenceUUID(sequence.getSequenceUUID()))
+			throw new IllegalStateException("Duplicate sequence UUID");
+	
+		addSequenceInternal(sequence);
+	
+		dispatchSequenceAdded(sequence);
+	}
+	
 	private void addSequenceInternal(GSSequence sequence) {
 		sequences.put(sequence.getSequenceUUID(), sequence);
 	}
 	
-	public GSTrack addTrack(String trackName) {
-		return addTrack(GSUUIDUtil.randomUnique(this::hasTrackUUID), trackName);
+	public boolean removeSequence(UUID sequenceUUID) {
+		GSSequence sequence = sequences.remove(sequenceUUID);
+		if (sequence != null) {
+			dispatchSequenceRemoved(sequence);
+			return true;
+		}
+		
+		return false;
 	}
 	
-	public GSTrack addTrack(UUID trackUUID, String trackName) {
+	public GSTrack addTrack(String trackName, int color) {
+		return addTrack(GSUUIDUtil.randomUnique(this::hasTrackUUID), trackName, color);
+	}
+	
+	public GSTrack addTrack(UUID trackUUID, String trackName, int color) {
 		if (hasTrackUUID(trackUUID))
 			throw new IllegalStateException("Duplicate track UUID");
 		
-		GSTrack track = new GSTrack(trackUUID, trackName);
+		GSTrack track = new GSTrack(trackUUID, trackName, color);
 		addTrackInternal(track);
 		
 		dispatchTrackAdded(track);
@@ -142,13 +161,13 @@ public class GSComposition {
 		return true;
 	}
 	
-	public void addSequenceListener(GSICompositionListener listener) {
+	public void addCompositionListener(GSICompositionListener listener) {
 		if (listeners == null)
 			listeners = new ArrayList<>();
 		listeners.add(listener);
 	}
 
-	public void removeSequenceListener(GSICompositionListener listener) {
+	public void removeCompositionListener(GSICompositionListener listener) {
 		if (listeners != null)
 			listeners.remove(listener);
 	}
@@ -160,9 +179,19 @@ public class GSComposition {
 	
 	private void dispatchCompositionNameChanged(String oldName) {
 		for (GSICompositionListener listener : getListeners())
-			listener.sequenceNameChanged(oldName);
+			listener.compositionNameChanged(oldName);
 	}
 
+	private void dispatchSequenceAdded(GSSequence sequence) {
+		for (GSICompositionListener listener : getListeners())
+			listener.sequenceAdded(sequence);
+	}
+
+	private void dispatchSequenceRemoved(GSSequence sequence) {
+		for (GSICompositionListener listener : getListeners())
+			listener.sequenceRemoved(sequence);
+	}
+	
 	private void dispatchTrackAdded(GSTrack track) {
 		for (GSICompositionListener listener : getListeners())
 			listener.trackAdded(track);
