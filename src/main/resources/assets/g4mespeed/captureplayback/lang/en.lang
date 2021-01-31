@@ -19,6 +19,8 @@ panel.sequence.opacity75=75%% Opacity
 panel.sequence.opacity90=90%% Opacity
 panel.sequence.opacity100=Fully Opaque
 
+panel.sequence.defaultname=New Channel
+
 panel.sequencecontent.createentry=New Entry
 panel.sequencecontent.entrytype=Entry Type
 panel.sequencecontent.deleteentry=Delete Entry
@@ -30,14 +32,12 @@ panel.sequencecontent.typeend=Event at End
 
 hotkey.capture-playback.title=Capture & Playback
 hotkey.capture-playback.channelRenderingType=Toggle Channel Rendering
+hotkey.capture-playback.newChannel=Create New Channel
 
 ############ Settings ############
 setting.capture-playback=Capture & Playback
 setting.capture-playback.channelRenderingType=Channel Rendering
+setting.capture-playback.channelRenderingType.desc=The type of rendering that should be used when drawing channel positions in-game.
 setting.capture-playback.channelRenderingType.0=Disabled
 setting.capture-playback.channelRenderingType.1=Depth
 setting.capture-playback.channelRenderingType.2=No Depth
-
-############ Sequence ############
-
-sequence.channel.defaultname=New Channel

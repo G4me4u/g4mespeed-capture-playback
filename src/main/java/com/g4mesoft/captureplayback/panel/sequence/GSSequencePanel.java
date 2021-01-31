@@ -64,7 +64,9 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private int contentWidth;
 	private int contentHeight;
 	
+	private int hoveredMouseX;
 	private int hoveredMouseY;
+	private int hoveredColumnIndex;
 	private UUID hoveredChannelUUID;
 	
 	private GSESequenceOpacity opacity;
@@ -118,7 +120,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		expandedColumnModel.addModelListener(this);
 		
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
@@ -128,7 +130,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		sequence.removeSequenceListener(this);
 		expandedColumnModel.removeModelListener(this);
 	
-		setHoveredChannelUUID(null);
+		setHoveredCell(-1, null);
 	}
 	
 	@Override
@@ -207,13 +209,16 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	
 	@Override
 	public void mouseMoved(GSMouseEvent event) {
+		hoveredMouseX = event.getX() - sequenceContent.getX();
 		hoveredMouseY = event.getY() - sequenceContent.getY();
 		
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 	
-	private void updateHoveredChannel() {
-		setHoveredChannelUUID(modelView.getChannelUUIDFromView(hoveredMouseY));
+	private void updateHoveredCell() {
+		int columnIndex = modelView.getColumnIndexFromView(hoveredMouseX);
+		UUID channelUUID = modelView.getChannelUUIDFromView(hoveredMouseY);
+		setHoveredCell(columnIndex, channelUUID);
 	}
 	
 	@Override
@@ -309,13 +314,13 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	@Override
 	public void channelAdded(GSChannel channel) {
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
 	public void channelRemoved(GSChannel channel) {
 		initModelView();
-		updateHoveredChannel();
+		updateHoveredCell();
 	}
 
 	@Override
@@ -336,19 +341,18 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	@Override
 	public void onExpandedColumnChanged(int minExpandedColumnIndex, int maxExpandedColumnIndex) {
 		updateContentSize();
+		updateHoveredCell();
 	}
 	
-	public UUID getHoveredChannelUUID() {
-		return hoveredChannelUUID;
-	}
-	
-	private void setHoveredChannelUUID(UUID hoveredChannelUUID) {
-		if (!Objects.equal(hoveredChannelUUID, this.hoveredChannelUUID)) {
-			this.hoveredChannelUUID = hoveredChannelUUID;
+	private void setHoveredCell(int columnIndex, UUID channelUUID) {
+		if (columnIndex != hoveredColumnIndex || !Objects.equal(channelUUID, hoveredChannelUUID)) {
+			hoveredChannelUUID = channelUUID;
+			hoveredColumnIndex = columnIndex;
 			
-			sequenceContent.setHoveredChannelUUID(hoveredChannelUUID);
-			channelHeader.setHoveredChannelUUID(hoveredChannelUUID);
-			infoPanel.setHoveredChannelUUID(hoveredChannelUUID);
+			sequenceContent.setHoveredCell(columnIndex, channelUUID);
+			channelHeader.setHoveredChannelUUID(channelUUID);
+			columnHeader.setHoveredColumn(columnIndex);
+			infoPanel.setHoveredChannelUUID(channelUUID);
 		}
 	}
 	

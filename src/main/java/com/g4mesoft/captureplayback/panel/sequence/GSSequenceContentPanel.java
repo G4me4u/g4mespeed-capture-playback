@@ -178,12 +178,12 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 	
 	protected void renderChannelEntry(GSIRenderer2D renderer, GSChannelEntry entry, int color) {
-		if (draggingEntry == entry || hoveredEntry == entry)
-			color = renderer.darkenColor(color);
-
 		GSRectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
+			if (draggingEntry == entry || hoveredEntry == entry)
+				color = renderer.darkenColor(color);
+			
 			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, renderer.darkenColor(color));
 			
 			if (entry.getType() != GSEChannelEntryType.EVENT_START)
@@ -668,8 +668,8 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		return hoveredChannelUUID;
 	}
 	
-	void setHoveredChannelUUID(UUID hoveredChannelUUID) {
-		this.hoveredChannelUUID = hoveredChannelUUID;
+	void setHoveredCell(int columnIndex, UUID channelUUID) {
+		hoveredChannelUUID = channelUUID;
 		
 		updateHoveredEntry();
 	}

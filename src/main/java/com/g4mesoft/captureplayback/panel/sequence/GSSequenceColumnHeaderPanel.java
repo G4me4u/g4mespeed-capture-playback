@@ -24,13 +24,15 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	public static final int DOTTED_LINE_LENGTH  = 4;
 	public static final int DOTTED_LINE_SPACING = 3;
 	
-	private static final Text EXPAND_TEXT = new TranslatableText("panel.sequencecolumnheader.expand");
-	private static final Text COLLAPSE_TEXT = new TranslatableText("panel.sequencecolumnheader.collapse");
-	private static final Text EXPAND_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.expandall");
+	private static final Text EXPAND_TEXT       = new TranslatableText("panel.sequencecolumnheader.expand");
+	private static final Text COLLAPSE_TEXT     = new TranslatableText("panel.sequencecolumnheader.collapse");
+	private static final Text EXPAND_ALL_TEXT   = new TranslatableText("panel.sequencecolumnheader.expandall");
 	private static final Text COLLAPSE_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.collapseall");
 	
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSSequenceModelView modelView;
+	
+	private int hoveredColumnIndex;
 	
 	public GSSequenceColumnHeaderPanel(GSSequence sequence, GSExpandedColumnModel expandedColumnModel, GSSequenceModelView modelView) {
 		this.expandedColumnModel = expandedColumnModel;
@@ -69,20 +71,19 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	private void renderColumnHeader(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
 		boolean expanded = expandedColumnModel.isColumnExpanded(columnIndex);
 		
-		int ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
 		int color = HEADER_TEXT_COLOR;
-		
 		if (!expanded && expandedColumnModel.hasExpandedColumn())
 			color = DARK_HEADER_TEXT_COLOR;
 
-		long gametick = modelView.getColumnGametick(columnIndex);
-		renderer.drawText(Long.toString(gametick), cx + 2, ty, color, false);
+		String title = Long.toString(modelView.getColumnGametick(columnIndex));
+		int ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
+		renderer.drawText(title, cx + 2, ty, color, false);
 		
-		if (renderer.getMouseX() >= cx && renderer.getMouseX() < cx + cw) {
+		if (columnIndex == hoveredColumnIndex) {
 			renderer.drawVLine(cx - 1, 0, height, COLUMN_LINE_COLOR);
 			renderer.drawVLine(cx + cw - 1, 0, height, COLUMN_LINE_COLOR);
 		}
-		
+
 		if (expanded)
 			renderMicrotickLabels(renderer, columnIndex);
 	}
@@ -153,5 +154,9 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 				event.consume();
 			}
 		}
+	}
+	
+	public void setHoveredColumn(int columnIndex) {
+		hoveredColumnIndex = columnIndex;
 	}
 }

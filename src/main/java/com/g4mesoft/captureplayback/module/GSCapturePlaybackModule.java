@@ -12,6 +12,8 @@ import org.lwjgl.glfw.GLFW;
 import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
+import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
+import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
@@ -142,6 +144,12 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 				newValue = cChannelRenderingType.getMinValue();
 			cChannelRenderingType.setValue(newValue);
 		}, GSEKeyEventType.PRESS);
+		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
+				new GSDefaultChannelProvider(), this::addChannelToActiveSequence, GSEKeyEventType.PRESS);
+	}
+	
+	private void addChannelToActiveSequence(GSIChannelProvider channelProvider) {
+		activeSequence.addChannel(channelProvider.createNextChannelInfo(activeSequence));
 	}
 	
 	@Override

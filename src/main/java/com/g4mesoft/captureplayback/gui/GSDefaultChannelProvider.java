@@ -15,7 +15,7 @@ import net.minecraft.util.math.BlockPos;
 
 public class GSDefaultChannelProvider implements GSIChannelProvider {
 
-	private static final String DEFAULT_CHANNEL_NAME = "sequence.channel.defaultname";
+	private static final String DEFAULT_CHANNEL_NAME = "panel.sequence.defaultname";
 	private static final int MAX_COLOR_TRIES = 10;
 	
 	@Override
