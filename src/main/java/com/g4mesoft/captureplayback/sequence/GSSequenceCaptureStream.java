@@ -27,16 +27,17 @@ class GSSequenceCaptureStream implements GSICaptureStream {
 		posToCaptures = new HashMap<>();
 		
 		for (GSChannel channel : sequence.getChannels()) {
-			BlockPos pos = channel.getInfo().getPos();
-			
-			List<GSChannelCapture> captures = posToCaptures.get(pos);
-			if (captures == null) {
-				// Assume 2 or less channels in the same position
-				captures = new ArrayList<>(2);
-				posToCaptures.put(pos, captures);
+			// TODO: fix issues when capturing a single channel in multiple positions
+			for (BlockPos position : channel.getInfo().getPositions()) {
+				List<GSChannelCapture> captures = posToCaptures.get(position);
+				if (captures == null) {
+					// Assume 2 or less channels in the same position
+					captures = new ArrayList<>(2);
+					posToCaptures.put(position, captures);
+				}
+				
+				captures.add(new GSChannelCapture(channel));
 			}
-			
-			captures.add(new GSChannelCapture(channel));
 		}
 		
 		closed = posToCaptures.isEmpty();

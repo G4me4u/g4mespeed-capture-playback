@@ -226,21 +226,21 @@ public class GSSequence {
 		int z1 = Integer.MIN_VALUE;
 		
 		for (GSChannel channel : getChannels()) {
-			BlockPos pos = channel.getInfo().getPos();
-			
-			if (pos.getX() < x0)
-				x0 = pos.getX();
-			if (pos.getY() < y0)
-				y0 = pos.getY();
-			if (pos.getZ() < z0)
-				z0 = pos.getZ();
-
-			if (pos.getX() > x1)
-				x1 = pos.getX();
-			if (pos.getY() > y1)
-				y1 = pos.getY();
-			if (pos.getZ() > z1)
-				z1 = pos.getZ();
+			for (BlockPos position : channel.getInfo().getPositions()) {
+				if (position.getX() < x0)
+					x0 = position.getX();
+				if (position.getY() < y0)
+					y0 = position.getY();
+				if (position.getZ() < z0)
+					z0 = position.getZ();
+	
+				if (position.getX() > x1)
+					x1 = position.getX();
+				if (position.getY() > y1)
+					y1 = position.getY();
+				if (position.getZ() > z1)
+					z1 = position.getZ();
+			}
 		}
 		
 		return new GSBlockRegion(x0, y0, z0, x1, y1, z1);

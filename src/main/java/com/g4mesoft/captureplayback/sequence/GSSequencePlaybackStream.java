@@ -27,15 +27,15 @@ class GSSequencePlaybackStream implements GSIPlaybackStream {
 		entries = new PriorityQueue<>();
 
 		for (GSChannel channel : sequence.getChannels()) {
-			BlockPos pos = channel.getInfo().getPos();
-			
-			for (GSChannelEntry entry : channel.getEntries()) {
-				GSEChannelEntryType type = entry.getType();
-				
-				if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_START)
-					addEntry(pos, entry.getStartTime(), GSESignalEdge.RISING_EDGE);
-				if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_END)
-					addEntry(pos, entry.getEndTime(), GSESignalEdge.FALLING_EDGE);
+			for (BlockPos position : channel.getInfo().getPositions()) {
+				for (GSChannelEntry entry : channel.getEntries()) {
+					GSEChannelEntryType type = entry.getType();
+					
+					if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_START)
+						addEntry(position, entry.getStartTime(), GSESignalEdge.RISING_EDGE);
+					if (type == GSEChannelEntryType.EVENT_BOTH || type == GSEChannelEntryType.EVENT_END)
+						addEntry(position, entry.getEndTime(), GSESignalEdge.FALLING_EDGE);
+				}
 			}
 		}
 	}

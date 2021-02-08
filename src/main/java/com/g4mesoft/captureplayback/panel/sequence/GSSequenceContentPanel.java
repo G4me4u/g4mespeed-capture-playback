@@ -168,7 +168,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		int th = modelView.getChannelHeight();
 		
 		if (channel.getChannelUUID().equals(hoveredChannelUUID))
-			renderer.fillRect(0, ty, width, th, GSSequenceChannelHeaderPanel.CHANNEL_HOVER_COLOR);
+			renderer.fillRect(0, ty, width, th, GSChannelHeaderPanel.CHANNEL_HOVER_COLOR);
 
 		for (GSChannelEntry entry : channel.getEntries())
 			renderChannelEntry(renderer, entry, channel.getInfo().getColor());

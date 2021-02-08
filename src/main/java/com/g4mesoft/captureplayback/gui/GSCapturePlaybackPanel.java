@@ -26,23 +26,23 @@ public class GSCapturePlaybackPanel extends GSParentPanel {
 			GSComposition composition = new GSComposition(UUID.randomUUID(), "Test");
 
 			GSSequence sequence1 = new GSSequence(UUID.randomUUID(), "Sequence #1");
-			sequence1.addChannel(new GSChannelInfo("", new BlockPos(0, 0, 0), 0xFFFF00FF))
+			sequence1.addChannel(new GSChannelInfo("", 0xFFFF00FF, BlockPos.ORIGIN))
 				.tryAddEntry(new GSSignalTime(0, 0), new GSSignalTime(20, 0));
 			
 			GSSequence sequence2 = new GSSequence(UUID.randomUUID(), "Sequence #2");
-			sequence2.addChannel(new GSChannelInfo("", new BlockPos(0, 0, 0), 0xFFFF00FF))
+			sequence2.addChannel(new GSChannelInfo("", 0xFFFF00FF, BlockPos.ORIGIN))
 				.tryAddEntry(new GSSignalTime(0, 0), new GSSignalTime(20, 0));
 			
 			GSSequence sequence3 = new GSSequence(UUID.randomUUID(), "Sequence #3");
-			sequence3.addChannel(new GSChannelInfo("", new BlockPos(0, 0, 0), 0xFFFF00FF))
+			sequence3.addChannel(new GSChannelInfo("", 0xFFFF00FF, BlockPos.ORIGIN))
 				.tryAddEntry(new GSSignalTime(0, 0), new GSSignalTime(20, 0));
 			
 			GSSequence sequence4 = new GSSequence(UUID.randomUUID(), "Sequence #4");
-			sequence4.addChannel(new GSChannelInfo("", new BlockPos(0, 0, 0), 0xFFFF00FF))
+			sequence4.addChannel(new GSChannelInfo("", 0xFFFF00FF, BlockPos.ORIGIN))
 				.tryAddEntry(new GSSignalTime(0, 0), new GSSignalTime(30, 0));
 			
 			GSSequence sequence5 = new GSSequence(UUID.randomUUID(), "Sequence #5");
-			sequence5.addChannel(new GSChannelInfo("", new BlockPos(0, 0, 0), 0xFFFF00FF))
+			sequence5.addChannel(new GSChannelInfo("", 0xFFFF00FF, BlockPos.ORIGIN))
 				.tryAddEntry(new GSSignalTime(0, 0), new GSSignalTime(80, 0));
 			
 			composition.addSequence(sequence1);
