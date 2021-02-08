@@ -14,6 +14,7 @@ import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
+import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
@@ -33,9 +34,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import io.netty.buffer.Unpooled;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.PacketByteBuf;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 
 public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListener {
 
@@ -109,6 +114,8 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 			PacketByteBuf buffer = new PacketByteBuf(Unpooled.wrappedBuffer(data));
 			sequence = GSSequence.read(buffer);
 			buffer.release();
+		} catch (Throwable throwable) {
+			throw new IOException("Unable to read sequence", throwable);
 		}
 		
 		return sequence;
@@ -126,6 +133,8 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 				fos.getChannel().write(buffer.nioBuffer());
 			}
 			buffer.release();
+		} catch (Throwable throwable) {
+			throw new IOException("Unable to write sequence", throwable);
 		}
 	}
 
@@ -144,12 +153,36 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 				newValue = cChannelRenderingType.getMinValue();
 			cChannelRenderingType.setValue(newValue);
 		}, GSEKeyEventType.PRESS);
+		
 		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
 				new GSDefaultChannelProvider(), this::addChannelToActiveSequence, GSEKeyEventType.PRESS);
+		
+		keyManager.registerKey("extendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, null, ignore -> {
+			BlockPos position = getCrosshairTarget();
+			GSChannel channel = getSelectedChannel();
+			if (position != null && channel != null)
+				channel.setInfo(channel.getInfo().addPosition(position));
+		}, GSEKeyEventType.PRESS);
 	}
 	
 	private void addChannelToActiveSequence(GSIChannelProvider channelProvider) {
 		activeSequence.addChannel(channelProvider.createNextChannelInfo(activeSequence));
+	}
+	
+	private GSChannel getSelectedChannel() {
+		GSChannel selectedChannel = null;
+		for (GSChannel channel : activeSequence.getChannels())
+			selectedChannel = channel;
+		return selectedChannel;
+	}
+	
+	public static BlockPos getCrosshairTarget() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client.crosshairTarget == null)
+			return null;
+		if (client.crosshairTarget.getType() != HitResult.Type.BLOCK)
+			return null;
+		return ((BlockHitResult)client.crosshairTarget).getBlockPos();
 	}
 	
 	@Override

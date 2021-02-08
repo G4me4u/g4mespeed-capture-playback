@@ -33,7 +33,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
                                                               GSISequenceListener, GSIExpandedColumnModelListener,
                                                               GSIMouseListener, GSIKeyListener {
 
-	private static final int CHANNEL_HEADER_WIDTH = 100;
+	private static final int CHANNEL_HEADER_WIDTH = 120;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 	
 	private static final int CORNER_SQUARE_COLOR = 0xFF000000;
@@ -48,7 +48,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private final GSSequenceModelView modelView;
 	
 	private final GSSequenceContentPanel sequenceContent;
-	private final GSSequenceChannelHeaderPanel channelHeader;
+	private final GSChannelHeaderPanel channelHeader;
 	private final GSSequenceColumnHeaderPanel columnHeader;
 	
 	private final GSSequenceInfoPanel infoPanel;
@@ -79,10 +79,10 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		modelView = new GSSequenceModelView(sequence, expandedColumnModel);
 		
 		sequenceContent = new GSSequenceContentPanel(sequence, expandedColumnModel, modelView);
-		channelHeader = new GSSequenceChannelHeaderPanel(sequence, modelView);
+		channelHeader = new GSChannelHeaderPanel(sequence, modelView);
 		columnHeader = new GSSequenceColumnHeaderPanel(sequence, expandedColumnModel, modelView);
 		
-		infoPanel = new GSSequenceInfoPanel(sequence);
+		infoPanel = new GSSequenceInfoPanel();
 		buttonPanel = new GSSequenceButtonPanel(sequence);
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
@@ -352,7 +352,6 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 			sequenceContent.setHoveredCell(columnIndex, channelUUID);
 			channelHeader.setHoveredChannelUUID(channelUUID);
 			columnHeader.setHoveredColumn(columnIndex);
-			infoPanel.setHoveredChannelUUID(channelUUID);
 		}
 	}
 	

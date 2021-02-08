@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
@@ -8,9 +9,6 @@ import com.g4mesoft.captureplayback.util.GSColorUtil;
 import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.module.translation.GSTranslationModule;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 public class GSDefaultChannelProvider implements GSIChannelProvider {
@@ -18,30 +16,30 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	private static final String DEFAULT_CHANNEL_NAME = "panel.sequence.defaultname";
 	private static final int MAX_COLOR_TRIES = 10;
 	
+	private static String defaultChannelName;
+	
 	@Override
 	public GSChannelInfo createNextChannelInfo(GSSequence sequence) {
+		return new GSChannelInfo(getDefaultChannelName(), 
+		                         getUniqueColor(sequence, MAX_COLOR_TRIES),
+		                         getChannelPosition());
+	}
+
+	private String getDefaultChannelName() {
 		GSTranslationModule translationModule = GSControllerClient.getInstance().getTranslationModule();
-		String channelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
-		return new GSChannelInfo(channelName, getNextChannelPos(), getUniqueColor(sequence, MAX_COLOR_TRIES));
+		if (defaultChannelName == null && translationModule.hasTranslation(DEFAULT_CHANNEL_NAME))
+			defaultChannelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
+		return defaultChannelName;
 	}
 
-	private BlockPos getNextChannelPos() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.crosshairTarget != null && client.crosshairTarget.getType() == HitResult.Type.BLOCK)
-			return ((BlockHitResult)client.crosshairTarget).getBlockPos();
-		return new BlockPos(0, 0, 0);
-	}
-	
 	private int getUniqueColor(GSSequence sequence, int maxTries) {
-		int color = 0x000000;
+		int color;
 
-		int tries = 0;
-		while (++tries <= maxTries) {
+		do {
 			color = (int)(Math.random() * 0xFFFFFF);
-
 			if (isColorUnique(sequence, color))
 				break;
-		}
+		} while (maxTries-- <= 0);
 
 		return color;
 	}
@@ -53,5 +51,10 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 		}
 
 		return true;
+	}
+	
+	private BlockPos getChannelPosition() {
+		BlockPos position = GSCapturePlaybackModule.getCrosshairTarget();
+		return (position == null) ? BlockPos.ORIGIN : position;
 	}
 }

@@ -29,7 +29,7 @@ public class GSSequenceModelView {
 	private static final int MT_COLUMN_WIDTH = 20;
 	private static final int MINIMUM_ENTRY_WIDTH = 15;
 	
-	private static final int ENTRY_HEIGHT = 8;
+	private static final int ENTRY_HEIGHT = 9;
 	private static final int CHANNEL_LABEL_PADDING = 2;
 	private static final int DEFAULT_CHANNEL_SPACING = 1;
 	
