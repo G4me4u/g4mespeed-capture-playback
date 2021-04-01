@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.common;
 
 import java.io.IOException;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 
 public final class GSSignalTime {
 

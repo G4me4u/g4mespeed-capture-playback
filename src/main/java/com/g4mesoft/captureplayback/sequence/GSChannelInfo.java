@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.g4mesoft.util.GSBufferUtil;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 public final class GSChannelInfo {

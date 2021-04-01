@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 
 public class GSChannelEntryTime {
 

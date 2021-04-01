@@ -12,6 +12,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.world.dimension.DimensionType;
 
 public final class GSPlaybackCommand {
 
@@ -32,7 +33,7 @@ public final class GSPlaybackCommand {
 
 		GSSequence sequence = module.getActiveSequence();
 
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
 		((GSIServerWorldAccess)world).addPlaybackStream(sequence.getPlaybackStream());
 		
 		source.sendFeedback(new LiteralText("Playback has started."), true);
@@ -41,7 +42,7 @@ public final class GSPlaybackCommand {
 	}
 
 	private static int stopAllPlaybacks(ServerCommandSource source) {
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
 		((GSIServerWorldAccess)world).getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
 		source.sendFeedback(new LiteralText("All playbacks have stopped."), true);

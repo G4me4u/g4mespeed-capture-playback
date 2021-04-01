@@ -12,7 +12,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 
 public class GSChannel {
 

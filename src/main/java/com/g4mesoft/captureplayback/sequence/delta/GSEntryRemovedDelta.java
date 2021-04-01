@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
-import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 
 public class GSEntryRemovedDelta extends GSEntryDelta {
 

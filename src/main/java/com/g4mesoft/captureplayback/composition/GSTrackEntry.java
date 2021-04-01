@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.composition;
 import java.io.IOException;
 import java.util.UUID;
 
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.PacketByteBuf;
 
 public class GSTrackEntry {
 

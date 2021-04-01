@@ -6,15 +6,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
@@ -40,23 +40,24 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.PistonBlock;
 import net.minecraft.network.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
+import net.minecraft.network.packet.s2c.play.BlockActionS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
-import net.minecraft.server.world.BlockEvent;
+import net.minecraft.server.world.BlockAction;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkManager;
+import net.minecraft.world.dimension.Dimension;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.LevelProperties;
 
 @Mixin(ServerWorld.class)
 public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSISignalEventContext {
 
 	@Shadow @Final private MinecraftServer server;
-	@Shadow @Final private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue;
+	@Shadow @Final private ObjectLinkedOpenHashSet<BlockAction> pendingBlockActions;
 	
 	private final List<GSIPlaybackStream> playbackStreams = new ArrayList<>();
 	private final List<GSICaptureStream> captureStreams = new ArrayList<>();
@@ -68,12 +69,12 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private int blockEventCount = 0;
 	private int microtick = -1;
 	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryKey,
-			DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
-		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
+	protected GSServerWorldMixin(LevelProperties levelProperties, DimensionType dimensionType,
+			BiFunction<World, Dimension, ChunkManager> chunkManagerProvider, Profiler profiler, boolean isClient) {
+		super(levelProperties, dimensionType, chunkManagerProvider, profiler, isClient);
 	}
-	
-	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
+
+	@Shadow protected abstract boolean method_14174(BlockAction blockAction);
 	
 	@Inject(method = "tick", at = @At("HEAD"))
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
@@ -127,17 +128,17 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		}
 	}
 
-	@Inject(method = "processSyncedBlockEvents", at = @At("RETURN"))
+	@Inject(method = "sendBlockActions", at = @At("RETURN"))
 	public void onBlockActionHead(CallbackInfo ci) {
 		phase = GSETickPhase.BLOCK_EVENTS;
 	}
 
-	@Inject(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", shift = Shift.BEFORE,
-			target = "Lnet/minecraft/server/world/ServerWorld;processBlockEvent(Lnet/minecraft/server/world/BlockEvent;)Z"))
-	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
+	@Inject(method = "sendBlockActions", at = @At(value = "INVOKE", shift = Shift.BEFORE,
+			target = "Lnet/minecraft/server/world/ServerWorld;method_14174(Lnet/minecraft/server/world/BlockAction;)Z"))
+	public void onBlockActionProcessing(CallbackInfo ci) {
 		if (blockEventCount == 0) {
 			// At this point we have already removed 1 block event.
-			blockEventCount = this.syncedBlockEventQueue.size();
+			blockEventCount = this.pendingBlockActions.size();
 			microtick++;
 		} else {
 			blockEventCount--;
@@ -146,23 +147,23 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		handleBlockEventPlayback(false);
 	}
 	
-	@Inject(method = "processSyncedBlockEvents", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(value = "INVOKE", shift = Shift.BEFORE,
+	@Inject(method = "sendBlockActions", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/server/MinecraftServer;getPlayerManager()Lnet/minecraft/server/PlayerManager;"))
-	public void onProcessSyncedBlockEventsSuccess(CallbackInfo ci, BlockEvent blockEvent) {
-		if (isCapturePosition(blockEvent.getPos())) {
-			Block block = blockEvent.getBlock();
+	public void onBlockActionSuccess(CallbackInfo ci, BlockAction blockAction) {
+		if (isCapturePosition(blockAction.getPos())) {
+			Block block = blockAction.getBlock();
 			
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
-				GSESignalEdge edge = (blockEvent.getType() == 0) ? GSESignalEdge.RISING_EDGE :
+				GSESignalEdge edge = (blockAction.getType() == 0) ? GSESignalEdge.RISING_EDGE :
 				                                                    GSESignalEdge.FALLING_EDGE;
-				handleCaptureEvent(edge, blockEvent.getPos());
+				handleCaptureEvent(edge, blockAction.getPos());
 			}
 		}
 	}
 	
-	@Inject(method = "processSyncedBlockEvents", at = @At("RETURN"))
-	public void onProcessSyncedBlockEventsReturn(CallbackInfo ci) {
+	@Inject(method = "sendBlockActions", at = @At("RETURN"))
+	public void onSendBlockActionsReturn(CallbackInfo ci) {
 		handleBlockEventPlayback(true);
 		// We are done with the block event phase
 		microtick = -1;
@@ -235,10 +236,10 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Override
 	public boolean dispatchBlockAction(BlockPos pos, Block block, int type, int data) {
-		BlockEvent blockAction = new BlockEvent(pos, block, type, data);
+		BlockAction blockAction = new BlockAction(pos, block, type, data);
 		
-		if (this.processBlockEvent(blockAction)) {
-            Packet<?> packet = new BlockEventS2CPacket(pos, block, type, data);
+		if (this.method_14174(blockAction)) {
+            Packet<?> packet = new BlockActionS2CPacket(pos, block, type, data);
 
             double dist = 64.0;
             if (block instanceof PistonBlock) {
@@ -248,7 +249,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
             }
 
             PlayerManager playerManager = server.getPlayerManager();
-            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, getRegistryKey(), packet);
+            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, dimension.getType(), packet);
             
             return true;
 		}

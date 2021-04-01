@@ -35,7 +35,7 @@ public abstract class GSPistonBlockMixin {
 		}
 	}
 	
-	@Redirect(method = "onSyncedBlockEvent", at = @At(value = "INVOKE", 
+	@Redirect(method = "onBlockAction", at = @At(value = "INVOKE", 
 			target = "Lnet/minecraft/block/PistonBlock;shouldExtend(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;)Z"))
 	public boolean onShouldExtendRedirect(PistonBlock block, World world, BlockPos pos, Direction pistonFace,
 			BlockState state, World world2, BlockPos pos2, int type, int data) {

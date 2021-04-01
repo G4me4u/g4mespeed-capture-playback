@@ -12,6 +12,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.world.dimension.DimensionType;
 
 public final class GSCaptureCommand {
 
@@ -32,7 +33,7 @@ public final class GSCaptureCommand {
 
 		GSSequence sequence = module.getActiveSequence();
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
 		((GSIServerWorldAccess)world).addCaptureStream(sequence.getCaptureStream());
 		
 		source.sendFeedback(new LiteralText("Capture has started."), true);
@@ -41,7 +42,7 @@ public final class GSCaptureCommand {
 	}
 
 	private static int stopAllCaptures(ServerCommandSource source) {
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
 		((GSIServerWorldAccess)world).getCaptureStreams().forEach(GSICaptureStream::close);
 		
 		source.sendFeedback(new LiteralText("All captures have stopped."), true);
