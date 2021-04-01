@@ -8,8 +8,7 @@ buildscript {
 }
 
 plugins {
-	id 'fabric-loom' version '0.4-SNAPSHOT'
-	id 'maven-publish'
+	id 'fabric-loom' version '0.6-SNAPSHOT'
 }
 
 repositories {
@@ -92,25 +91,4 @@ task obfuscateJar(type: proguard.gradle.ProGuardTask) {
 
 jar {
 	from "LICENSE"
-}
-
-// configure the maven publication
-publishing {
-	// select the repositories you want to publish to
-	repositories {
-		// uncomment to publish to the local maven
-		// mavenLocal()
-	}
-		
-	publications {
-		mavenJava(MavenPublication) {
-			// add all the jars that should be included when publishing to maven
-			artifact(remapJar) {
-				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
-			}
-		}
-	}
 }

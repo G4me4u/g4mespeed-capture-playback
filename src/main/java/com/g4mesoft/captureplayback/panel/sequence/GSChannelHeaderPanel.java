@@ -93,23 +93,26 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	}
 
 	private void layoutChannelLabel(UUID channelUUID) {
+		if (!uuidToLabel.containsKey(channelUUID))
+			addChannelLabel(channelUUID);
+		
 		GSChannelLabelPanel labelPanel = uuidToLabel.get(channelUUID);
-		
-		if (labelPanel == null) {
-			GSChannel channel = sequence.getChannel(channelUUID);
-			
-			if (channel != null) {
-				labelPanel = new GSChannelLabelPanel(channel);
-				labelPanel.setEditable(editable);
-				uuidToLabel.put(channelUUID, labelPanel);
-				add(labelPanel);
-			}
-		}
-		
+
 		if (labelPanel != null) {
 			int cy = modelView.getChannelY(channelUUID);
 			int ch = modelView.getChannelHeight();
 			labelPanel.setBounds(0, cy, width, ch);
+		}
+	}
+	
+	private void addChannelLabel(UUID channelUUID) {
+		GSChannel channel = sequence.getChannel(channelUUID);
+		
+		if (channel != null) {
+			GSChannelLabelPanel labelPanel = new GSChannelLabelPanel(channel);
+			labelPanel.setEditable(editable);
+			uuidToLabel.put(channelUUID, labelPanel);
+			add(labelPanel);
 		}
 	}
 	
