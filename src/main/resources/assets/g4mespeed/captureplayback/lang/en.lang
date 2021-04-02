@@ -28,6 +28,8 @@ panel.sequencecontent.typeboth=Both
 panel.sequencecontent.typestart=Event at Start
 panel.sequencecontent.typeend=Event at End
 
+panel.edit.back=Back
+
 ############ Hotkeys ############
 
 hotkey.capture-playback.title=Capture & Playback

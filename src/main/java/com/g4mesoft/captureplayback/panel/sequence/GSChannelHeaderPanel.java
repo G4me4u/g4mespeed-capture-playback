@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSIChannelSelectionModel;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.GSSingleChannelSelectionModel;
+import com.g4mesoft.panel.GSETextAlignment;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.button.GSRadioButton;
@@ -20,15 +22,18 @@ import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.text.GSETextAlignment;
 import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
+
+import net.minecraft.util.math.BlockPos;
 
 public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceListener, GSISequenceModelViewListener {
 
 	public static final int CHANNEL_HEADER_COLOR  = 0xFF171717;
 	public static final int CHANNEL_HOVER_COLOR   = 0x30FFFFFF;
 	public static final int CHANNEL_SPACING_COLOR = 0xFF202020;
+	
+	private static final int CROSSHAIR_TARGET_BORDER_COLOR = 0xFFE0E0E0;
 	
 	private final GSSequence sequence;
 	private final GSSequenceModelView modelView;
@@ -180,7 +185,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	
 	private class GSChannelLabelPanel extends GSParentPanel implements GSIMouseListener, GSIKeyListener {
 
-		private static final int SELECTION_BUTTON_MARGIN      = 2;
+		private static final int SELECTION_BUTTON_MARGIN      = 1;
 		private static final int NAME_FIELD_HORIZONTAL_MARGIN = 4;
 		
 		private final GSChannel channel;
@@ -264,6 +269,12 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 				renderer.fillRect(0, 0, width, height, CHANNEL_HOVER_COLOR);
 			
 			super.render(renderer);
+		
+			BlockPos target = GSCapturePlaybackModule.getCrosshairTarget();
+			if (target != null && channel.getInfo().getPositions().contains(target)) {
+				int bx = nameField.getX() - 1 - SELECTION_BUTTON_MARGIN;
+				renderer.drawRect(bx, 0, width - bx, height, CROSSHAIR_TARGET_BORDER_COLOR);
+			}
 		}
 		
 		@Override

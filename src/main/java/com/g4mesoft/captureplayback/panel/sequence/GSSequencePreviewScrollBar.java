@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.panel.sequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.scroll.GSIScrollListener;
 import com.g4mesoft.panel.scroll.GSIScrollable;
@@ -43,18 +44,10 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 		this.modelView = modelView;
 	
 		tmpEntryRect = new GSRectangle();
-	}
-	
-	@Override
-	public void initVerticalLeft(int xl, int yt, int height) {
-		throw new IllegalStateException("Vertical scroll bar not supported");
-	}
-	
-	@Override
-	public void initVerticalRight(int xr, int yt, int height) {
-		throw new IllegalStateException("Vertical scroll bar not supported");
-	}
 
+		setVertical(false);
+	}
+	
 	@Override
 	protected int getScrollButtonSpriteX(boolean left, boolean hovered) {
 		return isEnabled() ? (hovered ? SCROLL_BUTTON_WIDTH : 0) : (2 * SCROLL_BUTTON_WIDTH);
@@ -187,6 +180,13 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
+	protected GSDimension calculatePreferredSize() {
+		int w = Math.max(SCROLL_BUTTON_HEIGHT, getButtonWidth());
+		int h = getMinimumNobSize() + getButtonHeight() * 2;
+		return isVertical() ? new GSDimension(w, h) : new GSDimension(h, w);
+	}
+	
+	@Override
 	protected int getButtonWidth() {
 		// Note that this is opposite since we only support the
 		// horizontal scroll bar.
@@ -199,7 +199,8 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	@Override
-	public int getPreferredScrollBarWidth() {
-		return SCROLL_BUTTON_HEIGHT;
+	public void setVertical(boolean ignore) {
+		// Only support horizontal
+		super.setVertical(false);
 	}
 }

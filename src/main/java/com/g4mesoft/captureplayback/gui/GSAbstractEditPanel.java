@@ -1,35 +1,58 @@
 package com.g4mesoft.captureplayback.gui;
 
+import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.panel.GSClosableParentPanel;
+import com.g4mesoft.panel.GSECursorType;
+import com.g4mesoft.panel.GSETextAlignment;
+import com.g4mesoft.panel.GSIActionListener;
+import com.g4mesoft.panel.GSIcon;
+import com.g4mesoft.panel.GSPanelContext;
+import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.panel.GSTexturedIcon;
+import com.g4mesoft.panel.button.GSButton;
 import com.g4mesoft.panel.event.GSFocusEvent;
 import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.legend.GSButtonPanel;
-import com.g4mesoft.panel.text.GSETextAlignment;
 import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.renderer.GSTexture;
 
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Identifier;
 
 public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 
+	private static final Identifier BACKARROW_TEXTURE_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/backarrow.png");
+	private static final GSTexture BACKARROW_TEXTURE = new GSTexture(BACKARROW_TEXTURE_IDENTIFIER, 9, 9);
+	
 	private static final int TITLE_HEIGHT = 25;
 	private static final int MAXIMUM_TITLE_WIDTH = 250;
-	private static final int BACK_BUTTON_WIDTH = 45;
 	private static final int TITLE_MARGIN = 5;
 	
 	private static final int TITLE_SEPARATOR_COLOR = 0xFF444444;
 	private static final int TITLE_BACKGROUND_COLOR = 0xFF171717;
 	
-	private static final Text BACK_TEXT = new LiteralText("< BACK");
+	private static final GSIcon BACK_ICON = new GSTexturedIcon(BACKARROW_TEXTURE);
+	private static final Text BACK_TEXT = new TranslatableText("panel.edit.back");
 	
-	protected final GSButtonPanel backButton;
+	protected final GSButton backButton;
 	protected final GSTextField nameField;
 
 	public GSAbstractEditPanel() {
-		backButton = new GSButtonPanel(BACK_TEXT, this::close);
+		backButton = new GSButton(BACK_ICON, BACK_TEXT);
+		backButton.setBackgroundColor(0x00000000);
+		backButton.setHoveredBackgroundColor(0x00000000);
+		backButton.setBorderWidth(0);
+		backButton.setCursor(GSECursorType.HAND);
+		backButton.addActionListener(new GSIActionListener() {
+			@Override
+			public void actionPerformed() {
+				GSPanelContext.setContent(GSControllerClient.getInstance().getTabbedGUI());
+			}
+		});
 		
 		nameField = new GSTextField();
 		nameField.setBackgroundColor(0x00000000);
@@ -76,7 +99,7 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 	public void onBoundsChanged() {
 		layoutContent(0, TITLE_HEIGHT, width, Math.max(height - TITLE_HEIGHT, 0));
 		
-		backButton.setPreferredBounds(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, BACK_BUTTON_WIDTH);
+		backButton.setBounds(new GSRectangle(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, backButton.getPreferredSize()));
 		nameField.setBounds((width - MAXIMUM_TITLE_WIDTH) / 2, 0, MAXIMUM_TITLE_WIDTH, TITLE_HEIGHT);
 	}
 	
@@ -85,7 +108,7 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 	@Override
 	public void render(GSIRenderer2D renderer) {
 		renderTitle(renderer);
-
+		
 		super.render(renderer);
 	}
 	

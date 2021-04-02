@@ -10,6 +10,7 @@ import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSColoredIcon;
+import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.dropdown.GSDropdown;
@@ -91,8 +92,10 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 				modelView.setYOffset((int)(-newScroll));
 			}
 		});
-		
 		horizontalScrollBar = new GSSequencePreviewScrollBar(sequence, modelView, this, this);
+		
+		verticalScrollBar.setVertical(true);
+		horizontalScrollBar.setVertical(false);
 	
 		// Editable by default
 		editable = true;
@@ -144,20 +147,20 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	}
 	
 	private void layoutPanels() {
-		int sw = verticalScrollBar.getPreferredScrollBarWidth();
-		int sh = horizontalScrollBar.getPreferredScrollBarWidth();
-		int cw = Math.max(1, width - CHANNEL_HEADER_WIDTH - sw);
-		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - sh);
+		GSDimension vs = verticalScrollBar.getPreferredSize();
+		GSDimension hs = horizontalScrollBar.getPreferredSize();
+		int cw = Math.max(1, width - CHANNEL_HEADER_WIDTH - vs.getWidth());
+		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - hs.getHeight());
 
 		sequenceContent.setBounds(CHANNEL_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
 		channelHeader.setBounds(0, COLUMN_HEADER_HEIGHT, CHANNEL_HEADER_WIDTH, ch);
 		columnHeader.setBounds(CHANNEL_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
 		
 		infoPanel.setBounds(0, 0, CHANNEL_HEADER_WIDTH, COLUMN_HEADER_HEIGHT);
-		buttonPanel.setBounds(0, height - sh, CHANNEL_HEADER_WIDTH, sh);
+		buttonPanel.setBounds(0, height - hs.getHeight(), CHANNEL_HEADER_WIDTH, hs.getHeight());
 
-		verticalScrollBar.initVerticalRight(width, COLUMN_HEADER_HEIGHT, ch);
-		horizontalScrollBar.initHorizontalBottom(CHANNEL_HEADER_WIDTH, height, cw);
+		verticalScrollBar.setBounds(width - vs.getWidth(), COLUMN_HEADER_HEIGHT, vs.getWidth(), ch);
+		horizontalScrollBar.setBounds(CHANNEL_HEADER_WIDTH, height - hs.getHeight(), cw, hs.getHeight());
 	}
 
 	public void initModelView() {
