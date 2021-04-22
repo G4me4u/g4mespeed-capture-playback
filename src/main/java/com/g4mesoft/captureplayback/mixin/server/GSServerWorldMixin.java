@@ -168,21 +168,19 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		microtick = -1;
 	}
 	
-	private void handleBlockEventPlayback(boolean skipMicrotickCheck) {
+	private void handleBlockEventPlayback(boolean skipTimeCheck) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		Map<Block, GSISignalEventHandler> handlerRegistry = extension.getSignalEventHandlerRegistry();
 		
-		while (signalFrame.hasNext()) {
+		while (signalFrame.hasNext() && (skipTimeCheck || signalFrame.peek().getMicrotick() == microtick)) {
 			GSSignalEvent event = signalFrame.next();
 			
-			if (skipMicrotickCheck || event.getMicrotick() == microtick) {
-				BlockState state = getBlockState(event.getPos());
+			BlockState state = getBlockState(event.getPos());
 
-				GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
-				if (handler != null) {
-					microtick = event.getMicrotick();
-					handler.handle(state, event, this);
-				}
+			GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
+			if (handler != null) {
+				microtick = event.getMicrotick();
+				handler.handle(state, event, this);
 			}
 		}
 	}
