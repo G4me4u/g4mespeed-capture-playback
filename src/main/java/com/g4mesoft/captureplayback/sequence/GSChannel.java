@@ -58,10 +58,12 @@ public class GSChannel {
 		clear();
 		
 		for (GSChannelEntry entry : other.getEntries()) {
-			GSChannelEntry entryCopy = new GSChannelEntry(entry.getEntryUUID());
-			entryCopy.set(entry);
+			GSChannelEntry entryCopy = new GSChannelEntry(entry.getEntryUUID(),
+					entry.getStartTime(), entry.getEndTime());
+		
 			addEntryInternal(entryCopy);
 			dispatchEntryAdded(entryCopy);
+			entryCopy.set(entry);
 		}
 	}
 	

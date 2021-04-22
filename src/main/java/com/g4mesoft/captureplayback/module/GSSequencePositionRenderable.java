@@ -19,7 +19,8 @@ import net.minecraft.util.math.Vec3d;
 public class GSSequencePositionRenderable implements GSIRenderable3D {
 
 	private static final int COLOR_ALPHA = 0x80;
-	private static final float UNIT_SURFACE_OFFSET = 1.0e-4f;
+	private static final float UNIT_SURFACE_OFFSET = 2.0e-4f;
+	private static final float MINIMUM_SURFACE_OFFSET = 1.0e-3f;
 	
 	private final GSCapturePlaybackModule module;
 	private final GSSequence sequence;
@@ -78,7 +79,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			int color = (cube.color & 0x00FFFFFF) | (COLOR_ALPHA << 24);
 			
 			// Offset edges to fix issues with z-fighting
-			float offset = cube.dist * UNIT_SURFACE_OFFSET;
+			float offset = Math.max(MINIMUM_SURFACE_OFFSET, cube.dist * UNIT_SURFACE_OFFSET);
 
 			renderer.fillCuboid(rx - offset,
 			                    ry - offset,

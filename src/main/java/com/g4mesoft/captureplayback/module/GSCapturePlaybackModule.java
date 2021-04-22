@@ -44,7 +44,8 @@ import net.minecraft.util.math.BlockPos;
 
 public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListener {
 
-	public static final String SEQUENCE_FILE_NAME = "active_sequence.gsq";
+	public static final String ACTIVE_SEQUENCE_FILE_NAME = "active_sequence";
+	public static final String SEQUENCE_EXTENSION = ".gsq";
 
 	private static final String GUI_TAB_TITLE = "gui.tab.capture-playback";
 	public static final String KEY_CATEGORY = "capture-playback";
@@ -80,7 +81,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 
 		manager.runOnServer((serverManager) -> {
 			try {
-				activeSequence.set(readSequence(getSequenceFile()));
+				setActiveSequence(readSequence(getSequenceFile(ACTIVE_SEQUENCE_FILE_NAME)));
 			} catch (IOException e) {
 				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read active sequence!");
 			}
@@ -95,7 +96,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onClose() {
 		manager.runOnServer((serverManager) -> {
 			try {
-				writeSequence(activeSequence, getSequenceFile());
+				writeSequence(activeSequence, getSequenceFile(ACTIVE_SEQUENCE_FILE_NAME));
 			} catch (IOException e) {
 				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write active sequence!");
 			}
@@ -106,6 +107,15 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		transformer.uninstall(activeSequence);
 	}
 
+	public GSSequence readSequence(String fileName) {
+		GSSequence sequence = null;
+		try {
+			sequence = readSequence(getSequenceFile(fileName));
+		} catch (IOException e) {
+		}
+		return sequence;
+	}
+	
 	private GSSequence readSequence(File sequenceFile) throws IOException {
 		GSSequence sequence;
 		
@@ -119,6 +129,15 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		}
 		
 		return sequence;
+	}
+	
+	public boolean writeSequence(GSSequence sequence, String fileName) {
+		try {
+			writeSequence(sequence, getSequenceFile(fileName));
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
 	}
 	
 	private void writeSequence(GSSequence sequence, File sequenceFile) throws IOException {
@@ -194,6 +213,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
 		GSPlaybackCommand.registerCommand(dispatcher);
 		GSCaptureCommand.registerCommand(dispatcher);
+		GSSequenceCommand.registerCommand(dispatcher);
 	}
 	
 	@Override
@@ -234,7 +254,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 			} catch (GSSequenceDeltaException ignore) {
 				// The delta could not be applied. Probably because of a de-sync, or
 				// because multiple users are changing the same part of the sequence.
-				managerServer.sendPacket(new GSSequencePacket(activeSequence), player);	
+				managerServer.sendPacket(new GSSequencePacket(activeSequence), player);
 			} finally {
 				transformer.setEnabled(true);
 			}
@@ -253,12 +273,29 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 			}
 		});
 	}
+	
+	private File getSequenceFile(String fileName) {
+		return new File(getSequenceDirectory(), fileName + SEQUENCE_EXTENSION);
+	}
 
-	private File getSequenceFile() {
-		return new File(manager.getCacheFile(), SEQUENCE_FILE_NAME);
+	public File getSequenceDirectory() {
+		return manager.getCacheFile();
 	}
 	
 	public GSSequence getActiveSequence() {
 		return activeSequence;
+	}
+	
+	public void setActiveSequence(GSSequence sequence) {
+		try {
+			transformer.setEnabled(false);
+			activeSequence.set(sequence);
+		} finally {
+			transformer.setEnabled(true);
+		}
+		
+		manager.runOnServer((managerServer) -> {
+			managerServer.sendPacketToAll(new GSSequencePacket(activeSequence));
+		});
 	}
 }

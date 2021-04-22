@@ -142,14 +142,11 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 			return null;
 		
 		int x1 = bounds.x + bounds.width;
-		bounds.x = mapEntryX(bounds.x);
-		bounds.width  = Math.max(1, mapEntryX(x1) - bounds.x);
-
-		if (bounds.width <= 0)
-			return null;
-
 		int y1 = bounds.y + bounds.height;
+
+		bounds.x = mapEntryX(bounds.x);
 		bounds.y = mapEntryY(bounds.y);
+		bounds.width  = Math.max(1, mapEntryX(x1) - bounds.x);
 		bounds.height = Math.max(1, mapEntryY(y1) - bounds.y);
 		
 		return bounds;

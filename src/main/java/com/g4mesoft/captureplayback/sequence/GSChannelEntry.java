@@ -10,7 +10,6 @@ import net.minecraft.network.PacketByteBuf;
 public final class GSChannelEntry {
 
 	public static final GSEChannelEntryType DEFAULT_ENTRY_TYPE = GSEChannelEntryType.EVENT_BOTH;
-	public static final GSSignalTime DEFAULT_TIME = new GSSignalTime(0L, 0);
 	
 	private final UUID entryUUID;
 	
@@ -20,10 +19,6 @@ public final class GSChannelEntry {
 	private GSEChannelEntryType type;
 
 	private GSChannel parent;
-
-	GSChannelEntry(UUID entryUUID) {
-		this(entryUUID, DEFAULT_TIME, DEFAULT_TIME);
-	}
 
 	GSChannelEntry(UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
 		if (entryUUID == null)
@@ -147,13 +142,14 @@ public final class GSChannelEntry {
 	}
 	
 	public static GSChannelEntry read(PacketByteBuf buf) throws IOException {
-		GSChannelEntry entry = new GSChannelEntry(buf.readUuid());
+		UUID entryUUID = buf.readUuid();
 
 		GSSignalTime startTime = GSSignalTime.read(buf);
 		GSSignalTime endTime = GSSignalTime.read(buf);
 		if (startTime.isAfter(endTime))
 			throw new IOException("Invalid entry time-span");
-		entry.setTimespan(startTime, endTime);
+		
+		GSChannelEntry entry = new GSChannelEntry(entryUUID, startTime, endTime);
 		
 		GSEChannelEntryType type = GSEChannelEntryType.fromIndex(buf.readInt());
 		if (type == null)

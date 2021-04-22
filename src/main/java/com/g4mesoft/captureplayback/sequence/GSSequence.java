@@ -51,13 +51,8 @@ public class GSSequence {
 		
 		clear();
 		
-		for (GSChannel channel : other.getChannels()) {
-			GSChannel channelCopy = new GSChannel(channel.getChannelUUID(), channel.getInfo());
-			channelCopy.set(channel);
-			addChannelInternal(channelCopy);
-			
-			dispatchChannelAdded(channelCopy);
-		}
+		for (GSChannel channel : other.getChannels())
+			addChannel(channel.getChannelUUID(), channel.getInfo()).set(channel);
 	}
 	
 	private void clear() {
