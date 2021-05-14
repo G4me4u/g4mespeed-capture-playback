@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.glfw.GLFW;
@@ -13,8 +14,8 @@ import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
-import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
+import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
@@ -25,10 +26,11 @@ import com.g4mesoft.core.GSIModuleManager;
 import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSEKeyEventType;
 import com.g4mesoft.hotkey.GSKeyManager;
+import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.setting.GSSettingCategory;
 import com.g4mesoft.setting.GSSettingManager;
 import com.g4mesoft.setting.types.GSIntegerSetting;
-import com.g4mesoft.util.GSFileUtils;
+import com.g4mesoft.util.GSFileUtil;
 import com.mojang.brigadier.CommandDispatcher;
 
 import io.netty.buffer.Unpooled;
@@ -55,7 +57,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public static final int RENDERING_DEPTH    = 1;
 	public static final int RENDERING_NO_DEPTH = 2;
 	
-	private final GSSequence activeSequence;
+	private final GSSequenceSession sequenceSession;
 	private final GSSequenceDeltaTransformer transformer;
 
 	private GSIModuleManager manager;
@@ -63,7 +65,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public final GSIntegerSetting cChannelRenderingType;
 	
 	public GSCapturePlaybackModule() {
-		activeSequence = new GSSequence(UUID.randomUUID());
+		sequenceSession = new GSSequenceSession(new GSSequence(UUID.randomUUID()));
 		
 		transformer = new GSSequenceDeltaTransformer();
 		transformer.addDeltaListener(this);
@@ -77,7 +79,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void init(GSIModuleManager manager) {
 		this.manager = manager;
 
-		transformer.install(activeSequence);
+		transformer.install(getActiveSequence());
 
 		manager.runOnServer((serverManager) -> {
 			try {
@@ -88,7 +90,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		});
 		
 		manager.runOnClient((clientManager) -> {
-			clientManager.addRenderable(new GSSequencePositionRenderable(this, activeSequence));
+			clientManager.addRenderable(new GSSequencePositionRenderable(this, getActiveSequence()));
 		});
 	}
 	
@@ -96,7 +98,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onClose() {
 		manager.runOnServer((serverManager) -> {
 			try {
-				writeSequence(activeSequence, getSequenceFile(ACTIVE_SEQUENCE_FILE_NAME));
+				writeSequence(getActiveSequence(), getSequenceFile(ACTIVE_SEQUENCE_FILE_NAME));
 			} catch (IOException e) {
 				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write active sequence!");
 			}
@@ -104,7 +106,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		
 		manager = null;
 		
-		transformer.uninstall(activeSequence);
+		transformer.uninstall(getActiveSequence());
 	}
 
 	public GSSequence readSequence(String fileName) {
@@ -141,7 +143,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	}
 	
 	private void writeSequence(GSSequence sequence, File sequenceFile) throws IOException {
-		GSFileUtils.ensureFileExists(sequenceFile);
+		GSFileUtil.ensureFileExists(sequenceFile);
 		
 		try (FileOutputStream fos = new FileOutputStream(sequenceFile)) {
 			PacketByteBuf buffer = new PacketByteBuf(Unpooled.buffer());
@@ -166,33 +168,70 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	@Override
 	@Environment(EnvType.CLIENT)
 	public void registerHotkeys(GSKeyManager keyManager) {
-		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, null, ignore -> {
+		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
 			int newValue = cChannelRenderingType.getValue() + 1;
 			if (newValue > cChannelRenderingType.getMaxValue())
 				newValue = cChannelRenderingType.getMinValue();
 			cChannelRenderingType.setValue(newValue);
 		}, GSEKeyEventType.PRESS);
 		
-		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
-				new GSDefaultChannelProvider(), this::addChannelToActiveSequence, GSEKeyEventType.PRESS);
-		
-		keyManager.registerKey("extendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, null, ignore -> {
+		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
 			BlockPos position = getCrosshairTarget();
-			GSChannel channel = getSelectedChannel();
+			// Only add channels if we have a crosshair target
+			if (position != null) {
+				GSSequence activeSequence = getActiveSequence();
+				String name = GSDefaultChannelProvider.getDefaultChannelName();
+				int color = GSDefaultChannelProvider.getUniqueColor(activeSequence);
+				GSChannel channel = activeSequence.addChannel(new GSChannelInfo(name, color, position));
+				
+				// Automatically select the new channel
+				if (channel != null)
+					sequenceSession.setSelectedChannelUUID(channel.getChannelUUID());
+			}
+		}, GSEKeyEventType.PRESS);
+		
+		keyManager.registerKey("extendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
+			BlockPos position = getCrosshairTarget();
+			GSChannel channel = sequenceSession.getSelectedChannel();
 			if (position != null && channel != null)
 				channel.setInfo(channel.getInfo().addPosition(position));
 		}, GSEKeyEventType.PRESS);
-	}
-	
-	private void addChannelToActiveSequence(GSIChannelProvider channelProvider) {
-		activeSequence.addChannel(channelProvider.createNextChannelInfo(activeSequence));
-	}
-	
-	private GSChannel getSelectedChannel() {
-		GSChannel selectedChannel = null;
-		for (GSChannel channel : activeSequence.getChannels())
-			selectedChannel = channel;
-		return selectedChannel;
+		
+		keyManager.registerKey("unextendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
+			BlockPos position = getCrosshairTarget();
+			GSChannel channel = sequenceSession.getSelectedChannel();
+			if (position != null && channel != null) {
+				GSChannelInfo info = channel.getInfo();
+				// Ensure that we have at least one position in the channel
+				if (info.getPositions().size() > 1)
+					channel.setInfo(info.removePosition(position));
+			}
+		}, GSEKeyEventType.PRESS);
+
+		keyManager.registerKey("selectChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
+			GSChannel channel = getCrosshairChannel();
+			if (channel != null)
+				sequenceSession.setSelectedChannelUUID(channel.getChannelUUID());
+		}, GSEKeyEventType.PRESS);
+		
+		keyManager.registerKey("pasteChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+			GSChannel selectedChannel = sequenceSession.getSelectedChannel();
+			if (selectedChannel != null)
+				return channel.getInfo().withColor(selectedChannel.getInfo().getColor());
+			return channel.getInfo();
+		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
+
+		keyManager.registerKey("brightenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+			return channel.getInfo().withColor(GSIRenderer.brightenColor(channel.getInfo().getColor()));
+		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
+
+		keyManager.registerKey("darkenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+			return channel.getInfo().withColor(GSIRenderer.darkenColor(channel.getInfo().getColor()));
+		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
+
+		keyManager.registerKey("randomizeChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+			return channel.getInfo().withColor(GSDefaultChannelProvider.getUniqueColor(channel.getParent()));
+		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 	}
 	
 	public static BlockPos getCrosshairTarget() {
@@ -202,6 +241,24 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		if (client.crosshairTarget.getType() != HitResult.Type.BLOCK)
 			return null;
 		return ((BlockHitResult)client.crosshairTarget).getBlockPos();
+	}
+	
+	private GSChannel getCrosshairChannel() {
+		BlockPos position = getCrosshairTarget();
+		if (position != null) {
+			for (GSChannel channel : getActiveSequence().getChannels()) {
+				if (channel.getInfo().getPositions().contains(position))
+					return channel;
+			}
+		}
+		
+		return null;
+	}
+	
+	private void modifyCrosshairChannel(Function<GSChannel, GSChannelInfo> modifier) {
+		GSChannel channel = getCrosshairChannel();
+		if (channel != null)
+			channel.setInfo(modifier.apply(channel));
 	}
 	
 	@Override
@@ -219,7 +276,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	@Override
 	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSExtensionInfo coreInfo) {
 		manager.runOnServer(managerServer -> {
-			managerServer.sendPacket(new GSSequencePacket(activeSequence), player);	
+			managerServer.sendPacket(new GSSequencePacket(getActiveSequence()), player);	
 		});
 	}
 	
@@ -227,7 +284,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		manager.runOnClient(managerClient -> {
 			try {
 				transformer.setEnabled(false);
-				activeSequence.set(sequence);
+				getActiveSequence().set(sequence);
 			} finally {
 				transformer.setEnabled(true);
 			}
@@ -248,13 +305,13 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		manager.runOnServer(managerServer -> {
 			try {
 				transformer.setEnabled(false);
-				delta.applyDelta(activeSequence);
+				delta.applyDelta(getActiveSequence());
 				
 				managerServer.sendPacketToAllExcept(new GSSequenceDeltaPacket(delta), player);
 			} catch (GSSequenceDeltaException ignore) {
 				// The delta could not be applied. Probably because of a de-sync, or
 				// because multiple users are changing the same part of the sequence.
-				managerServer.sendPacket(new GSSequencePacket(activeSequence), player);
+				managerServer.sendPacket(new GSSequencePacket(getActiveSequence()), player);
 			} finally {
 				transformer.setEnabled(true);
 			}
@@ -266,7 +323,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		manager.runOnClient(managerClient -> {
 			try {
 				transformer.setEnabled(false);
-				delta.applyDelta(activeSequence);
+				delta.applyDelta(getActiveSequence());
 			} catch (GSSequenceDeltaException ignore) {
 			} finally {
 				transformer.setEnabled(true);
@@ -282,20 +339,24 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 		return manager.getCacheFile();
 	}
 	
+	public GSSequenceSession getSequenceSession() {
+		return sequenceSession;
+	}
+	
 	public GSSequence getActiveSequence() {
-		return activeSequence;
+		return sequenceSession.getActiveSequence();
 	}
 	
 	public void setActiveSequence(GSSequence sequence) {
 		try {
 			transformer.setEnabled(false);
-			activeSequence.set(sequence);
+			getActiveSequence().set(sequence);
 		} finally {
 			transformer.setEnabled(true);
 		}
 		
 		manager.runOnServer((managerServer) -> {
-			managerServer.sendPacketToAll(new GSSequencePacket(activeSequence));
+			managerServer.sendPacketToAll(new GSSequencePacket(getActiveSequence()));
 		});
 	}
 }

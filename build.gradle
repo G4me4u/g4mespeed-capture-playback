@@ -21,7 +21,11 @@ sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 archivesBaseName = project.archives_base_name
-version = project.mod_version + "-mc" + project.minecraft_version
+if (project.mod_version.startsWith("0.")) {
+	version = project.mod_version + "-mc" + project.minecraft_version + "-beta"
+} else {
+	version = project.mod_version + "-mc" + project.minecraft_version
+}
 group = project.maven_group
 
 minecraft {

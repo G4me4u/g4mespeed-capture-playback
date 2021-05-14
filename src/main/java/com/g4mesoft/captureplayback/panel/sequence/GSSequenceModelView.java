@@ -12,12 +12,11 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSPanelContext;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.renderer.GSIRenderer2D;
-import com.g4mesoft.util.GSMathUtils;
+import com.g4mesoft.util.GSMathUtil;
 
 public class GSSequenceModelView {
 
@@ -273,7 +272,7 @@ public class GSSequenceModelView {
 			dest.width = MINIMUM_ENTRY_WIDTH;
 		}
 		
-		if (entry.getStartTime().isEqual(GSSignalTime.ZERO) && entry.getType() == GSEChannelEntryType.EVENT_END) {
+		if (entry.getStartTime().isEqual(GSSignalTime.ZERO) && !entry.getType().hasStartEvent()) {
 			int x0 = getColumnX(0);
 			dest.width += dest.x - x0;
 			dest.x = x0;
@@ -427,7 +426,7 @@ public class GSSequenceModelView {
 		if (expandedColumnModel.isSingleExpandedColumn()) {
 			int minIndex = expandedColumnModel.getMinColumnIndex();
 			int maxIndex = expandedColumnModel.getMaxColumnIndex();
-			int columnIndex = GSMathUtils.clamp(getColumnIndexFromView(x), minIndex, maxIndex);
+			int columnIndex = GSMathUtil.clamp(getColumnIndexFromView(x), minIndex, maxIndex);
 			
 			int columnOffset = x - getColumnX(columnIndex);
 			if (columnOffset < 0)

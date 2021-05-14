@@ -18,7 +18,7 @@ public class GSPistonSignalEventHandler implements GSISignalEventHandler {
 			int type = (event.getEdge() == GSESignalEdge.RISING_EDGE) ? 0 : 1;
 			int data = state.get(Properties.FACING).getId();
 			
-			context.dispatchBlockAction(event.getPos(), block, type, data);
+			context.dispatchBlockEvent(event.getPos(), block, type, data);
 		}
 	}
 }

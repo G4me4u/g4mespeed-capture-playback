@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.panel.composition;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSCompositionTrackHeaderPanel extends GSPanel {
@@ -36,6 +37,6 @@ public class GSCompositionTrackHeaderPanel extends GSPanel {
 	
 	private void renderHeader(GSIRenderer2D renderer, GSTrack track, int x, int y, int width) {
 		renderer.fillRect(x, y, width, modelView.getTrackHeight(), TRACK_LABEL_COLOR);
-		renderer.drawText(track.getName(), x + 2, y + 2, renderer.brightenColor(track.getColor()), false);
+		renderer.drawText(track.getName(), x + 2, y + 2, GSIRenderer.brightenColor(track.getColor()), false);
 	}
 }

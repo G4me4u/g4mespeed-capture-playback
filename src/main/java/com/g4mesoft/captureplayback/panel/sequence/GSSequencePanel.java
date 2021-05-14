@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.panel.sequence;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.panel.GSDarkScrollBar;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
@@ -42,6 +43,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private static final GSIcon OPACITY_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
 	private static final Text OPACITY_TEXT = new TranslatableText("panel.sequence.opacity");
 	
+	private final GSSequenceSession session;
 	private final GSSequence sequence;
 	private final GSIChannelProvider channelProvider;
 	
@@ -72,19 +74,20 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	
 	private GSESequenceOpacity opacity;
 	
-	public GSSequencePanel(GSSequence sequence, GSIChannelProvider channelProvider) {
-		this.sequence = sequence;
+	public GSSequencePanel(GSSequenceSession session, GSIChannelProvider channelProvider) {
+		this.session = session;
+		this.sequence = session.getActiveSequence();
 		this.channelProvider = channelProvider;
 
 		expandedColumnModel = new GSExpandedColumnModel();
 		modelView = new GSSequenceModelView(sequence, expandedColumnModel);
 		
 		sequenceContent = new GSSequenceContentPanel(sequence, expandedColumnModel, modelView);
-		channelHeader = new GSChannelHeaderPanel(sequence, modelView);
+		channelHeader = new GSChannelHeaderPanel(session, modelView);
 		columnHeader = new GSSequenceColumnHeaderPanel(sequence, expandedColumnModel, modelView);
 		
-		infoPanel = new GSSequenceInfoPanel();
-		buttonPanel = new GSSequenceButtonPanel(sequence);
+		infoPanel = new GSSequenceInfoPanel(session);
+		buttonPanel = new GSSequenceButtonPanel();
 		
 		verticalScrollBar = new GSDarkScrollBar(this, new GSIScrollListener() {
 			@Override
@@ -124,12 +127,20 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		
 		initModelView();
 		updateHoveredCell();
+		
+		horizontalScrollBar.setScrollOffset(session.getXOffset());
+		verticalScrollBar.setScrollOffset(session.getYOffset());
+		setOpacity(session.getOpacity());
 	}
 
 	@Override
 	public void onHidden() {
 		super.onHidden();
 
+		session.setXOffset(horizontalScrollBar.getScrollOffset());
+		session.setYOffset(verticalScrollBar.getScrollOffset());
+		session.setOpacity(getOpacity());
+		
 		sequence.removeSequenceListener(this);
 		expandedColumnModel.removeModelListener(this);
 	

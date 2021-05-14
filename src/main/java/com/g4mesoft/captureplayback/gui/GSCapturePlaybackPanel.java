@@ -70,6 +70,7 @@ public class GSCapturePlaybackPanel extends GSParentPanel {
 			
 			GSPanelContext.setContent(new GSCompositionEditPanel(composition));
 		});
+		
 		editSequenceButton = new GSButtonPanel("Edit Sequence", () -> {
 			GSPanelContext.setContent(new GSSequenceEditPanel(module.getActiveSequence()));
 		});

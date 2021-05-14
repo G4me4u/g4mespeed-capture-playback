@@ -2,7 +2,8 @@ package com.g4mesoft.captureplayback.common;
 
 public enum GSETickPhase {
 
-	BLOCK_EVENTS(0);
+	IMMEDIATE(0),
+	BLOCK_EVENTS(1);
 
 	private final int order;
 	

@@ -8,6 +8,7 @@ import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.scroll.GSIScrollListener;
 import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.panel.scroll.GSScrollBar;
+import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
 
@@ -92,7 +93,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private void renderChannelPreview(GSIRenderer2D renderer, GSChannel channel, int x, int y, int width, int height) {
-		int color = renderer.darkenColor(channel.getInfo().getColor());
+		int color = GSIRenderer.darkenColor(channel.getInfo().getColor());
 		
 		for (GSChannelEntry entry : channel.getEntries()) {
 			GSRectangle bounds = getMappedEntryBounds(entry);

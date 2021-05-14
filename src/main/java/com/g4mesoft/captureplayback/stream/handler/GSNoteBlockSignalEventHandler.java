@@ -13,15 +13,17 @@ public class GSNoteBlockSignalEventHandler implements GSISignalEventHandler {
 	@Override
 	public void handle(BlockState state, GSSignalEvent event, GSISignalEventContext context) {
 		Block block = state.getBlock();
+		
 		if (block == Blocks.NOTE_BLOCK) {
+			// Only perform the update if event is not shadow
 			boolean rising = (event.getEdge() == GSESignalEdge.RISING_EDGE);
 			BlockState newState = state.with(Properties.POWERED, rising);
 			context.setState0(event.getPos(), newState, GSISignalEventContext.PROPAGATE_CHANGE | 
 			                                            GSISignalEventContext.NOTIFY_LISTENERS);
 			if (rising) {
-				// Only send block actions if the note block is powered
+				// Only send block events if the note block is powered
 				// but was not powered prior to the signal (rising edge).
-				context.dispatchBlockAction(event.getPos(), block, 0, 0);
+				context.dispatchBlockEvent(event.getPos(), block, 0, 0);
 			}
 		}
 	}

@@ -92,6 +92,7 @@ class GSSequenceCaptureStream implements GSICaptureStream {
 		private final GSChannel channel;
 
 		private GSSignalTime risingTime;
+		private boolean risingShadow;
 		
 		public GSChannelCapture(GSChannel channel) {
 			this.channel = channel;
@@ -103,19 +104,31 @@ class GSSequenceCaptureStream implements GSICaptureStream {
 			GSSignalTime time = new GSSignalTime(captureTime, event.getMicrotick());
 			
 			if (event.getEdge() == GSESignalEdge.RISING_EDGE) {
-				if (risingTime != null) {
+				if (risingTime != null && !risingShadow) {
 					// In case we already have a rising edge
 					addHalfEntry(risingTime, GSEChannelEntryType.EVENT_START);
 				}
+				
 				risingTime = time;
+				risingShadow = event.isShadow();
 			} else { // event.getEdge() == GSESignalEdge.FALLING_EDGE
 				if (risingTime == null) {
 					// In case the signal did not have a rising edge
 					addHalfEntry(time, GSEChannelEntryType.EVENT_END);
 				} else {
-					channel.tryAddEntry(risingTime, time);
+					// Ensure that we actually have an event
+					if (!risingShadow || !event.isShadow()) {
+						GSChannelEntry entry = channel.tryAddEntry(risingTime, time);
+						// Handle shadow events
+						if (entry != null && (risingShadow || event.isShadow())) {
+							entry.setType(risingShadow ? GSEChannelEntryType.EVENT_END :
+							                             GSEChannelEntryType.EVENT_START);
+						}
+					}
+	
 					// Invalidate the current rising time
 					risingTime = null;
+					risingShadow = false;
 				}
 			}
 		}
@@ -127,9 +140,10 @@ class GSSequenceCaptureStream implements GSICaptureStream {
 		}
 		
 		private void onClose() {
-			if (risingTime != null) {
+			if (risingTime != null && !risingShadow) {
 				addHalfEntry(risingTime, GSEChannelEntryType.EVENT_START);
 				risingTime = null;
+				risingShadow = false;
 			}
 		}
 	}

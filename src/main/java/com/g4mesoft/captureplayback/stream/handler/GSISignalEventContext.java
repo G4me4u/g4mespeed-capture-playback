@@ -21,7 +21,7 @@ public interface GSISignalEventContext {
 	/* Signals that this is a mechanical update, usually caused by pistons moving blocks. */
 	public static final int MECHANICAL_UPDATE     = 0b01000000; // 64;
 	
-	public boolean dispatchBlockAction(BlockPos pos, Block block, int type, int data);
+	public boolean dispatchBlockEvent(BlockPos pos, Block block, int type, int data);
 
 	public boolean setState0(BlockPos pos, BlockState state, int flags);
 	

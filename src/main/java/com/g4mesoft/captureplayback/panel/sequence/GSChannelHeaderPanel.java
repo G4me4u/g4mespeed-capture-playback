@@ -5,12 +5,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
+import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
-import com.g4mesoft.captureplayback.sequence.GSIChannelSelectionModel;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.GSSingleChannelSelectionModel;
 import com.g4mesoft.panel.GSETextAlignment;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSParentPanel;
@@ -22,7 +21,7 @@ import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.text.GSTextField;
+import com.g4mesoft.panel.field.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.util.math.BlockPos;
@@ -35,22 +34,22 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	
 	private static final int CROSSHAIR_TARGET_BORDER_COLOR = 0xFFE0E0E0;
 	
+	private final GSSequenceSession session;
 	private final GSSequence sequence;
 	private final GSSequenceModelView modelView;
 	
 	private final Map<UUID, GSChannelLabelPanel> uuidToLabel;
-	private final GSIChannelSelectionModel selectionModel;
 	private final GSRadioButtonGroup selectionButtonGroup;
 
 	private UUID hoveredChannelUUID;
 	private boolean editable;
 	
-	public GSChannelHeaderPanel(GSSequence sequence, GSSequenceModelView modelView) {
-		this.sequence = sequence;
+	public GSChannelHeaderPanel(GSSequenceSession session, GSSequenceModelView modelView) {
+		this.session = session;
+		this.sequence = session.getActiveSequence();
 		this.modelView = modelView;
 		
 		uuidToLabel = new HashMap<>();
-		selectionModel = new GSSingleChannelSelectionModel();
 		selectionButtonGroup = new GSRadioButtonGroup();
 		
 		hoveredChannelUUID = null;
@@ -197,8 +196,9 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			this.channel = channel;
 			
 			selectionButton = new GSRadioButton();
+			selectionButton.setSelected(this.channel.getChannelUUID().equals(session.getSelectedChannelUUID()));
 			selectionButton.addActionListener(() -> {
-				selectionModel.setSelectedChannel(channel.getChannelUUID());
+				session.setSelectedChannelUUID(this.channel.getChannelUUID());
 			});
 			
 			nameField = new GSTextField();
@@ -224,12 +224,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			add(selectionButton);
 			add(nameField);
 
-			onChannelSelectionChanged();
 			onChannelInfoChanged();
-		}
-		
-		private void onChannelSelectionChanged() {
-			selectionButton.setSelected(selectionModel.isChannelSelected(channel.getChannelUUID()));
 		}
 		
 		private void onChannelInfoChanged() {

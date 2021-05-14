@@ -2,6 +2,7 @@ package com.g4mesoft.captureplayback.mixin.server;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,11 +16,11 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
@@ -32,6 +33,7 @@ import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 import com.g4mesoft.captureplayback.stream.frame.GSMergedSignalFrame;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
+import com.g4mesoft.captureplayback.stream.handler.GSPoweredState;
 import com.g4mesoft.core.server.GSControllerServer;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -56,13 +58,16 @@ import net.minecraft.world.dimension.DimensionType;
 public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSISignalEventContext {
 
 	@Shadow @Final private MinecraftServer server;
-	@Shadow @Final private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue;
+	
+	private final Map<Block, GSISignalEventHandler> signalEventHandlerRegistry = 
+			CapturePlaybackMod.getInstance().getExtension().getSignalEventHandlerRegistry();
 	
 	private final List<GSIPlaybackStream> playbackStreams = new ArrayList<>();
 	private final List<GSICaptureStream> captureStreams = new ArrayList<>();
 	
 	private LinkedList<GSSignalEvent> capturedEvents = new LinkedList<>();
 	private GSISignalFrame signalFrame;
+	private Map<BlockPos, GSPoweredState> poweredStates = new HashMap<>();
 	
 	private GSETickPhase phase = GSETickPhase.BLOCK_EVENTS;
 	private int blockEventCount = 0;
@@ -74,6 +79,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
+
+	@Override
+	@Shadow public abstract void addSyncedBlockEvent(BlockPos pos, Block block, int type, int data);
 	
 	@Inject(method = "tick", at = @At("HEAD"))
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
@@ -103,8 +111,48 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 				captureStreamItr.remove();
 		}
 
+		// Handle immediate playback events
+		while (signalFrame.hasNext() && signalFrame.peek().getPhase() == GSETickPhase.IMMEDIATE)
+			handleSignalEvent(signalFrame.next());
+
+		// Prepare capturing of events
 		capturedEvents.clear();
 		signalFrame.mark();
+	}
+	
+	private void handleReadySignalEvents() {
+		// Handle playback events in the current breath.
+		while (signalFrame.hasNext() && isEventReady(signalFrame.peek()))
+			handleSignalEvent(signalFrame.next());
+	}
+	
+	private void handleSignalEvent(GSSignalEvent event) {
+		boolean rising = (event.getEdge() == GSESignalEdge.RISING_EDGE);
+
+		// Turn position into a powered position.
+		if (rising) {
+			incrementPowered(event.getPos());
+		} else {
+			decrementPowered(event.getPos());
+		}
+		
+		if (!event.isShadow()) {
+			BlockState state = getBlockState(event.getPos());
+	
+			GSISignalEventHandler handler = signalEventHandlerRegistry.get(state.getBlock());
+			if (handler != null)
+				handler.handle(state, event, this);
+		}
+	}
+	
+	private boolean isEventReady(GSSignalEvent event) {
+		// We are not in the correct phase
+		if (phase.isBefore(event.getPhase()))
+			return false;
+		// If we are in block event phase, check microtick
+		if (phase == GSETickPhase.BLOCK_EVENTS && event.getPhase() == phase)
+			return (microtick >= event.getMicrotick());
+		return true;
 	}
 	
 	@Inject(method = "tick", at = @At("RETURN"))
@@ -127,23 +175,44 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		}
 	}
 
-	@Inject(method = "processSyncedBlockEvents", at = @At("RETURN"))
+	@Inject(method = "processSyncedBlockEvents", at = @At("HEAD"))
 	public void onBlockActionHead(CallbackInfo ci) {
 		phase = GSETickPhase.BLOCK_EVENTS;
+		
+		blockEventCount = 0;
+		microtick = -1;
 	}
 
+	@Redirect(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", ordinal = 0,
+			target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;isEmpty()Z"))
+	public boolean onProcessSyncedBlockEventsLoop(ObjectLinkedOpenHashSet<BlockEvent> blockEventQueue) {
+		if (blockEventCount == 0) {
+			blockEventCount = blockEventQueue.size();
+			microtick++;
+		}
+
+		if (signalFrame.hasNext()) {
+			// No more block events from external sources,
+			// so we have to skip a few microticks.
+			if (blockEventCount == 0) {
+				do {
+					microtick = signalFrame.peek().getMicrotick();
+					handleReadySignalEvents();
+					// Check if we had new events added to the queue
+					blockEventCount = blockEventQueue.size();
+				} while (signalFrame.hasNext() && blockEventCount == 0);
+			} else {
+				handleReadySignalEvents();
+			}
+		}
+		
+		return (blockEventCount == 0);
+	}
+	
 	@Inject(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/server/world/ServerWorld;processBlockEvent(Lnet/minecraft/server/world/BlockEvent;)Z"))
 	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
-		if (blockEventCount == 0) {
-			// At this point we have already removed 1 block event.
-			blockEventCount = this.syncedBlockEventQueue.size();
-			microtick++;
-		} else {
-			blockEventCount--;
-		}
-	
-		handleBlockEventPlayback(false);
+		blockEventCount--;
 	}
 	
 	@Inject(method = "processSyncedBlockEvents", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(value = "INVOKE", shift = Shift.BEFORE,
@@ -155,7 +224,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
 				GSESignalEdge edge = (blockEvent.getType() == 0) ? GSESignalEdge.RISING_EDGE :
-				                                                    GSESignalEdge.FALLING_EDGE;
+				                                                   GSESignalEdge.FALLING_EDGE;
 				handleCaptureEvent(edge, blockEvent.getPos());
 			}
 		}
@@ -163,31 +232,14 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Inject(method = "processSyncedBlockEvents", at = @At("RETURN"))
 	public void onProcessSyncedBlockEventsReturn(CallbackInfo ci) {
-		handleBlockEventPlayback(true);
 		// We are done with the block event phase
 		microtick = -1;
 	}
 	
-	private void handleBlockEventPlayback(boolean skipTimeCheck) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		Map<Block, GSISignalEventHandler> handlerRegistry = extension.getSignalEventHandlerRegistry();
-		
-		while (signalFrame.hasNext() && (skipTimeCheck || signalFrame.peek().getMicrotick() == microtick)) {
-			GSSignalEvent event = signalFrame.next();
-			
-			BlockState state = getBlockState(event.getPos());
-
-			GSISignalEventHandler handler = handlerRegistry.get(state.getBlock());
-			if (handler != null) {
-				microtick = event.getMicrotick();
-				handler.handle(state, event, this);
-			}
-		}
-	}
-	
 	@Override
 	public void handleCaptureEvent(GSESignalEdge edge, BlockPos pos) {
-		capturedEvents.add(new GSSignalEvent(phase, microtick, capturedEvents.size(), edge, pos));
+		if (!captureStreams.isEmpty())
+			capturedEvents.add(new GSSignalEvent(phase, microtick, capturedEvents.size(), edge, pos, false));
 	}
 	
 	@Override
@@ -232,25 +284,52 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Override
-	public boolean dispatchBlockAction(BlockPos pos, Block block, int type, int data) {
-		BlockEvent blockAction = new BlockEvent(pos, block, type, data);
+	public boolean isPlaybackPowering(BlockPos pos) {
+		GSPoweredState poweredState = poweredStates.get(pos);
+		return (poweredState != null && poweredState.isPowered());
+	}
+	
+	private void incrementPowered(BlockPos pos) {
+		GSPoweredState poweredState = poweredStates.get(pos);
 		
-		if (this.processBlockEvent(blockAction)) {
-            Packet<?> packet = new BlockEventS2CPacket(pos, block, type, data);
-
-            double dist = 64.0;
-            if (block instanceof PistonBlock) {
-            	// This is a g4mespeed specific feature that allows the user
-            	// to change the distance at which the block actions are sent.
-	            dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
-            }
-
-            PlayerManager playerManager = server.getPlayerManager();
-            playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, getRegistryKey(), packet);
-            
-            return true;
+		if (poweredState != null) {
+			poweredState.increment();
+		} else {
+			poweredStates.put(pos, new GSPoweredState(1));
 		}
+	}
+
+	private void decrementPowered(BlockPos pos) {
+		GSPoweredState poweredState = poweredStates.get(pos);
 		
+		if (poweredState != null) {
+			poweredState.decrement();
+		
+			if (!poweredState.isPowered())
+				poweredStates.remove(pos);
+		}
+	}
+	
+	@Override
+	public boolean dispatchBlockEvent(BlockPos pos, Block block, int type, int data) {
+		BlockEvent blockAction = new BlockEvent(pos, block, type, data);
+
+		if (this.processBlockEvent(blockAction)) {
+			Packet<?> packet = new BlockEventS2CPacket(pos, block, type, data);
+
+			double dist = 64.0;
+			if (block instanceof PistonBlock) {
+				// This is a g4mespeed specific feature that allows the user
+				// to change the distance at which the block actions are sent.
+				dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
+			}
+
+			PlayerManager playerManager = server.getPlayerManager();
+			playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, getRegistryKey(), packet);
+
+			return true;
+		}
+
 		return false;
 	}
 	

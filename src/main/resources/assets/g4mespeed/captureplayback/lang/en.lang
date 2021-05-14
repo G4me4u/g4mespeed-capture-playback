@@ -25,8 +25,9 @@ panel.sequencecontent.createentry=New Entry
 panel.sequencecontent.entrytype=Entry Type
 panel.sequencecontent.deleteentry=Delete Entry
 panel.sequencecontent.typeboth=Both
-panel.sequencecontent.typestart=Event at Start
-panel.sequencecontent.typeend=Event at End
+panel.sequencecontent.typestart=Update at Start
+panel.sequencecontent.typeend=Update at End
+panel.sequencecontent.typenone=None
 
 panel.edit.back=Back
 
@@ -35,6 +36,13 @@ panel.edit.back=Back
 hotkey.capture-playback.title=Capture & Playback
 hotkey.capture-playback.channelRenderingType=Toggle Channel Rendering
 hotkey.capture-playback.newChannel=Create New Channel
+hotkey.capture-playback.extendChannel=Add Channel Position
+hotkey.capture-playback.unextendChannel=Remove Channel Position
+hotkey.capture-playback.selectChannel=Select Channel
+hotkey.capture-playback.pasteChannelColor=Paste Channel Color
+hotkey.capture-playback.brightenChannelColor=Brighten Channel Color
+hotkey.capture-playback.darkenChannelColor=Darken Channel Color
+hotkey.capture-playback.randomizeChannelColor=Randomize Channel Color
 
 ############ Settings ############
 setting.capture-playback=Capture & Playback

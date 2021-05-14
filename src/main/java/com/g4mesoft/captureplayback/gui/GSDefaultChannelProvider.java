@@ -5,9 +5,9 @@ import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
-import com.g4mesoft.captureplayback.util.GSColorUtil;
 import com.g4mesoft.core.client.GSControllerClient;
 import com.g4mesoft.module.translation.GSTranslationModule;
+import com.g4mesoft.util.GSColorUtil;
 
 import net.minecraft.util.math.BlockPos;
 
@@ -21,18 +21,22 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	@Override
 	public GSChannelInfo createNextChannelInfo(GSSequence sequence) {
 		return new GSChannelInfo(getDefaultChannelName(), 
-		                         getUniqueColor(sequence, MAX_COLOR_TRIES),
+		                         getUniqueColor(sequence),
 		                         getChannelPosition());
 	}
 
-	private String getDefaultChannelName() {
+	public static String getDefaultChannelName() {
 		GSTranslationModule translationModule = GSControllerClient.getInstance().getTranslationModule();
 		if (defaultChannelName == null && translationModule.hasTranslation(DEFAULT_CHANNEL_NAME))
 			defaultChannelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
 		return defaultChannelName;
 	}
 
-	private int getUniqueColor(GSSequence sequence, int maxTries) {
+	public static int getUniqueColor(GSSequence sequence) {
+		return getUniqueColor(sequence, MAX_COLOR_TRIES);
+	}
+
+	public static int getUniqueColor(GSSequence sequence, int maxTries) {
 		int color;
 
 		do {
@@ -44,7 +48,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 		return color;
 	}
 
-	private boolean isColorUnique(GSSequence sequence, int color) {
+	private static boolean isColorUnique(GSSequence sequence, int color) {
 		for (GSChannel channel : sequence.getChannels()) {
 			if (GSColorUtil.isRGBSimilar(channel.getInfo().getColor(), color))
 				return false;
@@ -53,7 +57,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 		return true;
 	}
 	
-	private BlockPos getChannelPosition() {
+	private static BlockPos getChannelPosition() {
 		BlockPos position = GSCapturePlaybackModule.getCrosshairTarget();
 		return (position == null) ? BlockPos.ORIGIN : position;
 	}

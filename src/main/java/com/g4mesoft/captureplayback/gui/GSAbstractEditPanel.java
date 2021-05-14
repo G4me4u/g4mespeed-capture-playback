@@ -14,8 +14,8 @@ import com.g4mesoft.panel.event.GSFocusEvent;
 import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
+import com.g4mesoft.panel.field.GSTextField;
 import com.g4mesoft.panel.legend.GSButtonPanel;
-import com.g4mesoft.panel.text.GSTextField;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
 

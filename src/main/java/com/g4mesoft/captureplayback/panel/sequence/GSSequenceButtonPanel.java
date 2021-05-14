@@ -1,6 +1,5 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
@@ -8,7 +7,7 @@ public class GSSequenceButtonPanel extends GSParentPanel {
 
 	private static final int BACKGROUND_COLOR = 0xFF171717;
 	
-	public GSSequenceButtonPanel(GSSequence sequence) {
+	public GSSequenceButtonPanel() {
 	}
 	
 	@Override

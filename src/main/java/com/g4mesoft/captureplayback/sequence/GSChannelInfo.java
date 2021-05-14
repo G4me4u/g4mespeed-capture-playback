@@ -27,13 +27,13 @@ public final class GSChannelInfo {
 		this(name, color, positions, false);
 	}
 	
-	public GSChannelInfo(String name, int color, Set<BlockPos> positions, boolean internal) {
+	public GSChannelInfo(String name, int color, Set<BlockPos> positions, boolean immutable) {
 		if (positions.isEmpty() || positions.size() > MAX_POSITION_COUNT)
 			throw new IllegalArgumentException("Insufficient or too many positions");
 		
 		this.name = name;
 		this.color = color | 0xFF000000;
-		if (internal) {
+		if (immutable) {
 			this.positions = positions;
 		} else {
 			this.positions = new LinkedHashSet<>();
@@ -70,6 +70,12 @@ public final class GSChannelInfo {
 	public GSChannelInfo addPosition(BlockPos position) {
 		Set<BlockPos> positions = new LinkedHashSet<>(this.positions);
 		positions.add(position.toImmutable());
+		return new GSChannelInfo(name, color, positions, true);
+	}
+	
+	public GSChannelInfo removePosition(BlockPos position) {
+		Set<BlockPos> positions = new LinkedHashSet<>(this.positions);
+		positions.remove(position);
 		return new GSChannelInfo(name, color, positions, true);
 	}
 	

@@ -6,6 +6,7 @@ import com.g4mesoft.captureplayback.composition.GSTrackEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 public class GSCompositionContentPanel extends GSPanel {
@@ -75,9 +76,9 @@ public class GSCompositionContentPanel extends GSPanel {
 		GSRectangle bounds = modelView.viewToModel(entry);
 		
 		if (sequence != null && bounds != null) {
-			int brightColor = renderer.brightenColor(color);
-			int darkColor = renderer.darkenColor(color);
-			int darkDarkColor = renderer.darkenColor(darkColor);
+			int brightColor = GSIRenderer.brightenColor(color);
+			int darkColor = GSIRenderer.darkenColor(color);
+			int darkDarkColor = GSIRenderer.darkenColor(darkColor);
 			
 			int x = bounds.x;
 			int y = bounds.y;

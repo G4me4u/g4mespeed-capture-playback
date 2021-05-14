@@ -18,6 +18,7 @@ import com.g4mesoft.panel.dropdown.GSDropdownAction;
 import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
+import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
@@ -182,14 +183,13 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		
 		if (rect != null) {
 			if (draggingEntry == entry || hoveredEntry == entry)
-				color = renderer.darkenColor(color);
+				color = GSIRenderer.darkenColor(color);
 			
-			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, renderer.darkenColor(color));
+			renderer.fillRect(rect.x, rect.y, rect.width, rect.height, GSIRenderer.darkenColor(color));
 			
-			if (entry.getType() != GSEChannelEntryType.EVENT_START)
+			if (entry.getType().hasEndEvent())
 				rect.width -= ENTRY_BORDER_THICKNESS;
-
-			if (entry.getType() != GSEChannelEntryType.EVENT_END) {
+			if (entry.getType().hasStartEvent()) {
 				rect.x += ENTRY_BORDER_THICKNESS;
 				rect.width -= ENTRY_BORDER_THICKNESS;
 			}
@@ -457,21 +457,19 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 				GSEResizeArea resizeArea = getHoveredResizeArea(hoveredEntry, event.getX(), event.getY());
 				
 				if (resizeArea != null) {
-					toggleEntryEdge(hoveredEntry, resizeAreaToEntryType(resizeArea));
+					toggleEntryEdge(hoveredEntry, resizeArea);
 					event.consume();
 				}
 			}
 		}
 	}
 	
-	private GSEChannelEntryType resizeAreaToEntryType(GSEResizeArea resizeArea) {
-		if (resizeArea == GSEResizeArea.HOVERING_START)
-			return GSEChannelEntryType.EVENT_END;
-		return GSEChannelEntryType.EVENT_START;
-	}
-	
-	private void toggleEntryEdge(GSChannelEntry entry, GSEChannelEntryType type) {
-		entry.setType((type == entry.getType()) ? GSEChannelEntryType.EVENT_BOTH : type);
+	private void toggleEntryEdge(GSChannelEntry entry, GSEResizeArea resizeArea) {
+		if (resizeArea == GSEResizeArea.HOVERING_START) {
+			entry.setType(entry.getType().toggleStart());
+		} else {
+			entry.setType(entry.getType().toggleEnd());
+		}
 	}
 
 	@Override

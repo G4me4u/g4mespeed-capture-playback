@@ -24,5 +24,6 @@ public interface GSIServerWorldAccess {
 
 	public boolean isCapturePosition(BlockPos pos);
 
+	public boolean isPlaybackPowering(BlockPos pos);
 	
 }
