@@ -63,4 +63,8 @@ public class GSSequenceSession {
 	public void setSelectedChannelUUID(UUID channelUUID) {
 		selectedChannelUUID = channelUUID;
 	}
+
+	public boolean isSelected(UUID channelUUID) {
+		return channelUUID.equals(selectedChannelUUID);
+	}
 }

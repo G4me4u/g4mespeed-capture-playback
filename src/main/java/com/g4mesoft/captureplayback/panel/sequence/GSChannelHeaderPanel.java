@@ -196,7 +196,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			this.channel = channel;
 			
 			selectionButton = new GSRadioButton();
-			selectionButton.setSelected(this.channel.getChannelUUID().equals(session.getSelectedChannelUUID()));
+			selectionButton.setSelected(session.isSelected(channel.getChannelUUID()));
 			selectionButton.addActionListener(() -> {
 				session.setSelectedChannelUUID(this.channel.getChannelUUID());
 			});
