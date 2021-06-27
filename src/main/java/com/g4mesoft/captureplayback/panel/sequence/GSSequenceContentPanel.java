@@ -174,7 +174,8 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 			int cy = modelView.getChannelY(channel.getChannelUUID());
 			if (cy + modelView.getChannelHeight() > 0 && cy < height) {
 				if (channel.getChannelUUID().equals(sequencePanel.getDraggedChannelUUID())) {
-					renderer.fillRect(0, cy, width, modelView.getChannelHeight(), COLUMN_COLOR);
+					int h = modelView.getChannelHeight() + modelView.getChannelSpacing();
+					renderer.fillRect(0, cy, width, h, COLUMN_COLOR);
 				} else {
 					renderChannel(renderer, channel, cy);
 				}
