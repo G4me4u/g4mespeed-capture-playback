@@ -96,8 +96,11 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		infoPanel = new GSSequenceInfoPanel(session);
 		buttonPanel = new GSSequenceButtonPanel();
 		
-		verticalScrollBar = new GSScrollBar(this, (newScroll) -> {
-			modelView.setYOffset((int)(-newScroll));
+		verticalScrollBar = new GSScrollBar(this, new GSIScrollListener() {
+			@Override
+			public void scrollChanged(float newScroll) {
+				modelView.setYOffset((int)(-newScroll));
+			}
 		});
 		horizontalScrollBar = new GSSequencePreviewScrollBar(sequence, modelView, this, this);
 		
