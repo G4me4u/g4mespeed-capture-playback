@@ -2,6 +2,7 @@ package com.g4mesoft.captureplayback.sequence.delta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
@@ -68,15 +69,21 @@ public class GSSequenceDeltaTransformer implements GSISequenceListener {
 	}
 	
 	@Override
-	public void channelAdded(GSChannel channel) {
+	public void channelAdded(GSChannel channel, UUID prevUUID) {
 		if (enabled)
-			dispatchSequenceDeltaEvent(new GSChannelAddedDelta(channel));
+			dispatchSequenceDeltaEvent(new GSChannelAddedDelta(channel, prevUUID));
 	}
 
 	@Override
-	public void channelRemoved(GSChannel channel) {
+	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
 		if (enabled)
-			dispatchSequenceDeltaEvent(new GSChannelRemovedDelta(channel));
+			dispatchSequenceDeltaEvent(new GSChannelRemovedDelta(channel, oldPrevUUID));
+	}
+	
+	@Override
+	public void channelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
+		if (enabled)
+			dispatchSequenceDeltaEvent(new GSChannelMovedDelta(channel.getChannelUUID(), newPrevUUID, oldPrevUUID));
 	}
 	
 	@Override

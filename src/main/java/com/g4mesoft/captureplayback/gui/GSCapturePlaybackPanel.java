@@ -80,9 +80,7 @@ public class GSCapturePlaybackPanel extends GSParentPanel {
 	}
 	
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
-		
+	protected void layout() {
 		editCompositionButton.setPreferredBounds(width / 2 - 95, TOP_MARGIN, 90);
 		editSequenceButton.setPreferredBounds(width / 2 + 5, TOP_MARGIN, 90);
 	}

@@ -283,10 +283,10 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onSequenceReceived(GSSequence sequence) {
 		manager.runOnClient(managerClient -> {
 			try {
-				transformer.setEnabled(false);
+				disableDeltaTransformer();
 				getActiveSequence().set(sequence);
 			} finally {
-				transformer.setEnabled(true);
+				enableDeltaTransformer();
 			}
 		});
 	}
@@ -304,7 +304,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onClientDeltaReceived(GSISequenceDelta delta, ServerPlayerEntity player) {
 		manager.runOnServer(managerServer -> {
 			try {
-				transformer.setEnabled(false);
+				disableDeltaTransformer();
 				delta.applyDelta(getActiveSequence());
 				
 				managerServer.sendPacketToAllExcept(new GSSequenceDeltaPacket(delta), player);
@@ -313,7 +313,7 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 				// because multiple users are changing the same part of the sequence.
 				managerServer.sendPacket(new GSSequencePacket(getActiveSequence()), player);
 			} finally {
-				transformer.setEnabled(true);
+				enableDeltaTransformer();
 			}
 		});
 	}
@@ -322,11 +322,11 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	public void onServerDeltaReceived(GSISequenceDelta delta) {
 		manager.runOnClient(managerClient -> {
 			try {
-				transformer.setEnabled(false);
+				disableDeltaTransformer();
 				delta.applyDelta(getActiveSequence());
 			} catch (GSSequenceDeltaException ignore) {
 			} finally {
-				transformer.setEnabled(true);
+				enableDeltaTransformer();
 			}
 		});
 	}
@@ -349,14 +349,24 @@ public class GSCapturePlaybackModule implements GSIModule, GSISequenceDeltaListe
 	
 	public void setActiveSequence(GSSequence sequence) {
 		try {
-			transformer.setEnabled(false);
+			disableDeltaTransformer();
 			getActiveSequence().set(sequence);
 		} finally {
-			transformer.setEnabled(true);
+			enableDeltaTransformer();
 		}
 		
 		manager.runOnServer((managerServer) -> {
 			managerServer.sendPacketToAll(new GSSequencePacket(getActiveSequence()));
 		});
+	}
+	
+	private void disableDeltaTransformer() {
+		transformer.setEnabled(false);
+		sequenceSession.getUndoRedoHistory().stopTracking();
+	}
+
+	private void enableDeltaTransformer() {
+		transformer.setEnabled(true);
+		sequenceSession.getUndoRedoHistory().startTracking();
 	}
 }

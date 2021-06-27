@@ -11,29 +11,31 @@ import net.minecraft.network.PacketByteBuf;
 
 public class GSChannelAddedDelta extends GSChannelDelta {
 
+	private UUID prevUUID;
 	private GSChannelInfo info;
 
 	public GSChannelAddedDelta() {
 	}
 
-	public GSChannelAddedDelta(GSChannel channel) {
-		this(channel.getChannelUUID(), channel.getInfo());
+	public GSChannelAddedDelta(GSChannel channel, UUID prevUUID) {
+		this(channel.getChannelUUID(), prevUUID, channel.getInfo());
 	}
 	
-	public GSChannelAddedDelta(UUID channelUUID, GSChannelInfo info) {
+	public GSChannelAddedDelta(UUID channelUUID, UUID prevUUID, GSChannelInfo info) {
 		super(channelUUID);
 		
+		this.prevUUID = prevUUID;
 		this.info = info;
 	}
 	
 	@Override
 	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
-		removeChannel(sequence, info, GSChannel.DEFAULT_DISABLED, 0);
+		removeChannel(sequence, prevUUID, info, GSChannel.DEFAULT_DISABLED, 0);
 	}
 
 	@Override
 	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
-		addChannel(sequence, info);
+		addChannel(sequence, prevUUID, info);
 	}
 	
 	@Override
@@ -41,6 +43,7 @@ public class GSChannelAddedDelta extends GSChannelDelta {
 		super.read(buf);
 		
 		info = GSChannelInfo.read(buf);
+		prevUUID = buf.readBoolean() ? buf.readUuid() : null;
 	}
 
 	@Override
@@ -48,5 +51,9 @@ public class GSChannelAddedDelta extends GSChannelDelta {
 		super.write(buf);
 
 		GSChannelInfo.write(buf, info);
+
+		buf.writeBoolean(prevUUID != null);
+		if (prevUUID != null)
+			buf.writeUuid(prevUUID);
 	}
 }

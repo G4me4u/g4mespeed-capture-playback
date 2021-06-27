@@ -29,6 +29,8 @@ panel.sequencecontent.typestart=Update at Start
 panel.sequencecontent.typeend=Update at End
 panel.sequencecontent.typenone=None
 
+panel.edit.undo=Undo
+panel.edit.redo=Redo
 panel.edit.back=Back
 
 ############ Hotkeys ############

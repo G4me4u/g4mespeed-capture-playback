@@ -16,12 +16,19 @@ public class GSSequenceSession {
 	private GSESequenceOpacity opacity;
 	
 	private UUID selectedChannelUUID;
+	
+	private final GSSequenceUndoRedoHistory undoRedoHistory;
 
 	public GSSequenceSession(GSSequence activeSequence) {
 		this.activeSequence = activeSequence;
 		
 		xOffset = yOffset = 0.0f;
 		opacity = GSESequenceOpacity.OPACITY_90;
+	
+		selectedChannelUUID = null;
+		
+		undoRedoHistory = new GSSequenceUndoRedoHistory();
+		undoRedoHistory.install(activeSequence);
 	}
 	
 	public GSSequence getActiveSequence() {
@@ -66,5 +73,9 @@ public class GSSequenceSession {
 
 	public boolean isSelected(UUID channelUUID) {
 		return channelUUID.equals(selectedChannelUUID);
+	}
+	
+	public GSSequenceUndoRedoHistory getUndoRedoHistory() {
+		return undoRedoHistory;
 	}
 }

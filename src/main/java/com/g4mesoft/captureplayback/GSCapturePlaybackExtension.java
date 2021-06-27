@@ -9,16 +9,17 @@ import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
 import com.g4mesoft.captureplayback.module.GSSequenceDeltaPacket;
 import com.g4mesoft.captureplayback.module.GSSequencePacket;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelAddedDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelDisabledDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelInfoDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelMovedDelta;
+import com.g4mesoft.captureplayback.sequence.delta.GSChannelRemovedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSEntryAddedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSEntryRemovedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSEntryTimeDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSEntryTypeDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceNameDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSChannelAddedDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSChannelDisabledDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSChannelInfoDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSChannelRemovedDelta;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSNoteBlockSignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPistonSignalEventHandler;
@@ -64,6 +65,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		deltaRegistry.register(6, GSEntryRemovedDelta.class, GSEntryRemovedDelta::new);
 		deltaRegistry.register(7, GSEntryTimeDelta.class, GSEntryTimeDelta::new);
 		deltaRegistry.register(8, GSEntryTypeDelta.class, GSEntryTypeDelta::new);
+		deltaRegistry.register(9, GSChannelMovedDelta.class, GSChannelMovedDelta::new);
 		
 		signalEventHandlerRegistry = new IdentityHashMap<>();
 		

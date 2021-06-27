@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +13,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.stream.GSBlockRegion;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
+import com.g4mesoft.captureplayback.util.GSMutableLinkedHashMap;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
@@ -25,7 +25,7 @@ public class GSSequence {
 	private final UUID sequenceUUID;
 	private String name;
 	
-	private final Map<UUID, GSChannel> channels;
+	private final GSMutableLinkedHashMap<UUID, GSChannel> channels;
 	private List<GSISequenceListener> listeners;
 
 	public GSSequence(UUID sequenceUUID) {
@@ -41,7 +41,7 @@ public class GSSequence {
 		this.sequenceUUID = sequenceUUID;
 		this.name = name;
 		
-		channels = new LinkedHashMap<>();
+		channels = new GSMutableLinkedHashMap<>();
 		// Lazily initialized when adding a listener
 		listeners = null;
 	}
@@ -57,10 +57,12 @@ public class GSSequence {
 	
 	private void clear() {
 		Iterator<GSChannel> itr = channels.values().iterator();
+		UUID prevUUID = null;
 		while (itr.hasNext()) {
 			GSChannel channel = itr.next();
 			itr.remove();
-			onChannelRemoved(channel);
+			onChannelRemoved(channel, prevUUID);
+			prevUUID = channel.getChannelUUID();
 		}
 	}
 	
@@ -75,7 +77,9 @@ public class GSSequence {
 		GSChannel channel = new GSChannel(channelUUID, info);
 		addChannelInternal(channel);
 		
-		dispatchChannelAdded(channel);
+		GSChannel prevChannel = getPreviousChannel(channelUUID);
+		UUID prevUUID = (prevChannel == null) ? null : prevChannel.getChannelUUID();
+		dispatchChannelAdded(channel, prevUUID);
 		
 		return channel;
 	}
@@ -87,20 +91,50 @@ public class GSSequence {
 	}
 	
 	public boolean removeChannel(UUID channelUUID) {
+		GSChannel prevChannel = getPreviousChannel(channelUUID);
 		GSChannel channel = channels.remove(channelUUID);
 		if (channel != null) {
-			onChannelRemoved(channel);
+			UUID prevUUID = (prevChannel == null) ? null : prevChannel.getChannelUUID();
+			onChannelRemoved(channel, prevUUID);
 			return true;
 		}
 		
 		return false;
 	}
 	
-	private void onChannelRemoved(GSChannel channel) {
-		dispatchChannelRemoved(channel);
+	private void onChannelRemoved(GSChannel channel, UUID oldPrevUUID) {
+		dispatchChannelRemoved(channel, oldPrevUUID);
 		// Ensure that changes to the channel are no longer
 		// heard by the registered listeners.
 		channel.setParent(null);
+	}
+	
+	public void moveChannelBefore(UUID channelUUID, UUID newNextUUID) {
+		GSChannel prevChannel = getPreviousChannel(newNextUUID);
+		moveChannelAfter(channelUUID, (prevChannel == null) ? null : prevChannel.getChannelUUID());
+	}
+
+	public void moveChannelAfter(UUID channelUUID, UUID newPrevUUID) {
+		if (channelUUID != null) {
+			Map.Entry<UUID, GSChannel> prevEntry = channels.getPreviousEntry(channelUUID);
+			UUID oldPrevUUID = (prevEntry == null) ? null : prevEntry.getKey();
+	
+			if (!channelUUID.equals(newPrevUUID)) {
+				Map.Entry<UUID, GSChannel> entry = channels.moveAfter(channelUUID, newPrevUUID);
+				if (entry != null)
+					dispatchChannelMoved(entry.getValue(), newPrevUUID, oldPrevUUID);
+			}
+		}
+	}
+	
+	public GSChannel getPreviousChannel(UUID channelUUID) {
+		Map.Entry<UUID, GSChannel> prevEntry = channels.getPreviousEntry(channelUUID);
+		return (prevEntry == null) ? null : prevEntry.getValue();
+	}
+
+	public GSChannel getNextChannel(UUID channelUUID) {
+		Map.Entry<UUID, GSChannel> nextEntry = channels.getNextEntry(channelUUID);
+		return (nextEntry == null) ? null : nextEntry.getValue();
 	}
 	
 	public UUID getSequenceUUID() {
@@ -160,14 +194,19 @@ public class GSSequence {
 			listener.sequenceNameChanged(oldName);
 	}
 
-	private void dispatchChannelAdded(GSChannel channel) {
+	private void dispatchChannelAdded(GSChannel channel, UUID prevUUID) {
 		for (GSISequenceListener listener : getListeners())
-			listener.channelAdded(channel);
+			listener.channelAdded(channel, prevUUID);
 	}
 
-	private void dispatchChannelRemoved(GSChannel channel) {
+	private void dispatchChannelRemoved(GSChannel channel, UUID oldPrevUUID) {
 		for (GSISequenceListener listener : getListeners())
-			listener.channelRemoved(channel);
+			listener.channelRemoved(channel, oldPrevUUID);
+	}
+	
+	private void dispatchChannelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
+		for (GSISequenceListener listener : getListeners())
+			listener.channelMoved(channel, newPrevUUID, oldPrevUUID);
 	}
 	
 	public static GSSequence read(PacketByteBuf buf) throws IOException {

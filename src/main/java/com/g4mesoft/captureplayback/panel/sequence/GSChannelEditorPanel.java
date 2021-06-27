@@ -25,9 +25,9 @@ public class GSChannelEditorPanel extends GSEditorPanel {
 	}
 	
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
-
+	protected void layout() {
+		super.layout();
+		
 		colorPickerField.setBounds(new GSLocation(10, 10), colorPickerField.getPreferredSize());
 	}
 

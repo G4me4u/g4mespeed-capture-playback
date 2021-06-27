@@ -1,58 +1,98 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
+import com.g4mesoft.captureplayback.module.GSISequenceUndoRedoListener;
 import com.g4mesoft.captureplayback.module.GSSequenceSession;
-import com.g4mesoft.captureplayback.sequence.GSChannel;
+import com.g4mesoft.captureplayback.module.GSSequenceUndoRedoHistory;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSECursorType;
+import com.g4mesoft.panel.GSEIconAlignment;
 import com.g4mesoft.panel.GSIcon;
-import com.g4mesoft.panel.GSLocation;
-import com.g4mesoft.panel.GSPanelContext;
-import com.g4mesoft.panel.GSPanelUtil;
 import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.GSPopup;
+import com.g4mesoft.panel.GSTexturedIcon;
 import com.g4mesoft.panel.button.GSButton;
-import com.g4mesoft.panel.dropdown.GSDropdown;
-import com.g4mesoft.panel.dropdown.GSDropdownAction;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 
-public class GSSequenceInfoPanel extends GSParentPanel {
+public class GSSequenceInfoPanel extends GSParentPanel implements GSISequenceUndoRedoListener {
 
-	private static final GSIcon DOWN_ARROW_ICON = GSPanelContext.getIcon(30, 62, 10, 10);
-	private static final GSIcon HOVERED_DOWN_ARROW_ICON = GSPanelContext.getIcon(40, 62, 10, 10);
-	private static final GSIcon DISABLED_DOWN_ARROW_ICON = GSPanelContext.getIcon(50, 62, 10, 10);
+	private static final GSIcon UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 27, 9, 9));
+	private static final GSIcon HOVERED_UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 36, 9, 9));
+	private static final GSIcon DISABLED_UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 45, 9, 9));
+	private static final GSIcon REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 27, 9, 9));
+	private static final GSIcon HOVERED_REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 36, 9, 9));
+	private static final GSIcon DISABLED_REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 45, 9, 9));
+	
+	private static final Text UNDO_TEXT = new TranslatableText("panel.edit.undo");
+	private static final Text REDO_TEXT = new TranslatableText("panel.edit.redo");
+	
+	private static final int BUTTON_MARGIN = 2;
 	
 	private final GSSequenceSession session;
-	private final GSButton channelAction;
+	
+	private final GSButton undoButton;
+	private final GSButton redoButton;
 	
 	public GSSequenceInfoPanel(GSSequenceSession session) {
 		this.session = session;
 		
-		channelAction = new GSButton(DOWN_ARROW_ICON, "Edit Channel");
-		channelAction.setHoveredIcon(HOVERED_DOWN_ARROW_ICON);
-		channelAction.setDisabledIcon(DISABLED_DOWN_ARROW_ICON);
-		channelAction.setCursor(GSECursorType.HAND);
-		channelAction.setBackgroundColor(0x00000000);
-		channelAction.setHoveredBackgroundColor(0x00000000);
-		channelAction.setDisabledBackgroundColor(0x00000000);
-		channelAction.setBorderWidth(0);
-		channelAction.setHorizontalMargin(1);
-		channelAction.setIconSpacing(4);
-		channelAction.setClickSound(null);
+		undoButton = new GSButton(UNDO_ICON, UNDO_TEXT);
+		undoButton.setHoveredIcon(HOVERED_UNDO_ICON);
+		undoButton.setDisabledIcon(DISABLED_UNDO_ICON);
+		undoButton.setIconAlignment(GSEIconAlignment.LEFT);
+		undoButton.setCursor(GSECursorType.HAND);
+		undoButton.setBackgroundColor(0);
+		undoButton.setHoveredBackgroundColor(0);
+		undoButton.setDisabledBackgroundColor(0);
+		undoButton.setBorderWidth(0);
+		undoButton.addActionListener(() -> {
+			this.session.getUndoRedoHistory().undo();
+		});
 		
-		channelAction.addActionListener(this::onChannelAction);
+		redoButton = new GSButton(REDO_ICON, REDO_TEXT);
+		redoButton.setHoveredIcon(HOVERED_REDO_ICON);
+		redoButton.setDisabledIcon(DISABLED_REDO_ICON);
+		redoButton.setIconAlignment(GSEIconAlignment.LEFT);
+		redoButton.setCursor(GSECursorType.HAND);
+		redoButton.setBackgroundColor(0);
+		redoButton.setHoveredBackgroundColor(0);
+		redoButton.setDisabledBackgroundColor(0);
+		redoButton.setBorderWidth(0);
+		redoButton.addActionListener(() -> {
+			this.session.getUndoRedoHistory().redo();
+		});
 		
-		add(channelAction);
+		add(undoButton);
+		add(redoButton);
 	}
 	
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
+	protected void layout() {
+		GSDimension undoPrefS = undoButton.getPreferredSize();
+		GSDimension redoPrefS = redoButton.getPreferredSize();
 
-		GSDimension actionSize = channelAction.getPreferredSize();
-		channelAction.setBounds(0, height - actionSize.getHeight(),
-				actionSize.getWidth(), actionSize.getHeight());
+		int bx = BUTTON_MARGIN;
+		int by = Math.min(height - undoPrefS.getHeight(), height - redoPrefS.getHeight()) - BUTTON_MARGIN;
+		undoButton.setBounds(bx, by, undoPrefS.getWidth(), undoPrefS.getHeight());
+		bx += undoPrefS.getWidth() + BUTTON_MARGIN;
+		redoButton.setBounds(bx, by, redoPrefS.getWidth(), redoPrefS.getHeight());
+	}
+	
+	@Override
+	protected void onShown() {
+		super.onShown();
+
+		session.getUndoRedoHistory().addUndoRedoListener(this);
+		
+		onHistoryChanged();
+	}
+
+	@Override
+	protected void onHidden() {
+		super.onHidden();
+		
+		session.getUndoRedoHistory().removeUndoRedoListener(this);
 	}
 	
 	@Override
@@ -64,26 +104,11 @@ public class GSSequenceInfoPanel extends GSParentPanel {
 
 		super.render(renderer);
 	}
-	
-	private void onChannelAction() {
-		GSDropdown dropdown = new GSDropdown();
-		
-		dropdown.addItem(new GSDropdownAction(new LiteralText("Test #1"), () -> {
-			GSChannel channel = session.getSelectedChannel();
-			
-			if (channel != null) {
-				GSChannelEditorPanel channelEditor = new GSChannelEditorPanel(channel);
-				channelEditor.show(getParent());
-			}
-		}));
-		dropdown.addItem(new GSDropdownAction(new LiteralText("Test #2"), null));
-		dropdown.addItem(new GSDropdownAction(new LiteralText("Test #3"), null));
-		
-		GSLocation viewLocation = GSPanelUtil.getViewLocation(channelAction);
-		int px = viewLocation.getX() + 15;
-		int py = viewLocation.getY() + channelAction.getHeight() - channelAction.getVerticalMargin();
 
-		GSPopup popup = new GSPopup(dropdown);
-		popup.show(channelAction, px, py);
+	@Override
+	public void onHistoryChanged() {
+		GSSequenceUndoRedoHistory undoRedoHistory = session.getUndoRedoHistory();
+		undoButton.setEnabled(undoRedoHistory.hasUndoHistory());
+		redoButton.setEnabled(undoRedoHistory.hasRedoHistory());
 	}
 }
