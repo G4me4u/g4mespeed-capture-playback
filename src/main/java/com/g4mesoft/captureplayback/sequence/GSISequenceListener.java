@@ -1,5 +1,7 @@
 package com.g4mesoft.captureplayback.sequence;
 
+import java.util.UUID;
+
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 
 public interface GSISequenceListener {
@@ -7,10 +9,13 @@ public interface GSISequenceListener {
 	default public void sequenceNameChanged(String oldName) {
 	}
 	
-	default public void channelAdded(GSChannel channel) {
+	default public void channelAdded(GSChannel channel, UUID prevUUID) {
 	}
 
-	default public void channelRemoved(GSChannel channel) {
+	default public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
+	}
+
+	default public void channelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
 	}
 	
 	default public void channelInfoChanged(GSChannel channel, GSChannelInfo oldInfo) {

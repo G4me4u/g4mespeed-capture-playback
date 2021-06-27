@@ -26,9 +26,9 @@ public class GSSequenceModelView {
 	private static final int GAMETICK_COLUMN_WIDTH = 30;
 	private static final int MULTI_COLUMN_INSETS = 10;
 	private static final int MT_COLUMN_WIDTH = 20;
-	private static final int MINIMUM_ENTRY_WIDTH = 15;
+	private static final int MINIMUM_ENTRY_WIDTH = 19;
 	
-	private static final int ENTRY_HEIGHT = 9;
+	private static final int ENTRY_HEIGHT = 11;
 	private static final int CHANNEL_LABEL_PADDING = 1;
 	private static final int DEFAULT_CHANNEL_SPACING = 1;
 	
@@ -125,7 +125,7 @@ public class GSSequenceModelView {
 			durationLookup[lookupOffset] = time.getMicrotick() + 1;
 	}
 	
-	private void updateChannelIndexLookup() {
+	public void updateChannelIndexLookup() {
 		channelUUIDToIndex.clear();
 		channelIndexToUUID.clear();
 		
@@ -262,7 +262,7 @@ public class GSSequenceModelView {
 			dest = new GSRectangle();
 		
 		dest.x = getTimeViewX(channelUUID, entry.getStartTime(), false);
-		dest.width = getTimeViewX(channelUUID, entry.getEndTime(), true) - dest.x;
+		dest.width = getTimeViewX(channelUUID, entry.getEndTime(), true) - dest.x + 1;
 
 		dest.y = getEntryY(channelUUID);
 		dest.height = ENTRY_HEIGHT;
@@ -286,11 +286,11 @@ public class GSSequenceModelView {
 		
 		int x = getColumnX(columnIndex);
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
-			x += time.getMicrotick() * MT_COLUMN_WIDTH + MT_COLUMN_WIDTH / 2;
+			x += time.getMicrotick() * MT_COLUMN_WIDTH + (MT_COLUMN_WIDTH - 1) / 2;
 		} else if (isMultiCell(channelUUID, columnIndex)) {
-			x += endTime ? MULTI_COLUMN_INSETS : (GAMETICK_COLUMN_WIDTH - MULTI_COLUMN_INSETS);
+			x += endTime ? MULTI_COLUMN_INSETS - 1 : (GAMETICK_COLUMN_WIDTH - 1 - MULTI_COLUMN_INSETS);
 		} else {
-			x += GAMETICK_COLUMN_WIDTH / 2;
+			x += (GAMETICK_COLUMN_WIDTH - 1) / 2;
 		}
 		
 		return x;

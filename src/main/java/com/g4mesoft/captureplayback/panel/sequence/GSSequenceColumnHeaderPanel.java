@@ -24,6 +24,12 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	public static final int DOTTED_LINE_LENGTH  = 4;
 	public static final int DOTTED_LINE_SPACING = 3;
 	
+	private static final int COLUMN_TITLE_LEFT_MARGIN = 2;
+	
+	private static final int SHADOW_WIDTH = 10;
+	private static final int SHADOW_START_COLOR = COLUMN_HEADER_COLOR;
+	private static final int SHADOW_END_COLOR = SHADOW_START_COLOR & 0x00FFFFFF;
+	
 	private static final Text EXPAND_TEXT       = new TranslatableText("panel.sequencecolumnheader.expand");
 	private static final Text COLLAPSE_TEXT     = new TranslatableText("panel.sequencecolumnheader.collapse");
 	private static final Text EXPAND_ALL_TEXT   = new TranslatableText("panel.sequencecolumnheader.expandall");
@@ -50,6 +56,8 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 		renderColumnHeaders(renderer);
 
 		renderer.drawHLine(0, width, height - 1, GSSequenceContentPanel.CHANNEL_SPACING_COLOR);
+
+		renderer.fillHGradient(width - SHADOW_WIDTH, 0, SHADOW_WIDTH, height, SHADOW_END_COLOR, SHADOW_START_COLOR);
 	}
 	
 	private void renderColumnHeaders(GSIRenderer2D renderer) {
@@ -77,7 +85,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 
 		String title = Long.toString(modelView.getColumnGametick(columnIndex));
 		int ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
-		renderer.drawText(title, cx + 2, ty, color, false);
+		renderer.drawText(title, cx + COLUMN_TITLE_LEFT_MARGIN, ty, color, false);
 		
 		if (columnIndex == hoveredColumnIndex) {
 			renderer.drawVLine(cx - 1, 0, height, COLUMN_LINE_COLOR);
@@ -100,7 +108,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 		
 			if (mt != 0) {
 				int ly = height / 2 + GSSequenceColumnHeaderPanel.DOTTED_LINE_SPACING / 2;
-				renderer.drawDottedVLine(x, ly, height, DOTTED_LINE_LENGTH, 
+				renderer.drawDottedVLine(x - 1, ly, height, DOTTED_LINE_LENGTH, 
 						DOTTED_LINE_SPACING, DOTTED_LINE_COLOR);
 			}
 		}

@@ -8,7 +8,6 @@ import com.g4mesoft.panel.GSIActionListener;
 import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSPanelContext;
 import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.GSTexturedIcon;
 import com.g4mesoft.panel.button.GSButton;
 import com.g4mesoft.panel.event.GSFocusEvent;
 import com.g4mesoft.panel.event.GSIFocusEventListener;
@@ -17,17 +16,12 @@ import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.field.GSTextField;
 import com.g4mesoft.panel.legend.GSButtonPanel;
 import com.g4mesoft.renderer.GSIRenderer2D;
-import com.g4mesoft.renderer.GSTexture;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Identifier;
 
 public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 
-	private static final Identifier BACKARROW_TEXTURE_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/backarrow.png");
-	private static final GSTexture BACKARROW_TEXTURE = new GSTexture(BACKARROW_TEXTURE_IDENTIFIER, 9, 9);
-	
 	private static final int TITLE_HEIGHT = 25;
 	private static final int MAXIMUM_TITLE_WIDTH = 250;
 	private static final int TITLE_MARGIN = 5;
@@ -35,7 +29,9 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 	private static final int TITLE_SEPARATOR_COLOR = 0xFF444444;
 	private static final int TITLE_BACKGROUND_COLOR = 0xFF171717;
 	
-	private static final GSIcon BACK_ICON = new GSTexturedIcon(BACKARROW_TEXTURE);
+	private static final GSIcon BACK_ICON = GSPanelContext.getIcon(60, 32, 9, 9);
+	private static final GSIcon HOVERED_BACK_ICON = GSPanelContext.getIcon(69, 32, 9, 9);
+	private static final GSIcon DISABLED_BACK_ICON = GSPanelContext.getIcon(78, 32, 9, 9);
 	private static final Text BACK_TEXT = new TranslatableText("panel.edit.back");
 	
 	protected final GSButton backButton;
@@ -43,8 +39,11 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 
 	public GSAbstractEditPanel() {
 		backButton = new GSButton(BACK_ICON, BACK_TEXT);
-		backButton.setBackgroundColor(0x00000000);
-		backButton.setHoveredBackgroundColor(0x00000000);
+		backButton.setHoveredIcon(HOVERED_BACK_ICON);
+		backButton.setDisabledIcon(DISABLED_BACK_ICON);
+		backButton.setBackgroundColor(0);
+		backButton.setHoveredBackgroundColor(0);
+		backButton.setDisabledBackgroundColor(0);
 		backButton.setBorderWidth(0);
 		backButton.setCursor(GSECursorType.HAND);
 		backButton.addActionListener(new GSIActionListener() {

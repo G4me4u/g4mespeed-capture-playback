@@ -56,6 +56,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	private final GSSequence sequence;
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSSequenceModelView modelView;
+	private final GSSequencePanel sequencePanel;
 	
 	private final GSRectangle tmpRenderRect;
 	
@@ -75,10 +76,13 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	
 	private boolean editable;
 	
-	public GSSequenceContentPanel(GSSequence sequence, GSExpandedColumnModel expandedColumnModel, GSSequenceModelView modelView) {
+	public GSSequenceContentPanel(GSSequence sequence, GSExpandedColumnModel expandedColumnModel,
+	                              GSSequenceModelView modelView, GSSequencePanel sequencePanel) {
+		
 		this.sequence = sequence;
 		this.expandedColumnModel = expandedColumnModel;
 		this.modelView = modelView;
+		this.sequencePanel = sequencePanel;
 		
 		tmpRenderRect = new GSRectangle();
 		
@@ -117,37 +121,46 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		renderColumns(renderer);
 		renderChannels(renderer);
 		
-		if (editable)
-			renderHoveredEdge(renderer);
+		if (editable) {
+			GSChannel draggedChannel = sequence.getChannel(sequencePanel.getDraggedChannelUUID());
+			if (draggedChannel != null) {
+				renderDraggedChannel(renderer, draggedChannel);
+			} else {
+				renderHoveredEdge(renderer);
+			}
+		}
 
 		renderer.popClip();
 	}
-	
+
 	protected void renderColumns(GSIRenderer2D renderer) {
+		renderColumns(renderer, 0, height);
+	}
+	
+	protected void renderColumns(GSIRenderer2D renderer, int y, int height) {
 		int columnStart = Math.max(0, modelView.getColumnIndexFromView(0));
 		int columnEnd = modelView.getColumnIndexFromView(width - 1);
 
 		int x = modelView.getColumnX(columnStart);
 		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
 			int cw = modelView.getColumnWidth(columnIndex);
-			renderColumn(renderer, columnIndex, x, cw);
+			renderColumn(renderer, columnIndex, x, y, cw, height);
 			x += cw;
 		}
 	}
 	
-	protected void renderColumn(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
-		renderer.fillRect(cx, 0, cw, height, getColumnColor(columnIndex));
-		renderer.drawVLine(cx + cw - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
+	protected void renderColumn(GSIRenderer2D renderer, int columnIndex, int cx, int y, int cw, int height) {
+		renderer.fillRect(cx, y, cw, height, getColumnColor(columnIndex));
+		renderer.drawVLine(cx + cw - 1, y, y + height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
 		
 		if (expandedColumnModel.isColumnExpanded(columnIndex)) {
+			int offset = modelView.getYOffset() % (DOTTED_LINE_LENGTH + DOTTED_LINE_SPACING);
+			int ly = y + DOTTED_LINE_SPACING / 2 + offset;
+
 			int duration = modelView.getColumnDuration(columnIndex);
-
 			for (int mt = 1; mt < duration; mt++) {
-				int offset = modelView.getYOffset() % (DOTTED_LINE_LENGTH + DOTTED_LINE_SPACING);
-
-				int x = modelView.getMicrotickColumnX(columnIndex, mt);
-				int y = DOTTED_LINE_SPACING / 2 + offset;
-				renderer.drawDottedVLine(x, y, height, DOTTED_LINE_LENGTH, DOTTED_LINE_SPACING, DOTTED_LINE_COLOR);
+				int lx = modelView.getMicrotickColumnX(columnIndex, mt) - 1;
+				renderer.drawDottedVLine(lx, ly, y + height, DOTTED_LINE_LENGTH, DOTTED_LINE_SPACING, DOTTED_LINE_COLOR);
 			}
 		}
 	}
@@ -158,30 +171,43 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	
 	protected void renderChannels(GSIRenderer2D renderer) {
 		for (GSChannel channel : sequence.getChannels()) {
-			int ty = modelView.getChannelY(channel.getChannelUUID());
-			
-			if (ty + modelView.getChannelHeight() > 0 && ty < height)
-				renderChannel(renderer, channel, ty);
+			int cy = modelView.getChannelY(channel.getChannelUUID());
+			if (cy + modelView.getChannelHeight() > 0 && cy < height) {
+				if (channel.getChannelUUID().equals(sequencePanel.getDraggedChannelUUID())) {
+					renderer.fillRect(0, cy, width, modelView.getChannelHeight(), COLUMN_COLOR);
+				} else {
+					renderChannel(renderer, channel, cy);
+				}
+			}
 		}
 	}
-	
-	protected void renderChannel(GSIRenderer2D renderer, GSChannel channel, int ty) {
-		int th = modelView.getChannelHeight();
-		
-		if (channel.getChannelUUID().equals(hoveredChannelUUID))
-			renderer.fillRect(0, ty, width, th, GSChannelHeaderPanel.CHANNEL_HOVER_COLOR);
 
-		for (GSChannelEntry entry : channel.getEntries())
-			renderChannelEntry(renderer, entry, channel.getInfo().getColor());
-		renderMultiCells(renderer, channel.getChannelUUID(), ty);
-		
-		renderer.fillRect(0, ty + th, width, modelView.getChannelSpacing(), CHANNEL_SPACING_COLOR);
+	protected void renderDraggedChannel(GSIRenderer2D renderer, GSChannel draggedChannel) {
+		int cy = sequencePanel.getDraggedChannelY();
+		renderColumns(renderer, cy, modelView.getChannelHeight());
+		renderChannel(renderer, draggedChannel, cy);
 	}
 	
-	protected void renderChannelEntry(GSIRenderer2D renderer, GSChannelEntry entry, int color) {
+	protected void renderChannel(GSIRenderer2D renderer, GSChannel channel, int cy) {
+		int ch = modelView.getChannelHeight();
+		
+		if (channel.getChannelUUID().equals(hoveredChannelUUID))
+			renderer.fillRect(0, cy, width, ch, GSChannelHeaderPanel.CHANNEL_HOVER_COLOR);
+
+		int entryOffsetY = cy - modelView.getChannelY(channel.getChannelUUID());
+		for (GSChannelEntry entry : channel.getEntries())
+			renderChannelEntry(renderer, entry, channel.getInfo().getColor(), entryOffsetY);
+		renderMultiCells(renderer, channel.getChannelUUID(), cy);
+		
+		renderer.fillRect(0, cy + ch, width, modelView.getChannelSpacing(), CHANNEL_SPACING_COLOR);
+	}
+	
+	protected void renderChannelEntry(GSIRenderer2D renderer, GSChannelEntry entry, int color, int entryOffsetY) {
 		GSRectangle rect = modelView.modelToView(entry, tmpRenderRect);
 		
 		if (rect != null) {
+			rect.y += entryOffsetY;
+			
 			if (draggingEntry == entry || hoveredEntry == entry)
 				color = GSIRenderer.darkenColor(color);
 			
@@ -201,21 +227,21 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		}
 	}
 	
-	protected void renderMultiCells(GSIRenderer2D renderer, UUID channelUUID, int y) {
+	protected void renderMultiCells(GSIRenderer2D renderer, UUID channelUUID, int cy) {
 		Iterator<GSMultiCellInfo> itr = modelView.getMultiCellIterator(channelUUID);
 		while (itr.hasNext()) {
 			GSMultiCellInfo multiCellInfo = itr.next();
 			if (!expandedColumnModel.isColumnExpanded(multiCellInfo.getColumnIndex()))
-				renderMultiCell(renderer, y, multiCellInfo);
+				renderMultiCell(renderer, cy, multiCellInfo);
 		}
 	}
 	
-	protected void renderMultiCell(GSIRenderer2D renderer, int y, GSMultiCellInfo multiCellInfo) {
+	protected void renderMultiCell(GSIRenderer2D renderer, int cy, GSMultiCellInfo multiCellInfo) {
 		String infoText = formatMultiCellInfo(multiCellInfo);
 		
 		int columnIndex = multiCellInfo.getColumnIndex();
 		int xc = modelView.getColumnX(columnIndex) + modelView.getColumnWidth(columnIndex) / 2;
-		int ty = y + (modelView.getChannelHeight() - renderer.getTextHeight() + 1) / 2;
+		int ty = cy + (modelView.getChannelHeight() - renderer.getTextAscent()) / 2;
 		renderer.drawCenteredText(infoText, xc, ty, TEXT_COLOR);
 	}
 
@@ -635,7 +661,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 
 	@Override
-	public void channelRemoved(GSChannel channel) {
+	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
 		UUID channelUUID = channel.getChannelUUID();
 		
 		if (draggingEntry != null) {

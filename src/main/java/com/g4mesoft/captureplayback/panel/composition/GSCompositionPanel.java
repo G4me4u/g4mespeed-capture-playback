@@ -50,22 +50,16 @@ public class GSCompositionPanel extends GSParentPanel implements GSICompositionL
 	}
 
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
-	
-		layoutPanels();
-		
-		if (isVisible())
-			modelView.updateModelView();
-	}
-	
-	private void layoutPanels() {
+	protected void layout() {
 		int cw = Math.max(width - TRACK_HEADER_WIDTH, 0);
 		int ch = Math.max(height - COLUMN_HEADER_HEIGHT, 0);
 		
 		content.setBounds(TRACK_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
 		columnHeader.setBounds(TRACK_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
 		trackHeader.setBounds(0, COLUMN_HEADER_HEIGHT, TRACK_HEADER_WIDTH, ch);
+		
+		if (isVisible())
+			modelView.updateModelView();
 	}
 	
 	@Override

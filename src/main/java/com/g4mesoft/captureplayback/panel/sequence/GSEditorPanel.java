@@ -61,9 +61,7 @@ public abstract class GSEditorPanel extends GSParentPanel {
 	}
 	
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
-
+	protected void layout() {
 		GSDimension cbs = cancelButton.getPreferredSize();
 		GSDimension abs = applyButton.getPreferredSize();
 		GSDimension dbs = doneButton.getPreferredSize();
