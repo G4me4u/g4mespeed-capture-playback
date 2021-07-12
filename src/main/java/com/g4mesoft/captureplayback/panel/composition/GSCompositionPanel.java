@@ -3,7 +3,6 @@ package com.g4mesoft.captureplayback.panel.composition;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.composition.GSICompositionListener;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackGroup;
 import com.g4mesoft.captureplayback.module.GSCompositionSession;
@@ -17,7 +16,7 @@ import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
-public class GSCompositionPanel extends GSScrollableContentPanel implements GSICompositionListener, GSIModelViewListener,
+public class GSCompositionPanel extends GSScrollableContentPanel implements GSIModelViewListener,
                                                                             GSIMouseListener, GSIKeyListener {
 
 	private static final int TRACK_HEADER_WIDTH = 90;
@@ -84,8 +83,6 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIC
 	protected void onShown() {
 		super.onShown();
 		
-		composition.addCompositionListener(this);
-		
 		modelView.installListeners();
 		modelView.updateModelView();
 		
@@ -102,8 +99,6 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIC
 		session.setYOffset(getYOffset());
 		session.setOpacity(getOpacity());
 		
-		composition.removeCompositionListener(this);
-
 		modelView.uninstallListeners();
 	}
 

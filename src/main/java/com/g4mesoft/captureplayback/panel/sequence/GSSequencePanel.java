@@ -2,13 +2,11 @@ package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.module.GSSequenceSession;
+import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.panel.GSScrollableContentPanel;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
-import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
-import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSEvent;
@@ -24,8 +22,7 @@ import com.google.common.base.Objects;
 
 import net.minecraft.util.Identifier;
 
-public class GSSequencePanel extends GSScrollableContentPanel implements GSISequenceListener, GSIExpandedColumnModelListener,
-                                                                         GSIMouseListener, GSIKeyListener {
+public class GSSequencePanel extends GSScrollableContentPanel implements GSIModelViewListener, GSIMouseListener, GSIKeyListener {
 
 	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/icons.png");
 	public static final GSTexture ICONS_SHEET = new GSTexture(ICONS_IDENTIFIER, 128, 128);
@@ -62,6 +59,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 
 		expandedColumnModel = new GSExpandedColumnModel();
 		modelView = new GSSequenceModelView(sequence, expandedColumnModel);
+		modelView.addModelViewListener(this);
 		
 		sequenceContent = new GSSequenceContentPanel(sequence, expandedColumnModel, modelView, this);
 		channelHeader = new GSChannelHeaderPanel(sequence, modelView, this);
@@ -118,11 +116,8 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 	public void onShown() {
 		super.onShown();
 		
-		sequence.addSequenceListener(this);
-		expandedColumnModel.addModelListener(this);
-		
-		initModelView();
-		updateHoveredCell();
+		modelView.installListeners();
+		modelView.updateModelView();
 		
 		setXOffset(session.getXOffset());
 		setYOffset(session.getYOffset());
@@ -137,9 +132,8 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 		session.setYOffset(getYOffset());
 		session.setOpacity(getOpacity());
 		
-		sequence.removeSequenceListener(this);
-		expandedColumnModel.removeModelListener(this);
-	
+		modelView.uninstallListeners();
+		
 		setHoveredCell(-1, null);
 	}
 
@@ -158,23 +152,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 		super.onBoundsChanged();
 
 		if (isVisible())
-			initModelView();
-	}
-	
-	@Override
-	protected void onXOffsetChanged(float xOffset) {
-		modelView.setXOffset(Math.round(xOffset));
-	}
-
-	@Override
-	protected void onYOffsetChanged(float yOffset) {
-		modelView.setYOffset(Math.round(yOffset));
-	}
-
-	public void initModelView() {
-		modelView.updateModelView();
-		
-		setContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
+			modelView.updateModelView();
 	}
 	
 	@Override
@@ -186,6 +164,93 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 
 		// Top right corner
 		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSSequenceColumnHeaderPanel.COLUMN_HEADER_COLOR);
+	}
+	
+	@Override
+	protected void onXOffsetChanged(float xOffset) {
+		modelView.setXOffset(Math.round(xOffset));
+	}
+
+	@Override
+	protected void onYOffsetChanged(float yOffset) {
+		modelView.setYOffset(Math.round(yOffset));
+	}
+	
+	@Override
+	public float getIncrementalScrollX(int sign) {
+		int leadingColumnIndex = modelView.getColumnIndexFromView(0);
+		int alignedColumn = leadingColumnIndex + sign;
+		if (leadingColumnIndex != -1 && alignedColumn >= 0)
+			return sign * modelView.getColumnX(alignedColumn);
+		
+		return super.getIncrementalScrollX(sign);
+	}
+
+	@Override
+	public float getIncrementalScrollY(int sign) {
+		UUID leadingChannelUUID = modelView.getChannelUUIDFromView(0);
+		if (leadingChannelUUID != null) {
+			// Default incremental scroll is 2 channels
+			int delta = 2 * (modelView.getChannelHeight() + modelView.getChannelSpacing());
+			// Normalize scrolling to top channel
+			return delta + sign * modelView.getChannelY(leadingChannelUUID);
+		}
+		
+		return super.getIncrementalScrollY(sign);
+	}
+	
+	@Override
+	public void setEditable(boolean editable) {
+		super.setEditable(editable);
+		
+		channelHeader.setEditable(editable);
+		sequenceContent.setEditable(editable);
+	}
+	
+	private void setHoveredCell(int columnIndex, UUID channelUUID) {
+		if (columnIndex != hoveredColumnIndex || !Objects.equal(channelUUID, hoveredChannelUUID)) {
+			hoveredChannelUUID = channelUUID;
+			hoveredColumnIndex = columnIndex;
+			
+			sequenceContent.setHoveredCell(columnIndex, channelUUID);
+			channelHeader.setHoveredChannelUUID(channelUUID);
+			columnHeader.setHoveredColumn(columnIndex);
+		}
+	}
+	
+	public void editChannel(UUID channelUUID) {
+		GSChannel channel = sequence.getChannel(channelUUID);
+		if (channel != null)
+			new GSChannelEditorPanel(channel).show(getParent());
+	}
+	
+	public UUID getDraggedChannelUUID() {
+		return draggedChannelUUID;
+	}
+
+	public void setDraggedChannelUUID(UUID draggedChannelUUID) {
+		this.draggedChannelUUID = draggedChannelUUID;
+		
+		if (draggedChannelUUID != null)
+			setHoveredCell(hoveredColumnIndex, draggedChannelUUID);
+	}
+	
+	public int getDraggedChannelY() {
+		return draggedChannelY;
+	}
+
+	public void setDraggedChannelY(int draggedChannelY) {
+		this.draggedChannelY = draggedChannelY;
+	}
+	
+	@Override
+	public void modelViewChanged() {
+		setXOffset(modelView.getXOffset());
+		setYOffset(modelView.getYOffset());
+		
+		setContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
+		
+		updateHoveredCell();
 	}
 	
 	@Override
@@ -251,111 +316,5 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSISequ
 			}
 			break;
 		}
-	}
-	
-	@Override
-	public float getIncrementalScrollX(int sign) {
-		int leadingColumnIndex = modelView.getColumnIndexFromView(0);
-		int alignedColumn = leadingColumnIndex + sign;
-		if (leadingColumnIndex != -1 && alignedColumn >= 0)
-			return sign * modelView.getColumnX(alignedColumn);
-		
-		return super.getIncrementalScrollX(sign);
-	}
-
-	@Override
-	public float getIncrementalScrollY(int sign) {
-		UUID leadingChannelUUID = modelView.getChannelUUIDFromView(0);
-		if (leadingChannelUUID != null) {
-			// Default incremental scroll is 2 channels
-			int delta = 2 * (modelView.getChannelHeight() + modelView.getChannelSpacing());
-			// Normalize scrolling to top channel
-			return delta + sign * modelView.getChannelY(leadingChannelUUID);
-		}
-		
-		return super.getIncrementalScrollY(sign);
-	}
-	
-	@Override
-	public void channelAdded(GSChannel channel, UUID prevUUID) {
-		initModelView();
-		updateHoveredCell();
-	}
-
-	@Override
-	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
-		initModelView();
-		updateHoveredCell();
-	}
-	
-	@Override
-	public void channelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
-		modelView.updateChannelIndexLookup();
-		updateHoveredCell();
-	}
-
-	@Override
-	public void entryAdded(GSChannelEntry entry) {
-		initModelView();
-	}
-
-	@Override
-	public void entryRemoved(GSChannelEntry entry) {
-		initModelView();
-	}
-
-	@Override
-	public void entryTimeChanged(GSChannelEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
-		initModelView();
-	}
-
-	@Override
-	public void onExpandedColumnChanged(int minExpandedColumnIndex, int maxExpandedColumnIndex) {
-		setContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
-		updateHoveredCell();
-	}
-	
-	private void setHoveredCell(int columnIndex, UUID channelUUID) {
-		if (columnIndex != hoveredColumnIndex || !Objects.equal(channelUUID, hoveredChannelUUID)) {
-			hoveredChannelUUID = channelUUID;
-			hoveredColumnIndex = columnIndex;
-			
-			sequenceContent.setHoveredCell(columnIndex, channelUUID);
-			channelHeader.setHoveredChannelUUID(channelUUID);
-			columnHeader.setHoveredColumn(columnIndex);
-		}
-	}
-	
-	public void editChannel(UUID channelUUID) {
-		GSChannel channel = sequence.getChannel(channelUUID);
-		if (channel != null)
-			new GSChannelEditorPanel(channel).show(getParent());
-	}
-	
-	@Override
-	public void setEditable(boolean editable) {
-		super.setEditable(editable);
-		
-		channelHeader.setEditable(editable);
-		sequenceContent.setEditable(editable);
-	}
-	
-	public UUID getDraggedChannelUUID() {
-		return draggedChannelUUID;
-	}
-
-	public void setDraggedChannelUUID(UUID draggedChannelUUID) {
-		this.draggedChannelUUID = draggedChannelUUID;
-		
-		if (draggedChannelUUID != null)
-			setHoveredCell(hoveredColumnIndex, draggedChannelUUID);
-	}
-	
-	public int getDraggedChannelY() {
-		return draggedChannelY;
-	}
-
-	public void setDraggedChannelY(int draggedChannelY) {
-		this.draggedChannelY = draggedChannelY;
 	}
 }

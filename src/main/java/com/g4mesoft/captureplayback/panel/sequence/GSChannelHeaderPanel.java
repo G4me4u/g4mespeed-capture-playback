@@ -239,21 +239,11 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	}
 	
 	@Override
-	public void channelAdded(GSChannel channel, UUID prevUUID) {
-		layoutChannelLabels();
-	}
-
-	@Override
 	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
 		removeChannelLabel(channel.getChannelUUID());
 		layoutChannelLabels();
 	}
 	
-	@Override
-	public void channelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
-		layoutChannelLabels();
-	}
-
 	@Override
 	public void channelInfoChanged(GSChannel channel, GSChannelInfo oldInfo) {
 		GSChannelLabelPanel labelPanel = uuidToLabel.get(channel.getChannelUUID());
