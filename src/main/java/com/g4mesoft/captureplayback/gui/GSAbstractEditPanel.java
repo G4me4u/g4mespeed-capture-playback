@@ -49,7 +49,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		backButton.addActionListener(new GSIActionListener() {
 			@Override
 			public void actionPerformed() {
-				GSClientController.getInstance().getMainGUI().back();
+				GSClientController.getInstance().getPrimaryGUI().back();
 			}
 		});
 		

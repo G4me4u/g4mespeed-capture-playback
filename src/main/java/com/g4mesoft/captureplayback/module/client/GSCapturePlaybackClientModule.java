@@ -31,7 +31,7 @@ import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.client.GSIClientModule;
 import com.g4mesoft.core.client.GSIClientModuleManager;
-import com.g4mesoft.gui.GSMainGUI;
+import com.g4mesoft.gui.GSContentHistoryGUI;
 import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSEKeyEventType;
 import com.g4mesoft.hotkey.GSKeyManager;
@@ -280,8 +280,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 		GSSequence sequence = getSessionSequence();
 		
 		if (sequenceSession != null && sequence != null) {
-			GSMainGUI mainGUI = GSClientController.getInstance().getMainGUI();
-			mainGUI.setContent(new GSSequenceEditPanel(this, sequenceSession, getSessionSequence()));
+			GSContentHistoryGUI primaryGUI = GSClientController.getInstance().getPrimaryGUI();
+			primaryGUI.setContent(new GSSequenceEditPanel(this, sequenceSession, getSessionSequence()));
 		}
 	}
 	
