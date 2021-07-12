@@ -32,7 +32,7 @@ public final class GSPlaybackCommand {
 
 		GSComposition composition = module.getComposition();
 
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).addPlaybackStream(composition.getPlaybackStream());
 		
 		source.sendFeedback(new LiteralText("Playback has started."), true);
@@ -41,7 +41,7 @@ public final class GSPlaybackCommand {
 	}
 
 	private static int stopAllPlaybacks(ServerCommandSource source) {
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
 		source.sendFeedback(new LiteralText("All playbacks have stopped."), true);
