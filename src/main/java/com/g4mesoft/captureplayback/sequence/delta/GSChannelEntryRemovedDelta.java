@@ -5,38 +5,45 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
+import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSEntryAddedDelta extends GSEntryDelta {
+public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 
 	private GSSignalTime startTime;
 	private GSSignalTime endTime;
-
-	public GSEntryAddedDelta() {
+	private GSEChannelEntryType type;
+	
+	public GSChannelEntryRemovedDelta() {
 	}
 
-	public GSEntryAddedDelta(GSChannelEntry entry) {
+	public GSChannelEntryRemovedDelta(GSChannelEntry entry) {
 		this(entry.getParent().getChannelUUID(), entry.getEntryUUID(),
-				entry.getStartTime(), entry.getEndTime());
+				entry.getStartTime(), entry.getEndTime(), entry.getType());
 	}
 	
-	public GSEntryAddedDelta(UUID channelUUID, UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
+	public GSChannelEntryRemovedDelta(UUID channelUUID, UUID entryUUID, GSSignalTime startTime,
+			GSSignalTime endTime, GSEChannelEntryType type) {
+		
 		super(channelUUID, entryUUID);
 		
 		this.startTime = startTime;
 		this.endTime = endTime;
+		this.type = type;
 	}
-	
+
 	@Override
 	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
-		removeEntry(sequence, entryUUID, startTime, endTime, GSChannelEntry.DEFAULT_ENTRY_TYPE);
+		GSChannelEntry entry = addEntry(sequence, startTime, endTime);
+		
+		entry.setType(type);
 	}
 
 	@Override
 	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
-		addEntry(sequence, entryUUID, startTime, endTime);
+		removeEntry(sequence, startTime, endTime, type);
 	}
 	
 	@Override
@@ -45,6 +52,10 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 		
 		startTime = GSSignalTime.read(buf);
 		endTime = GSSignalTime.read(buf);
+		
+		type = GSEChannelEntryType.fromIndex(buf.readInt());
+		if (type == null)
+			throw new IOException("Type index invalid");
 	}
 
 	@Override
@@ -53,5 +64,7 @@ public class GSEntryAddedDelta extends GSEntryDelta {
 
 		GSSignalTime.write(buf, startTime);
 		GSSignalTime.write(buf, endTime);
+		
+		buf.writeInt(type.getIndex());
 	}
 }

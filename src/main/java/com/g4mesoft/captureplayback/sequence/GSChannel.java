@@ -26,7 +26,16 @@ public class GSChannel {
 
 	private GSSequence parent;
 
-	public GSChannel(UUID channelUUID, GSChannelInfo info) {
+	GSChannel(GSChannel other) {
+		this(other.getChannelUUID(), other.getInfo());
+		
+		disabled = other.isDisabled();
+		
+		for (GSChannelEntry entry : other.getEntries())
+			addEntryInternal(new GSChannelEntry(entry));
+	}
+	
+	GSChannel(UUID channelUUID, GSChannelInfo info) {
 		if (channelUUID == null)
 			throw new IllegalArgumentException("Channel UUID must not be null!");
 		if (info == null)
@@ -45,17 +54,25 @@ public class GSChannel {
 		return parent;
 	}
 
-	void setParent(GSSequence parent) {
-		if (parent != null && this.parent != null)
+	void onAdded(GSSequence parent) {
+		if (this.parent != null)
 			throw new IllegalStateException("Channel already has a parent");
+		
 		this.parent = parent;
 	}
 	
-	public void set(GSChannel other) {
+	void onRemoved(GSSequence parent) {
+		if (this.parent != parent)
+			throw new IllegalStateException("Channel does not have specified parent");
+		
+		this.parent = null;
+	}
+	
+	void set(GSChannel other) {
+		clear();
+
 		setInfo(other.getInfo());
 		setDisabled(other.isDisabled());
-
-		clear();
 		
 		for (GSChannelEntry entry : other.getEntries()) {
 			GSChannelEntry entryCopy = new GSChannelEntry(entry.getEntryUUID(),
@@ -75,7 +92,7 @@ public class GSChannel {
 			onEntryRemoved(entry);
 		}
 	}
-
+	
 	public GSChannelEntry tryAddEntry(GSSignalTime startTime, GSSignalTime endTime) {
 		return tryAddEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), startTime, endTime);
 	}
@@ -95,7 +112,7 @@ public class GSChannel {
 	}
 	
 	private void addEntryInternal(GSChannelEntry entry) {
-		entry.setParent(this);
+		entry.onAdded(this);
 		
 		entries.put(entry.getEntryUUID(), entry);
 	}
@@ -114,7 +131,7 @@ public class GSChannel {
 		dispatchEntryRemoved(entry);
 		// Ensure that events are no longer heard by
 		// the registered listeners.
-		entry.setParent(null);
+		entry.onRemoved(this);
 	}
 	
 	public boolean isOverlappingEntries(GSSignalTime startTime, GSSignalTime endTime, GSChannelEntry ignoreEntry) {

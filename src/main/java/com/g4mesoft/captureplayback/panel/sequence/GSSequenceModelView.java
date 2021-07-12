@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
@@ -53,7 +54,7 @@ public class GSSequenceModelView {
 	private int channelHeight;
 	private int channelSpacing;
 
-	private final List<GSISequenceModelViewListener> listenters;
+	private final List<GSIModelViewListener> listenters;
 	
 	public GSSequenceModelView(GSSequence model, GSExpandedColumnModel expandedColumnModel) {
 		this.model = model;
@@ -83,6 +84,9 @@ public class GSSequenceModelView {
 		updateDurationLookup();
 		updateChannelIndexLookup();
 		updateMultiCellLookup();
+		
+		// TODO: move all updates into the modelView. :D
+		dispatchModelViewChangedEvent();
 	}
 	
 	private void updateBoundLookup() {
@@ -499,16 +503,16 @@ public class GSSequenceModelView {
 	
 	/* ******************** LISTENER & EVENT methods ******************** */
 	
-	public void addModelViewListener(GSISequenceModelViewListener listenter) {
+	public void addModelViewListener(GSIModelViewListener listenter) {
 		listenters.add(listenter);
 	}
 
-	public void removeModelViewListener(GSISequenceModelViewListener listenter) {
+	public void removeModelViewListener(GSIModelViewListener listenter) {
 		listenters.remove(listenter);
 	}
 	
 	private void dispatchModelViewChangedEvent() {
-		listenters.forEach(GSISequenceModelViewListener::modelViewChanged);
+		listenters.forEach(GSIModelViewListener::modelViewChanged);
 	}
 	
 	private class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {

@@ -1,11 +1,11 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
+import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
-import com.g4mesoft.core.client.GSControllerClient;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.module.translation.GSTranslationModule;
 import com.g4mesoft.util.GSColorUtil;
 
@@ -26,7 +26,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	}
 
 	public static String getDefaultChannelName() {
-		GSTranslationModule translationModule = GSControllerClient.getInstance().getTranslationModule();
+		GSTranslationModule translationModule = GSClientController.getInstance().getTranslationModule();
 		if (defaultChannelName == null && translationModule.hasTranslation(DEFAULT_CHANNEL_NAME))
 			defaultChannelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
 		return defaultChannelName;
@@ -58,7 +58,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	}
 	
 	private static BlockPos getChannelPosition() {
-		BlockPos position = GSCapturePlaybackModule.getCrosshairTarget();
+		BlockPos position = GSCapturePlaybackClientModule.getCrosshairTarget();
 		return (position == null) ? BlockPos.ORIGIN : position;
 	}
 }

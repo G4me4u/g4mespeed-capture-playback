@@ -1,9 +1,9 @@
-package com.g4mesoft.captureplayback.module;
+package com.g4mesoft.captureplayback.module.server;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -28,12 +28,12 @@ public final class GSPlaybackCommand {
 	
 	private static int startPlayback(ServerCommandSource source) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		GSCapturePlaybackModule module = extension.getServerModule();
+		GSCapturePlaybackServerModule module = extension.getServerModule();
 
-		GSSequence sequence = module.getActiveSequence();
+		GSComposition composition = module.getPrimaryComposition();
 
 		ServerWorld world = source.getMinecraftServer().getOverworld();
-		((GSIServerWorldAccess)world).addPlaybackStream(sequence.getPlaybackStream());
+		((GSIServerWorldAccess)world).addPlaybackStream(composition.getPlaybackStream());
 		
 		source.sendFeedback(new LiteralText("Playback has started."), true);
 		

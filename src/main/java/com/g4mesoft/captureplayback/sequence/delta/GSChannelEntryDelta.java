@@ -11,14 +11,14 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public abstract class GSEntryDelta extends GSChannelDelta {
+public abstract class GSChannelEntryDelta extends GSChannelDelta {
 
 	protected UUID entryUUID;
 
-	protected GSEntryDelta() {
+	protected GSChannelEntryDelta() {
 	}
 	
-	protected GSEntryDelta(UUID channelUUID, UUID entryUUID) {
+	protected GSChannelEntryDelta(UUID channelUUID, UUID entryUUID) {
 		super(channelUUID);
 		
 		this.entryUUID = entryUUID;
@@ -48,8 +48,8 @@ public abstract class GSEntryDelta extends GSChannelDelta {
 			throw new GSSequenceDeltaException("Entry does not have the expected type");
 	}
 	
-	protected void removeEntry(GSSequence sequence, UUID entryUUID, GSSignalTime startTime, 
-			GSSignalTime endTime, GSEChannelEntryType expectedType) throws GSSequenceDeltaException {
+	protected void removeEntry(GSSequence sequence, GSSignalTime startTime, GSSignalTime endTime,
+			GSEChannelEntryType expectedType) throws GSSequenceDeltaException {
 
 		GSChannelEntry entry = getEntry(sequence);
 		checkEntryTimespan(entry, startTime, endTime);
@@ -57,7 +57,7 @@ public abstract class GSEntryDelta extends GSChannelDelta {
 		entry.getParent().removeEntry(entryUUID);
 	}
 	
-	protected GSChannelEntry addEntry(GSSequence sequence, UUID entryUUID, GSSignalTime startTime,
+	protected GSChannelEntry addEntry(GSSequence sequence, GSSignalTime startTime,
 			GSSignalTime endTime) throws GSSequenceDeltaException {
 		
 		GSChannel channel = getChannel(sequence);

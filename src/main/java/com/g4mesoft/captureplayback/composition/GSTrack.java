@@ -3,11 +3,13 @@ package com.g4mesoft.captureplayback.composition;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
@@ -18,21 +20,46 @@ public class GSTrack {
 	private final UUID trackUUID;
 	private String name;
 	private int color;
+	private UUID groupUUID;
 	
+	private final GSSequence sequence;
 	private final Map<UUID, GSTrackEntry> entries;
 	
 	private GSComposition parent;
+
+	GSTrack(GSTrack other) {
+		trackUUID = other.getTrackUUID();
+		name = other.getName();
+		color = other.getColor();
+		groupUUID = other.getGroupUUID();
+		
+		sequence = new GSSequence(other.getSequence());
+		entries = new LinkedHashMap<>();
+		
+		for (GSTrackEntry entry : other.getEntries())
+			addEntryInternal(new GSTrackEntry(entry));
+	}
 	
-	public GSTrack(UUID trackUUID, String name, int color) {
+	GSTrack(UUID trackUUID, String name, int color, UUID groupUUID) {
+		this(trackUUID, name, color, groupUUID, new GSSequence(trackUUID));
+	}
+	
+	GSTrack(UUID trackUUID, String name, int color, UUID groupUUID, GSSequence sequence) {
 		if (trackUUID == null)
 			throw new IllegalArgumentException("trackUUID is null");
 		if (name == null)
 			throw new IllegalArgumentException("name is null");
+		if (groupUUID == null)
+			throw new IllegalArgumentException("groupUUID is null");
+		if (sequence == null)
+			throw new IllegalArgumentException("sequence is null");
 		
 		this.trackUUID = trackUUID;
 		this.name = name;
 		this.color = color | 0xFF000000;
-		
+		this.groupUUID = groupUUID;
+
+		this.sequence = sequence;
 		entries = new LinkedHashMap<>();
 		
 		parent = null;
@@ -42,23 +69,58 @@ public class GSTrack {
 		return parent;
 	}
 
-	void setParent(GSComposition parent) {
+	void onAdded(GSComposition parent) {
 		if (this.parent != null)
 			throw new IllegalStateException("Track already has a parent");
+		
 		this.parent = parent;
+		
+		GSTrackGroup group = getGroup();
+		if (group != null)
+			group.addTrack(trackUUID);
+	}
+
+	void onRemoved(GSComposition parent) {
+		if (this.parent != parent)
+			throw new IllegalStateException("Track does not have the specified parent");
+
+		GSTrackGroup group = getGroup();
+		if (group != null)
+			group.removeTrack(trackUUID);
+		
+		this.parent = null;
 	}
 	
-	public GSTrackEntry addEntry(UUID sequenceUUID, long offset) {
-		return addEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), sequenceUUID, offset);
+	void set(GSTrack other) {
+		clear();
+
+		setName(other.getName());
+		setColor(other.getColor());
+		setGroupUUID(other.getGroupUUID());
+		
+		sequence.set(other.getSequence());
+		for (GSTrackEntry entry : other.getEntries())
+			addEntry(entry.getEntryUUID(), entry.getOffset()).set(entry);
 	}
 	
-	public GSTrackEntry addEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
+	private void clear() {
+		Iterator<GSTrackEntry> itr = entries.values().iterator();
+		while (itr.hasNext()) {
+			GSTrackEntry entry = itr.next();
+			itr.remove();
+			onEntryRemoved(entry);
+		}
+	}
+	
+	public GSTrackEntry addEntry(long offset) {
+		return addEntry(GSUUIDUtil.randomUnique(this::hasEntryUUID), offset);
+	}
+	
+	public GSTrackEntry addEntry(UUID entryUUID, long offset) {
 		if (hasEntryUUID(entryUUID))
 			throw new IllegalStateException("Duplicate entry UUID");
-		if (parent == null || !parent.hasSequenceUUID(sequenceUUID))
-			throw new IllegalStateException("Unknown sequence UUID");
 		
-		GSTrackEntry entry = new GSTrackEntry(entryUUID, sequenceUUID, offset);
+		GSTrackEntry entry = new GSTrackEntry(entryUUID, offset);
 		addEntryInternal(entry);
 		
 		dispatchEntryAdded(entry);
@@ -67,7 +129,7 @@ public class GSTrack {
 	}
 	
 	private void addEntryInternal(GSTrackEntry entry) {
-		entry.setParent(this);
+		entry.onAdded(this);
 		
 		entries.put(entry.getEntryUUID(), entry);
 	}
@@ -75,11 +137,16 @@ public class GSTrack {
 	public boolean removeEntry(UUID entryUUID) {
 		GSTrackEntry entry = entries.remove(entryUUID);
 		if (entry != null) {
-			dispatchEntryRemoved(entry);
+			onEntryRemoved(entry);
 			return true;
 		}
 		
 		return false;
+	}
+	
+	private void onEntryRemoved(GSTrackEntry entry) {
+		dispatchEntryRemoved(entry);
+		entry.onRemoved(this);
 	}
 	
 	public UUID getTrackUUID() {
@@ -118,6 +185,35 @@ public class GSTrack {
 		}
 	}
 	
+	public UUID getGroupUUID() {
+		return groupUUID;
+	}
+
+	public void setGroupUUID(UUID groupUUID) {
+		if (parent == null || !parent.hasGroupUUID(groupUUID))
+			throw new IllegalArgumentException("Group does not exist");
+		
+		if (!groupUUID.equals(this.groupUUID)) {
+			UUID oldGroupUUID = this.groupUUID;
+			
+			getGroup().removeTrack(trackUUID);
+			this.groupUUID = groupUUID;
+			getGroup().addTrack(trackUUID);
+			
+			dispatchGroupChanged(oldGroupUUID);
+		}
+	}
+	
+	public GSTrackGroup getGroup() {
+		if (parent == null)
+			throw new IllegalStateException("Track not added");
+		return parent.getGroup(groupUUID);
+	}
+	
+	public GSSequence getSequence() {
+		return sequence;
+	}
+	
 	public GSTrackEntry getEntry(UUID entryUUID) {
 		return entries.get(entryUUID);
 	}
@@ -134,18 +230,6 @@ public class GSTrack {
 		return Collections.unmodifiableCollection(entries.values());
 	}
 	
-	public boolean isComplete() {
-		if (parent == null)
-			return false;
-		
-		for (GSTrackEntry entry : getEntries()) {
-			if (!parent.hasSequenceUUID(entry.getSequenceUUID()))
-				return false;
-		}
-		
-		return true;
-	}
-	
 	private void dispatchTrackNameChanged(String oldName) {
 		if (parent != null) {
 			for (GSICompositionListener listener : parent.getListeners())
@@ -157,6 +241,13 @@ public class GSTrack {
 		if (parent != null) {
 			for (GSICompositionListener listener : parent.getListeners())
 				listener.trackColorChanged(this, oldColor);
+		}
+	}
+	
+	private void dispatchGroupChanged(UUID oldGroup) {
+		if (parent != null) {
+			for (GSICompositionListener listener : parent.getListeners())
+				listener.trackGroupChanged(this, oldGroup);
 		}
 	}
 
@@ -178,7 +269,11 @@ public class GSTrack {
 		UUID trackUUID = buf.readUuid();
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
 		int color = buf.readMedium();
-		GSTrack track = new GSTrack(trackUUID, name, color);
+		UUID groupUUID = buf.readUuid();
+		
+		GSSequence sequence = GSSequence.read(buf);
+		
+		GSTrack track = new GSTrack(trackUUID, name, color, groupUUID, sequence);
 
 		int entryCount = buf.readInt();
 		while (entryCount-- != 0) {
@@ -195,6 +290,9 @@ public class GSTrack {
 		buf.writeUuid(track.getTrackUUID());
 		buf.writeString(track.getName());
 		buf.writeMedium(track.getColor());
+		buf.writeUuid(track.getGroupUUID());
+		
+		GSSequence.write(buf, track.getSequence());
 		
 		Collection<GSTrackEntry> entries = track.getEntries();
 		buf.writeInt(entries.size());

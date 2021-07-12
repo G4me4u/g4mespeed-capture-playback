@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
+import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
@@ -24,7 +25,7 @@ import com.g4mesoft.renderer.GSIRenderer2D;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 
-public class GSSequenceContentPanel extends GSPanel implements GSISequenceListener, GSISequenceModelViewListener,
+public class GSSequenceContentPanel extends GSPanel implements GSISequenceListener, GSIModelViewListener,
                                                                GSIMouseListener {
 
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
@@ -296,11 +297,10 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 	}
 	
 	@Override
-	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
+	public void populateRightClickMenu(GSDropdown dropdown, int x, int y) {
 		UUID channelUUID = hoveredChannelUUID;
 		GSChannelEntry entry = hoveredEntry;
 		
-		dropdown.addItemSeparator();
 		dropdown.addItem(new GSDropdownAction(CREATE_ENTRY_TEXT, () -> {
 			GSSignalTime time = modelView.viewToModel(x, y);
 			GSChannel channel = sequence.getChannel(channelUUID);
@@ -308,7 +308,7 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 			if (time != null && channel != null)
 				channel.tryAddEntry(time, time.offsetCopy(1L, 0));
 		}));
-		dropdown.addItemSeparator();
+		dropdown.separate();
 		GSDropdown entryTypeMenu = new GSDropdown();
 		if (entry != null) {
 			for (GSEChannelEntryType type : GSEChannelEntryType.TYPES) {
@@ -328,12 +328,6 @@ public class GSSequenceContentPanel extends GSPanel implements GSISequenceListen
 		
 		entryType.setEnabled(entry != null);
 		deleteEntry.setEnabled(entry != null);
-		
-		GSPanel parent = getParent();
-		if (parent != null) {
-			// Populate right click menu from parent
-			parent.createRightClickMenu(dropdown, this.x + x, this.y + y);
-		}
 	}
 	
 	@Override

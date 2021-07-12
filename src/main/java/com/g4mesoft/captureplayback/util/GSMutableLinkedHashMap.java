@@ -24,9 +24,13 @@ public class GSMutableLinkedHashMap<K, V> implements Map<K, V> {
 	
 	public GSMutableLinkedHashMap() {
 		nodes = new HashMap<K, GSNode<K, V>>();
-		
 		first = last = null;
 	}
+	
+    public GSMutableLinkedHashMap(int initialCapacity) {
+		nodes = new HashMap<K, GSNode<K, V>>(initialCapacity);
+		first = last = null;
+    }
 	
 	@Override
 	public int size() {

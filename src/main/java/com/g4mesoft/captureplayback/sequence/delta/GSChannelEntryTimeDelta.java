@@ -9,7 +9,7 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSEntryTimeDelta extends GSEntryDelta {
+public class GSChannelEntryTimeDelta extends GSChannelEntryDelta {
 
 	private GSSignalTime newStartTime;
 	private GSSignalTime newEndTime;
@@ -17,10 +17,10 @@ public class GSEntryTimeDelta extends GSEntryDelta {
 	private GSSignalTime oldStartTime;
 	private GSSignalTime oldEndTime;
 
-	public GSEntryTimeDelta() {
+	public GSChannelEntryTimeDelta() {
 	}
 	
-	public GSEntryTimeDelta(UUID channelUUID, UUID entryUUID, GSSignalTime newStartTime,
+	public GSChannelEntryTimeDelta(UUID channelUUID, UUID entryUUID, GSSignalTime newStartTime,
 			GSSignalTime newEndTime, GSSignalTime oldStartTime, GSSignalTime oldEndTime) {
 
 		super(channelUUID, entryUUID);

@@ -52,6 +52,6 @@ public class GSChannelDisabledDelta extends GSChannelDelta {
 		super.write(buf);
 
 		buf.writeBoolean(newDisabled);
-		buf.writeBoolean(newDisabled);
+		buf.writeBoolean(oldDisabled);
 	}
 }

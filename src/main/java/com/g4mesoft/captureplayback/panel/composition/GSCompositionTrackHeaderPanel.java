@@ -24,14 +24,15 @@ public class GSCompositionTrackHeaderPanel extends GSPanel {
 
 		renderer.fillRect(0, 0, width, height, GSCompositionContentPanel.BACKGROUND_COLOR);
 
+		renderer.pushClip(0, 0, width, height);
 		renderHeaders(renderer);
+		renderer.popClip();
 	}
 
 	private void renderHeaders(GSIRenderer2D renderer) {
-		int y = 0;
 		for (GSTrack track : composition.getTracks()) {
+			int y = modelView.getTrackY(track.getTrackUUID());
 			renderHeader(renderer, track, 1, y, width - 1);
-			y += modelView.getTrackHeight() + modelView.getTrackSpacing();
 		}
 	}
 	

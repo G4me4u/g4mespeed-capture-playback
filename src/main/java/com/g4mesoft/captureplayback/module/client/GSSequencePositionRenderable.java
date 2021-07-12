@@ -1,8 +1,9 @@
-package com.g4mesoft.captureplayback.module;
+package com.g4mesoft.captureplayback.module.client;
 
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
@@ -28,38 +29,39 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	
 	private static final float[] SELECTION_VERTICES = computeSelectionVertices(SELECTION_THICKNESS, SELECTION_NOTCH);
 	
-	private final GSCapturePlaybackModule module;
-	private final GSSequence sequence;
+	private final GSCapturePlaybackClientModule module;
 	
-	public GSSequencePositionRenderable(GSCapturePlaybackModule module, GSSequence sequence) {
+	public GSSequencePositionRenderable(GSCapturePlaybackClientModule module) {
 		this.module = module;
-		this.sequence = sequence;
 	}
 	
 	@Override
 	public void render(GSIRenderer3D renderer) {
-		switch(module.cChannelRenderingType.getValue()) {
-		case GSCapturePlaybackModule.RENDERING_DEPTH:
-			renderCubes(renderer);
-			break;
-		case GSCapturePlaybackModule.RENDERING_NO_DEPTH:
-			RenderSystem.disableDepthTest();
-			renderCubes(renderer);
-			RenderSystem.enableDepthTest();
-			break;
-		case GSCapturePlaybackModule.RENDERING_DISABLED:
-		default:
-			// Skip rendering in this case
-			break;
+		GSSequenceSession session = module.getSequenceSession();
+		GSSequence sequence = module.getSessionSequence();
+		
+		if (session != null && sequence != null) {
+			switch(module.cChannelRenderingType.getValue()) {
+			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
+				renderCubes(renderer, session, sequence);
+				break;
+			case GSCapturePlaybackClientModule.RENDERING_NO_DEPTH:
+				RenderSystem.disableDepthTest();
+				renderCubes(renderer, session, sequence);
+				RenderSystem.enableDepthTest();
+				break;
+			case GSCapturePlaybackClientModule.RENDERING_DISABLED:
+			default:
+				// Skip rendering in this case
+				break;
+			}
 		}
 	}
 	
-	private void renderCubes(GSIRenderer3D renderer) {
+	private void renderCubes(GSIRenderer3D renderer, GSSequenceSession session, GSSequence sequence) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
 		float viewDistance = client.gameRenderer.getViewDistance();
-
-		GSSequenceSession session = module.getSequenceSession();
 		
 		Set<GSCubeEntry> cubes = new TreeSet<>();
 		for (GSChannel channel : sequence.getChannels()) {

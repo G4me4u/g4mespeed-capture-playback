@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.panel.sequence;
 import com.g4mesoft.captureplayback.module.GSISequenceUndoRedoListener;
 import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.module.GSSequenceUndoRedoHistory;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSECursorType;
 import com.g4mesoft.panel.GSEIconAlignment;
@@ -30,12 +31,14 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISequenceUnd
 	private static final int BUTTON_MARGIN = 2;
 	
 	private final GSSequenceSession session;
+	private final GSSequence sequence;
 	
 	private final GSButton undoButton;
 	private final GSButton redoButton;
 	
-	public GSSequenceInfoPanel(GSSequenceSession session) {
+	public GSSequenceInfoPanel(GSSequenceSession session, GSSequence sequence) {
 		this.session = session;
+		this.sequence = sequence;
 		
 		undoButton = new GSButton(UNDO_ICON, UNDO_TEXT);
 		undoButton.setHoveredIcon(HOVERED_UNDO_ICON);
@@ -47,7 +50,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISequenceUnd
 		undoButton.setDisabledBackgroundColor(0);
 		undoButton.setBorderWidth(0);
 		undoButton.addActionListener(() -> {
-			this.session.getUndoRedoHistory().undo();
+			this.session.getUndoRedoHistory().undo(this.sequence);
 		});
 		
 		redoButton = new GSButton(REDO_ICON, REDO_TEXT);
@@ -60,7 +63,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISequenceUnd
 		redoButton.setDisabledBackgroundColor(0);
 		redoButton.setBorderWidth(0);
 		redoButton.addActionListener(() -> {
-			this.session.getUndoRedoHistory().redo();
+			this.session.getUndoRedoHistory().redo(this.sequence);
 		});
 		
 		add(undoButton);

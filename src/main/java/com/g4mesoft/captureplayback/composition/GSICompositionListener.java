@@ -1,16 +1,19 @@
 package com.g4mesoft.captureplayback.composition;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
+import java.util.UUID;
 
 public interface GSICompositionListener {
 
 	default public void compositionNameChanged(String oldName) {
 	}
 
-	default public void sequenceAdded(GSSequence sequence) {
+	default public void groupAdded(GSTrackGroup group) {
 	}
 
-	default public void sequenceRemoved(GSSequence sequence) {
+	default public void groupRemoved(GSTrackGroup group) {
+	}
+	
+	default public void groupNameChanged(GSTrackGroup group, String oldName) {
 	}
 	
 	default public void trackAdded(GSTrack track) {
@@ -22,7 +25,10 @@ public interface GSICompositionListener {
 	default public void trackNameChanged(GSTrack track, String oldName) {
 	}
 
-	default public void trackColorChanged(GSTrack gsTrack, int oldColor) {
+	default public void trackColorChanged(GSTrack track, int oldColor) {
+	}
+
+	default public void trackGroupChanged(GSTrack track, UUID oldGroupUUID) {
 	}
 	
 	default public void entryAdded(GSTrackEntry entry) {

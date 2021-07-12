@@ -1,23 +1,11 @@
-package com.g4mesoft.captureplayback.module;
-
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
-import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.stream.GSICaptureStream;
-import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
-
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+package com.g4mesoft.captureplayback.module.server;
 
 public final class GSCaptureCommand {
 
 	private GSCaptureCommand() {
 	}
 	
+/*
 	public static void registerCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
 		dispatcher.register(CommandManager.literal("capture").then(CommandManager.literal("start").executes(context -> {
 			return startCapture(context.getSource());
@@ -28,9 +16,9 @@ public final class GSCaptureCommand {
 	
 	private static int startCapture(ServerCommandSource source) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		GSCapturePlaybackModule module = extension.getServerModule();
+		GSCapturePlaybackServerModule module = extension.getServerModule();
 
-		GSSequence sequence = module.getActiveSequence();
+		GSSequence sequence = module.getPrimaryComposition();
 		
 		ServerWorld world = source.getMinecraftServer().getOverworld();
 		((GSIServerWorldAccess)world).addCaptureStream(sequence.getCaptureStream());
@@ -48,4 +36,5 @@ public final class GSCaptureCommand {
 		
 		return Command.SINGLE_SUCCESS;
 	}
+*/
 }
