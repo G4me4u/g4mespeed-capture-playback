@@ -34,7 +34,7 @@ import com.g4mesoft.captureplayback.stream.frame.GSMergedSignalFrame;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPoweredState;
-import com.g4mesoft.core.server.GSControllerServer;
+import com.g4mesoft.core.server.GSServerController;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.block.Block;
@@ -321,7 +321,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 			if (block instanceof PistonBlock) {
 				// This is a g4mespeed specific feature that allows the user
 				// to change the distance at which the block actions are sent.
-				dist = 16.0 * GSControllerServer.getInstance().getTpsModule().sBlockEventDistance.getValue();
+				dist = 16.0 * GSServerController.getInstance().getTpsModule().sBlockEventDistance.getValue();
 			}
 
 			PlayerManager playerManager = server.getPlayerManager();

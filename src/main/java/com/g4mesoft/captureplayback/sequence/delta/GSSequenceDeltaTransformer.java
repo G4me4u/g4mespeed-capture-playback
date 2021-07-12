@@ -101,19 +101,19 @@ public class GSSequenceDeltaTransformer implements GSISequenceListener {
 	@Override
 	public void entryAdded(GSChannelEntry entry) {
 		if (enabled)
-			dispatchSequenceDeltaEvent(new GSEntryAddedDelta(entry));
+			dispatchSequenceDeltaEvent(new GSChannelEntryAddedDelta(entry));
 	}
 
 	@Override
 	public void entryRemoved(GSChannelEntry entry) {
 		if (enabled)
-			dispatchSequenceDeltaEvent(new GSEntryRemovedDelta(entry));
+			dispatchSequenceDeltaEvent(new GSChannelEntryRemovedDelta(entry));
 	}
 
 	@Override
 	public void entryTimeChanged(GSChannelEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
 		if (enabled) {
-			dispatchSequenceDeltaEvent(new GSEntryTimeDelta(entry.getParent().getChannelUUID(),
+			dispatchSequenceDeltaEvent(new GSChannelEntryTimeDelta(entry.getParent().getChannelUUID(),
 					entry.getEntryUUID(), entry.getStartTime(), entry.getEndTime(), oldStart, oldEnd));
 		}
 	}
@@ -121,7 +121,7 @@ public class GSSequenceDeltaTransformer implements GSISequenceListener {
 	@Override
 	public void entryTypeChanged(GSChannelEntry entry, GSEChannelEntryType oldType) {
 		if (enabled) {
-			dispatchSequenceDeltaEvent(new GSEntryTypeDelta(entry.getParent().getChannelUUID(),
+			dispatchSequenceDeltaEvent(new GSChannelEntryTypeDelta(entry.getParent().getChannelUUID(),
 					entry.getEntryUUID(), entry.getType(), oldType));
 		}
 	}

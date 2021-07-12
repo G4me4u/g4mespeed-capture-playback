@@ -16,7 +16,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 	private UUID prevUUID;
 	private GSChannelInfo info;
 	private boolean disabled;
-	private GSEntryRemovedDelta[] entryDeltas;
+	private GSChannelEntryRemovedDelta[] entryDeltas;
 
 	public GSChannelRemovedDelta() {
 	}
@@ -34,11 +34,11 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		this.info = info;
 		this.disabled = disabled;
 		
-		entryDeltas = new GSEntryRemovedDelta[entries.size()];
+		entryDeltas = new GSChannelEntryRemovedDelta[entries.size()];
 		
 		int i = 0;
 		for (GSChannelEntry entry : entries)
-			entryDeltas[i++] = new GSEntryRemovedDelta(entry);
+			entryDeltas[i++] = new GSChannelEntryRemovedDelta(entry);
 	}
 	
 	@Override
@@ -47,7 +47,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		
 		channel.setDisabled(disabled);
 		
-		for (GSEntryDelta entryDelta : entryDeltas)
+		for (GSChannelEntryDelta entryDelta : entryDeltas)
 			entryDelta.unapplyDelta(sequence);
 	}
 
@@ -63,9 +63,9 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		info = GSChannelInfo.read(buf);
 		disabled = buf.readBoolean();
 		
-		entryDeltas = new GSEntryRemovedDelta[buf.readInt()];
+		entryDeltas = new GSChannelEntryRemovedDelta[buf.readInt()];
 		for (int i = 0; i < entryDeltas.length; i++)
-			(entryDeltas[i] = new GSEntryRemovedDelta()).read(buf);
+			(entryDeltas[i] = new GSChannelEntryRemovedDelta()).read(buf);
 		
 		prevUUID = buf.readBoolean() ? buf.readUuid() : null;
 	}
@@ -78,7 +78,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		buf.writeBoolean(disabled);
 		
 		buf.writeInt(entryDeltas.length);
-		for (GSEntryRemovedDelta entryDelta : entryDeltas)
+		for (GSChannelEntryRemovedDelta entryDelta : entryDeltas)
 			entryDelta.write(buf);
 		
 		buf.writeBoolean(prevUUID != null);

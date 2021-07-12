@@ -12,12 +12,12 @@ panel.sequencecolumnheader.collapse=Collapse
 panel.sequencecolumnheader.expandall=Expand All
 panel.sequencecolumnheader.collapseall=Collapse All
 
-panel.sequence.opacity=Opacity
-panel.sequence.opacity25=25%% Opacity
-panel.sequence.opacity50=50%% Opacity
-panel.sequence.opacity75=75%% Opacity
-panel.sequence.opacity90=90%% Opacity
-panel.sequence.opacity100=Fully Opaque
+panel.opacity=Opacity
+panel.opacity25=25%% Opacity
+panel.opacity50=50%% Opacity
+panel.opacity75=75%% Opacity
+panel.opacity90=90%% Opacity
+panel.opacity100=Fully Opaque
 
 panel.sequence.defaultname=New Channel
 

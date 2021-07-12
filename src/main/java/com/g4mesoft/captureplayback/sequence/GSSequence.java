@@ -28,6 +28,13 @@ public class GSSequence {
 	private final GSMutableLinkedHashMap<UUID, GSChannel> channels;
 	private List<GSISequenceListener> listeners;
 
+	public GSSequence(GSSequence other) {
+		this(other.getSequenceUUID(), other.getName());
+		
+		for (GSChannel channel : other.getChannels())
+			addChannelInternal(new GSChannel(channel));
+	}
+	
 	public GSSequence(UUID sequenceUUID) {
 		this(sequenceUUID, "");
 	}
@@ -45,11 +52,11 @@ public class GSSequence {
 		// Lazily initialized when adding a listener
 		listeners = null;
 	}
-
+	
 	public void set(GSSequence other) {
-		setName(other.getName());
-		
 		clear();
+
+		setName(other.getName());
 		
 		for (GSChannel channel : other.getChannels())
 			addChannel(channel.getChannelUUID(), channel.getInfo()).set(channel);
@@ -85,7 +92,7 @@ public class GSSequence {
 	}
 	
 	private void addChannelInternal(GSChannel channel) {
-		channel.setParent(this);
+		channel.onAdded(this);
 		
 		channels.put(channel.getChannelUUID(), channel);
 	}
@@ -95,6 +102,7 @@ public class GSSequence {
 		GSChannel channel = channels.remove(channelUUID);
 		if (channel != null) {
 			UUID prevUUID = (prevChannel == null) ? null : prevChannel.getChannelUUID();
+
 			onChannelRemoved(channel, prevUUID);
 			return true;
 		}
@@ -106,7 +114,7 @@ public class GSSequence {
 		dispatchChannelRemoved(channel, oldPrevUUID);
 		// Ensure that changes to the channel are no longer
 		// heard by the registered listeners.
-		channel.setParent(null);
+		channel.onRemoved(this);
 	}
 	
 	public void moveChannelBefore(UUID channelUUID, UUID newNextUUID) {
@@ -249,8 +257,7 @@ public class GSSequence {
 		return new GSSequenceCaptureStream(this);
 	}
 	
-	/* Method visible for play-back & capture streams */
-	GSBlockRegion getBlockRegion() {
+	public GSBlockRegion getBlockRegion() {
 		int x0 = Integer.MAX_VALUE;
 		int y0 = Integer.MAX_VALUE;
 		int z0 = Integer.MAX_VALUE;

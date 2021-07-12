@@ -8,17 +8,19 @@ import net.minecraft.network.PacketByteBuf;
 public class GSTrackEntry {
 
 	private final UUID entryUUID;
-	private final UUID sequenceUUID;
 	private long offset;
 	
 	private GSTrack parent;
 	
-	public GSTrackEntry(UUID entryUUID, UUID sequenceUUID, long offset) {
+	GSTrackEntry(GSTrackEntry other) {
+		this(other.getEntryUUID(), other.getOffset());
+	}
+	
+	GSTrackEntry(UUID entryUUID, long offset) {
 		if (offset < 0L)
 			throw new IllegalArgumentException("offset must be non-negative");
 		
 		this.entryUUID = entryUUID;
-		this.sequenceUUID = sequenceUUID;
 		this.offset = offset;
 		
 		parent = null;
@@ -28,20 +30,28 @@ public class GSTrackEntry {
 		return parent;
 	}
 
-	void setParent(GSTrack parent) {
+	void onAdded(GSTrack parent) {
 		if (this.parent != null)
 			throw new IllegalStateException("Entry already has a parent");
+		
 		this.parent = parent;
+	}
+
+	void onRemoved(GSTrack parent) {
+		if (this.parent != parent)
+			throw new IllegalStateException("Entry does not have specified parent");
+		
+		this.parent = null;
+	}
+	
+	public void set(GSTrackEntry other) {
+		setOffset(other.getOffset());
 	}
 	
 	public UUID getEntryUUID() {
 		return entryUUID;
 	}
 
-	public UUID getSequenceUUID() {
-		return sequenceUUID;
-	}
-	
 	public long getOffset() {
 		return offset;
 	}
@@ -67,15 +77,13 @@ public class GSTrackEntry {
 	
 	public static GSTrackEntry read(PacketByteBuf buf) throws IOException {
 		UUID entryUUID = buf.readUuid();
-		UUID sequenceUUID = buf.readUuid();
 		long offset = buf.readLong();
 
-		return new GSTrackEntry(entryUUID, sequenceUUID, offset);
+		return new GSTrackEntry(entryUUID, offset);
 	}
 
 	public static void write(PacketByteBuf buf, GSTrackEntry entry) throws IOException {
 		buf.writeUuid(entry.getEntryUUID());
-		buf.writeUuid(entry.getSequenceUUID());
 		buf.writeLong(entry.getOffset());
 	}
 }

@@ -17,12 +17,16 @@ public class GSCompositionColumnHeaderPanel extends GSPanel {
 	public void render(GSIRenderer2D renderer) {
 		super.render(renderer);
 		
-		renderer.fillRect(0, 0, width, height - 1, BACKGROUND_COLOR);
-		renderer.drawHLine(0, width, height - 1, GSCompositionContentPanel.BACKGROUND_COLOR);
+		renderer.fillRect(0, 0, width, height, BACKGROUND_COLOR);
 		
-		for (long gt = 0; gt < 120; gt += 10) {
-			int x = modelView.getGametickX(gt);
+		long interval = modelView.getTimeIndicatorInterval();
+		long gt = modelView.getTimeIndicatorStart();
+
+		int x;
+		do {
+			x = modelView.getGametickX(gt);
 			renderer.drawText(Long.toString(gt), x + 3, 2, 0xFF777777);
-		}
+			gt += interval;
+		} while (x < width);
 	}
 }

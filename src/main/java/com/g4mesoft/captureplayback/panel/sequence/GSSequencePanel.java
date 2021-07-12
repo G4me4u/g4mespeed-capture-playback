@@ -4,48 +4,34 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.module.GSSequenceSession;
+import com.g4mesoft.captureplayback.panel.GSScrollableContentPanel;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.panel.GSColoredIcon;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSIcon;
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.dropdown.GSDropdown;
-import com.g4mesoft.panel.dropdown.GSDropdownAction;
-import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
+import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.panel.scroll.GSIScrollListener;
-import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
 import com.google.common.base.Objects;
 
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 
-public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSIScrollListener, 
-                                                              GSISequenceListener, GSIExpandedColumnModelListener,
-                                                              GSIMouseListener, GSIKeyListener {
+public class GSSequencePanel extends GSScrollableContentPanel implements GSISequenceListener, GSIExpandedColumnModelListener,
+                                                                         GSIMouseListener, GSIKeyListener {
 
 	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/icons.png");
 	public static final GSTexture ICONS_SHEET = new GSTexture(ICONS_IDENTIFIER, 128, 128);
 	
 	private static final int CHANNEL_HEADER_WIDTH = 130;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
-	
-	private static final int BOTTOM_RIGHT_CORNER_COLOR = 0xFF000000;
-	
-	private static final GSIcon OPACITY_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
-	private static final Text OPACITY_TEXT = new TranslatableText("panel.sequence.opacity");
 	
 	private final GSSequenceSession session;
 	private final GSSequence sequence;
@@ -61,29 +47,17 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	private final GSSequenceInfoPanel infoPanel;
 	private final GSSequenceButtonPanel buttonPanel;
 	
-	private final GSScrollBar verticalScrollBar;
-	private final GSScrollBar horizontalScrollBar;
-	
-	private boolean editable;
-	
-	private int minContentWidth;
-	
-	private int contentWidth;
-	private int contentHeight;
-	
 	private int hoveredMouseX;
 	private int hoveredMouseY;
 	private int hoveredColumnIndex;
 	private UUID hoveredChannelUUID;
-	
-	private GSESequenceOpacity opacity;
 
 	private UUID draggedChannelUUID;
 	private int draggedChannelY;
 	
-	public GSSequencePanel(GSSequenceSession session, GSIChannelProvider channelProvider) {
+	public GSSequencePanel(GSSequenceSession session, GSSequence sequence, GSIChannelProvider channelProvider) {
 		this.session = session;
-		this.sequence = session.getActiveSequence();
+		this.sequence = sequence;
 		this.channelProvider = channelProvider;
 
 		expandedColumnModel = new GSExpandedColumnModel();
@@ -93,36 +67,51 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		channelHeader = new GSChannelHeaderPanel(sequence, modelView, this);
 		columnHeader = new GSSequenceColumnHeaderPanel(sequence, expandedColumnModel, modelView);
 		
-		infoPanel = new GSSequenceInfoPanel(session);
+		infoPanel = new GSSequenceInfoPanel(session, sequence);
 		buttonPanel = new GSSequenceButtonPanel();
 		
-		verticalScrollBar = new GSScrollBar(this, new GSIScrollListener() {
-			@Override
-			public void scrollChanged(float newScroll) {
-				modelView.setYOffset((int)(-newScroll));
-			}
-		});
-		horizontalScrollBar = new GSSequencePreviewScrollBar(sequence, modelView, this, this);
-		
-		verticalScrollBar.setVertical(true);
-		horizontalScrollBar.setVertical(false);
+		init();
+	}
 	
-		// Editable by default
-		editable = true;
-		// Fully opaque by default
-		opacity = GSESequenceOpacity.FULLY_OPAQUE;
-		
-		add(sequenceContent);
-		add(channelHeader);
-		add(columnHeader);
+	@Override
+	protected void init() {
+		super.init();
+
 		add(infoPanel);
 		add(buttonPanel);
 		
-		add(verticalScrollBar);
-		add(horizontalScrollBar);
-		
 		addMouseEventListener(this);
 		addKeyEventListener(this);
+	}
+	
+	@Override
+	public GSScrollBar createHorizontalScrollBar(GSIScrollListener listener) {
+		return new GSSequencePreviewScrollBar(sequence, modelView, this, listener);
+	}
+	
+	@Override
+	protected GSPanel getContent() {
+		return sequenceContent;
+	}
+	
+	@Override
+	protected GSPanel getColumnHeader() {
+		return columnHeader;
+	}
+
+	@Override
+	protected GSPanel getRowHeader() {
+		return channelHeader;
+	}
+	
+	@Override
+	protected int getColumnHeaderHeight() {
+		return COLUMN_HEADER_HEIGHT;
+	}
+
+	@Override
+	protected int getRowHeaderWidth() {
+		return CHANNEL_HEADER_WIDTH;
 	}
 	
 	@Override
@@ -135,8 +124,8 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		initModelView();
 		updateHoveredCell();
 		
-		horizontalScrollBar.setScrollOffset(session.getXOffset());
-		verticalScrollBar.setScrollOffset(session.getYOffset());
+		setXOffset(session.getXOffset());
+		setYOffset(session.getYOffset());
 		setOpacity(session.getOpacity());
 	}
 
@@ -144,8 +133,8 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	public void onHidden() {
 		super.onHidden();
 
-		session.setXOffset(horizontalScrollBar.getScrollOffset());
-		session.setYOffset(verticalScrollBar.getScrollOffset());
+		session.setXOffset(getXOffset());
+		session.setYOffset(getYOffset());
 		session.setOpacity(getOpacity());
 		
 		sequence.removeSequenceListener(this);
@@ -153,79 +142,50 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 	
 		setHoveredCell(-1, null);
 	}
+
+	@Override
+	protected void layoutTopLeft(int x, int y, int width, int height) {
+		infoPanel.setBounds(x, y, width, height);
+	}
+	
+	@Override
+	protected void layoutBottomLeft(int x, int y, int width, int height) {
+		buttonPanel.setBounds(x, y, width, height);
+	}
 	
 	@Override
 	public void onBoundsChanged() {
 		super.onBoundsChanged();
 
-		layoutPanels();
-		
 		if (isVisible())
 			initModelView();
 	}
 	
-	private void layoutPanels() {
-		GSDimension vs = verticalScrollBar.getPreferredSize();
-		GSDimension hs = horizontalScrollBar.getPreferredSize();
-		int cw = Math.max(1, width - CHANNEL_HEADER_WIDTH - vs.getWidth());
-		int ch = Math.max(1, height - COLUMN_HEADER_HEIGHT - hs.getHeight());
+	@Override
+	protected void onXOffsetChanged(float xOffset) {
+		modelView.setXOffset(Math.round(xOffset));
+	}
 
-		sequenceContent.setBounds(CHANNEL_HEADER_WIDTH, COLUMN_HEADER_HEIGHT, cw, ch);
-		channelHeader.setBounds(0, COLUMN_HEADER_HEIGHT, CHANNEL_HEADER_WIDTH, ch);
-		columnHeader.setBounds(CHANNEL_HEADER_WIDTH, 0, cw, COLUMN_HEADER_HEIGHT);
-		
-		infoPanel.setBounds(0, 0, CHANNEL_HEADER_WIDTH, COLUMN_HEADER_HEIGHT);
-		buttonPanel.setBounds(0, height - hs.getHeight(), CHANNEL_HEADER_WIDTH, hs.getHeight());
-
-		verticalScrollBar.setBounds(width - vs.getWidth(), COLUMN_HEADER_HEIGHT, vs.getWidth(), ch);
-		horizontalScrollBar.setBounds(CHANNEL_HEADER_WIDTH, height - hs.getHeight(), cw, hs.getHeight());
+	@Override
+	protected void onYOffsetChanged(float yOffset) {
+		modelView.setYOffset(Math.round(yOffset));
 	}
 
 	public void initModelView() {
 		modelView.updateModelView();
 		
-		updateContentSize();
-	}
-	
-	public void updateContentSize() {
-		int newContentWidth = modelView.getMinimumWidth();
-		int newContentHeight = modelView.getMinimumHeight();
-
-		minContentWidth = Math.max(getContentViewWidth(), newContentWidth);
-		if (minContentWidth > contentWidth)
-			contentWidth = minContentWidth;
-		
-		if (newContentHeight > getContentViewHeight()) {
-			contentHeight = newContentHeight;
-			verticalScrollBar.setEnabled(true);
-		} else {
-			contentHeight = getContentViewHeight();
-			verticalScrollBar.setEnabled(false);
-		}
-		
-		// Updating the scroll will ensure it is within bounds.
-		horizontalScrollBar.setScrollOffset(horizontalScrollBar.getScrollOffset());
-		verticalScrollBar.setScrollOffset(verticalScrollBar.getScrollOffset());
+		setContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
 	}
 	
 	@Override
-	public void render(GSIRenderer2D renderer) {
-		float oldOpacity = renderer.getOpacity();
-		renderer.setOpacity(opacity.getOpacity());
-		
-		super.render(renderer);
+	public void renderTranslucent(GSIRenderer2D renderer) {
+		super.renderTranslucent(renderer);
 
 		int sw = verticalScrollBar.getWidth();
-		int sh = horizontalScrollBar.getHeight();
 		int cx = width - sw;
-		int cy = height - sh;
 
 		// Top right corner
 		renderer.fillRect(cx, 0, sw, COLUMN_HEADER_HEIGHT, GSSequenceColumnHeaderPanel.COLUMN_HEADER_COLOR);
-		// Bottom right corner
-		renderer.fillRect(cx, cy, sw, sh, BOTTOM_RIGHT_CORNER_COLOR);
-
-		renderer.setOpacity(oldOpacity);
 	}
 	
 	@Override
@@ -277,9 +237,9 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 				
 				// Allow for redo with CTRL + SHIFT + Z
 				if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
-					session.getUndoRedoHistory().redo();
+					session.getUndoRedoHistory().redo(sequence);
 				} else {
-					session.getUndoRedoHistory().undo();
+					session.getUndoRedoHistory().undo(sequence);
 				}
 			}
 			break;
@@ -287,56 +247,10 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 			if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
 				event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
 				
-				session.getUndoRedoHistory().redo();
+				session.getUndoRedoHistory().redo(sequence);
 			}
 			break;
 		}
-	}
-	
-	@Override
-	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
-		dropdown.addItemSeparator();
-		GSDropdown opacityMenu = new GSDropdown();
-		for (GSESequenceOpacity opacity : GSESequenceOpacity.OPACITIES) {
-			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
-			Text text = new TranslatableText(opacity.getName());
-			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
-				setOpacity(opacity);
-			}));
-		}
-		dropdown.addItem(new GSDropdownSubMenu(OPACITY_TEXT, opacityMenu));
-		
-		super.createRightClickMenu(dropdown, x, y);
-	}
-	
-	@Override
-	public void preScrollChanged(float newScroll) {
-		contentWidth = Math.max(minContentWidth, (int)newScroll + getContentViewWidth());
-	}
-	
-	@Override
-	public void scrollChanged(float newScroll) {
-		modelView.setXOffset((int)(-newScroll));
-	}
-
-	@Override
-	public int getContentWidth() {
-		return contentWidth;
-	}
-
-	@Override
-	public int getContentHeight() {
-		return contentHeight;
-	}
-	
-	@Override
-	public int getContentViewWidth() {
-		return sequenceContent.getWidth();
-	}
-
-	@Override
-	public int getContentViewHeight() {
-		return sequenceContent.getHeight();
 	}
 	
 	@Override
@@ -346,7 +260,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 		if (leadingColumnIndex != -1 && alignedColumn >= 0)
 			return sign * modelView.getColumnX(alignedColumn);
 		
-		return GSIScrollable.super.getIncrementalScrollX(sign);
+		return super.getIncrementalScrollX(sign);
 	}
 
 	@Override
@@ -359,7 +273,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 			return delta + sign * modelView.getChannelY(leadingChannelUUID);
 		}
 		
-		return GSIScrollable.super.getIncrementalScrollY(sign);
+		return super.getIncrementalScrollY(sign);
 	}
 	
 	@Override
@@ -397,7 +311,7 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 
 	@Override
 	public void onExpandedColumnChanged(int minExpandedColumnIndex, int maxExpandedColumnIndex) {
-		updateContentSize();
+		setContentSize(modelView.getMinimumWidth(), modelView.getMinimumHeight());
 		updateHoveredCell();
 	}
 	
@@ -418,25 +332,12 @@ public class GSSequencePanel extends GSParentPanel implements GSIScrollable, GSI
 			new GSChannelEditorPanel(channel).show(getParent());
 	}
 	
-	public boolean isEditable() {
-		return editable;
-	}
-	
+	@Override
 	public void setEditable(boolean editable) {
-		this.editable = editable;
+		super.setEditable(editable);
 		
 		channelHeader.setEditable(editable);
 		sequenceContent.setEditable(editable);
-	}
-	
-	public GSESequenceOpacity getOpacity() {
-		return opacity;
-	}
-	
-	public void setOpacity(GSESequenceOpacity opacity) {
-		if (opacity == null)
-			throw new IllegalArgumentException("opacity is null");
-		this.opacity = opacity;
 	}
 	
 	public UUID getDraggedChannelUUID() {

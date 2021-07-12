@@ -1,71 +1,44 @@
 package com.g4mesoft.captureplayback.module;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.g4mesoft.captureplayback.CapturePlaybackMod;
+import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaException;
-import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 
-public class GSSequenceUndoRedoHistory implements GSISequenceDeltaListener {
+import net.minecraft.network.PacketByteBuf;
+
+public class GSSequenceUndoRedoHistory {
 
 	private static final int MAX_HISTORY_SIZE = 100000;
 	private static final long MAX_CHAINED_INTERVAL = 250L;
 	
 	private final Deque<GSEntry> undoHistory;
 	private final Deque<GSEntry> redoHistory;
-	
-	private final GSSequenceDeltaTransformer transformer;
-	private boolean tracking;
 
+	private boolean tracking;
+	
 	private List<GSISequenceUndoRedoListener> listeners;
-	
-	private GSSequence sequence;
-	
+
 	public GSSequenceUndoRedoHistory() {
-		undoHistory = new LinkedList<GSEntry>();
-		redoHistory = new LinkedList<GSEntry>();
+		this(new LinkedList<>(), new LinkedList<>());
+	}
 	
-		transformer = new GSSequenceDeltaTransformer();
-		tracking = false;
+	private GSSequenceUndoRedoHistory(Deque<GSEntry> undoHistory, Deque<GSEntry> redoHistory) {
+		this.undoHistory = undoHistory;
+		this.redoHistory = redoHistory;
+	
+		tracking = true;
 		
 		listeners = new ArrayList<GSISequenceUndoRedoListener>(1);
-		
-		sequence = null;
 	}
 
-	public void install(GSSequence sequence) {
-		this.sequence = sequence;
-		
-		transformer.install(sequence);
-		transformer.addDeltaListener(this);
-
-		startTracking();
-	}
-
-	public void uninstall(GSSequence sequence) {
-		stopTracking();
-
-		transformer.uninstall(sequence);
-		transformer.removeDeltaListener(this);
-	
-		sequence = null;
-	}
-	
-	public void stopTracking() {
-		transformer.setEnabled(false);
-		tracking = false;
-	}
-
-	public void startTracking() {
-		transformer.setEnabled(true);
-		tracking = true;
-	}
-	
 	public void addUndoRedoListener(GSISequenceUndoRedoListener listener) {
 		listeners.add(listener);
 	}
@@ -78,42 +51,35 @@ public class GSSequenceUndoRedoHistory implements GSISequenceDeltaListener {
 		listeners.forEach(GSISequenceUndoRedoListener::onHistoryChanged);
 	}
 	
-	public boolean undo() {
-		return applyHistory(undoHistory, redoHistory, this::undoEntry);
+	public boolean undo(GSSequence sequence) {
+		return applyHistory(undoHistory, redoHistory, entry -> {
+			entry.delta.unapplyDelta(sequence);
+		});
 	}
 
-	private void undoEntry(GSEntry entry) throws GSSequenceDeltaException {
-		entry.delta.unapplyDelta(sequence);
-	}
-
-	public boolean redo() {
-		return applyHistory(redoHistory, undoHistory, this::redoEntry);
+	public boolean redo(GSSequence sequence) {
+		return applyHistory(redoHistory, undoHistory, entry -> {
+			entry.delta.applyDelta(sequence);
+		});
 	}
 	
-	private void redoEntry(GSEntry entry) throws GSSequenceDeltaException {
-		entry.delta.applyDelta(sequence);
-	}
-
 	public boolean applyHistory(Deque<GSEntry> srcHistory, Deque<GSEntry> dstHistory, GSAction action) {
 		boolean success = true;
 		
 		if (!srcHistory.isEmpty()) {
-			boolean wasTracking = tracking;
-			
 			GSEntry entry;
 			do {
 				entry = srcHistory.getLast();
 
 				try {
-					stopTracking();
+					tracking = false;
 					action.apply(entry);
 				} catch (GSSequenceDeltaException e) {
 					// Unable to apply, break until it is possible.
 					success = false;
 					break;
 				} finally {
-					if (wasTracking)
-						startTracking();
+					tracking = true;
 				}
 				
 				dstHistory.addLast(srcHistory.removeLast());
@@ -132,19 +98,45 @@ public class GSSequenceUndoRedoHistory implements GSISequenceDeltaListener {
 	public boolean hasRedoHistory() {
 		return !redoHistory.isEmpty();
 	}
-	
-	@Override
-	public void onSequenceDelta(GSISequenceDelta delta) {
-		if (redoHistory.size() != 0)
-			redoHistory.clear();
-		
-		undoHistory.addLast(new GSEntry(delta, System.currentTimeMillis()));
 
-		// Ensure that the size of the history in limited to MAX_HISTORY_SIZE.
-		if (undoHistory.size() > MAX_HISTORY_SIZE)
-			undoHistory.removeFirst();
+	/* Visible for GSSequenceSession only! */
+	void trackSequenceDelta(GSISequenceDelta delta) {
+		if (tracking) {
+			if (redoHistory.size() != 0)
+				redoHistory.clear();
+			
+			undoHistory.addLast(new GSEntry(delta, System.currentTimeMillis()));
+	
+			// Ensure that the size of the history in limited to MAX_HISTORY_SIZE.
+			if (undoHistory.size() > MAX_HISTORY_SIZE)
+				undoHistory.removeFirst();
+			
+			invokeHistoryChangedEvent();
+		}
+	}
+
+	public static GSSequenceUndoRedoHistory read(PacketByteBuf buf) throws IOException {
+		Deque<GSEntry> undoHistory = new LinkedList<>();
+		Deque<GSEntry> redoHistory = new LinkedList<>();
 		
-		invokeHistoryChangedEvent();
+		int undoCount = buf.readInt();
+		while (undoCount-- != 0)
+			undoHistory.addLast(GSEntry.read(buf));
+		int redoCount = buf.readInt();
+		while (redoCount-- != 0)
+			redoHistory.addLast(GSEntry.read(buf));
+		
+		return new GSSequenceUndoRedoHistory(undoHistory, redoHistory);
+	}
+
+	public static void write(PacketByteBuf buf, GSSequenceUndoRedoHistory history) throws IOException {
+		buf.writeInt(history.undoHistory.size());
+		for (GSEntry entry : history.undoHistory)
+			GSEntry.write(buf, entry);
+		
+		buf.writeInt(history.redoHistory.size());
+		for (GSEntry entry : history.redoHistory)
+			GSEntry.write(buf, entry);
 	}
 	
 	private static class GSEntry {
@@ -159,6 +151,28 @@ public class GSSequenceUndoRedoHistory implements GSISequenceDeltaListener {
 		
 		public boolean isChained(GSEntry other) {
 			return Math.abs(other.timestampMillis - timestampMillis) <= MAX_CHAINED_INTERVAL;
+		}
+		
+		public static GSEntry read(PacketByteBuf buf) throws IOException {
+			GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+			
+			GSISequenceDelta delta = extension.getSequenceDeltaRegistry().createNewElement(buf.readInt());
+			if (delta == null)
+				throw new IOException("Invalid delta ID");
+			delta.read(buf);
+			
+			long timestampMillis = buf.readLong();
+			
+			return new GSEntry(delta, timestampMillis);
+		}
+
+		public static void write(PacketByteBuf buf, GSEntry entry) throws IOException {
+			GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+			
+			buf.writeInt(extension.getSequenceDeltaRegistry().getIdentifier(entry.delta));
+			entry.delta.write(buf);
+			
+			buf.writeLong(entry.timestampMillis);
 		}
 	}
 	

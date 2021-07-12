@@ -20,6 +20,12 @@ public final class GSChannelEntry {
 
 	private GSChannel parent;
 
+	GSChannelEntry(GSChannelEntry other) {
+		this(other.getEntryUUID(), other.getStartTime(), other.getEndTime());
+		
+		type = other.getType();
+	}
+	
 	GSChannelEntry(UUID entryUUID, GSSignalTime startTime, GSSignalTime endTime) {
 		if (entryUUID == null)
 			throw new NullPointerException("entryUUID is null");
@@ -40,13 +46,21 @@ public final class GSChannelEntry {
 		return parent;
 	}
 	
-	void setParent(GSChannel parent) {
-		if (parent != null && this.parent != null)
+	void onAdded(GSChannel parent) {
+		if (this.parent != null)
 			throw new IllegalStateException("Entry already has a parent");
+		
 		this.parent = parent;
 	}
+
+	void onRemoved(GSChannel parent) {
+		if (this.parent != parent)
+			throw new IllegalStateException("Entry does not have specified parent");
+		
+		this.parent = null;
+	}
 	
-	public void set(GSChannelEntry other) {
+	void set(GSChannelEntry other) {
 		setTimespan(other.getStartTime(), other.getEndTime());
 		setType(other.getType());
 	}

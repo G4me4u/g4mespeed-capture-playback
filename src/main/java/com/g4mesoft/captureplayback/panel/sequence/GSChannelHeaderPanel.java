@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.module.GSCapturePlaybackModule;
+import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
+import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
@@ -30,7 +31,7 @@ import com.g4mesoft.renderer.GSIRenderer2D;
 import net.minecraft.util.math.BlockPos;
 
 public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceListener, 
-                                                                   GSISequenceModelViewListener,
+                                                                   GSIModelViewListener,
                                                                    GSIMouseListener {
 
 	private static final GSIcon EDIT_ICON            = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 0,  0, 9, 9));
@@ -267,7 +268,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	
 	@Override
 	public void mouseDragged(GSMouseEvent event) {
-		if (dragging) {
+		if (dragging && event.getButton() == GSMouseEvent.BUTTON_LEFT) {
 			onChannelDragged(event.getY());
 			event.consume();
 		}
@@ -407,7 +408,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			
 			super.render(renderer);
 		
-			BlockPos target = GSCapturePlaybackModule.getCrosshairTarget();
+			BlockPos target = GSCapturePlaybackClientModule.getCrosshairTarget();
 			if (target != null && channel.getInfo().getPositions().contains(target))
 				renderer.drawRect(0, 0, width, height, CROSSHAIR_TARGET_BORDER_COLOR);
 		}

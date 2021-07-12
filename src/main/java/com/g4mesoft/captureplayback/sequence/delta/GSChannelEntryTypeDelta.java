@@ -9,15 +9,15 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSEntryTypeDelta extends GSEntryDelta {
+public class GSChannelEntryTypeDelta extends GSChannelEntryDelta {
 
 	private GSEChannelEntryType newType;
 	private GSEChannelEntryType oldType;
 
-	public GSEntryTypeDelta() {
+	public GSChannelEntryTypeDelta() {
 	}
 	
-	public GSEntryTypeDelta(UUID channelUUID, UUID entryUUID, GSEChannelEntryType newType, GSEChannelEntryType oldType) {
+	public GSChannelEntryTypeDelta(UUID channelUUID, UUID entryUUID, GSEChannelEntryType newType, GSEChannelEntryType oldType) {
 		super(channelUUID, entryUUID);
 		
 		this.newType = newType;

@@ -1,21 +1,26 @@
 package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
+import com.g4mesoft.captureplayback.composition.GSICompositionListener;
+import com.g4mesoft.captureplayback.module.GSCompositionSession;
+import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.panel.composition.GSCompositionPanel;
 import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.renderer.GSIRenderer2D;
 
-public class GSCompositionEditPanel extends GSAbstractEditPanel {
+public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSICompositionListener {
 
-	private static final int MIN_CONTENT_HEIGHT = 150;
-	
+	private final GSCompositionSession session;
 	private final GSComposition composition;
-	private final GSCompositionPanel contentPanel;
+	private final GSCapturePlaybackClientModule module;
 	
-	public GSCompositionEditPanel(GSComposition composition) {
-		this.composition = composition;
+	private final GSCompositionPanel contentPanel;
 
-		contentPanel = new GSCompositionPanel(composition);
+	public GSCompositionEditPanel(GSCapturePlaybackClientModule module, GSCompositionSession session, GSComposition composition) {
+		this.session = session;
+		this.composition = composition;
+		this.module = module;
+
+		contentPanel = new GSCompositionPanel(session, composition);
 		add(contentPanel);
 		
 		nameField.setText(composition.getName());
@@ -29,20 +34,41 @@ public class GSCompositionEditPanel extends GSAbstractEditPanel {
 	}
 	
 	@Override
-	protected void handleNameChanged(String name) {
-		composition.setName(name);
+	protected void onShown() {
+		super.onShown();
+
+		composition.addCompositionListener(this);
 	}
-	
+
+	@Override
+	protected void onHidden() {
+		super.onHidden();
+		
+		composition.removeCompositionListener(this);
+		
+		module.onCompositionSessionChanged(session);
+	}
+
 	@Override
 	protected void layoutContent(int x, int y, int width, int height) {
-		int contentHeight = Math.min(Math.max(height / 2, MIN_CONTENT_HEIGHT), height);
-		contentPanel.setBounds(x, y + height - contentHeight, width, contentHeight);
+		contentPanel.setBounds(x, y, width, height);
 	}
 	
 	@Override
-	public void render(GSIRenderer2D renderer) {
-		renderer.fillRect(0, 0, width, height, 0xDA0A0A0A);
-		
-		super.render(renderer);
+	protected void handleNameChanged(String name) {
+		boolean visible = isVisible();
+		try {
+			if (visible)
+				composition.removeCompositionListener(this);
+			composition.setName(name);
+		} finally {
+			if (visible)
+				composition.addCompositionListener(this);
+		}
+	}
+
+	@Override
+	public void compositionNameChanged(String oldName) {
+		nameField.setText(composition.getName());
 	}
 }

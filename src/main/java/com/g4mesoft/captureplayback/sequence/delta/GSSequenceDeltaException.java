@@ -9,4 +9,12 @@ public class GSSequenceDeltaException extends Exception {
 	public GSSequenceDeltaException(String msg) {
 		super(msg);
 	}
+
+	public GSSequenceDeltaException(Throwable cause) {
+		super(cause);
+	}
+
+	public GSSequenceDeltaException(String msg, Throwable cause) {
+		super(msg, cause);
+	}
 }

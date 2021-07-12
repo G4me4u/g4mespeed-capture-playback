@@ -1,29 +1,11 @@
-package com.g4mesoft.captureplayback.module;
-
-import java.io.File;
-
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
-import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.mojang.brigadier.Command;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.text.Texts;
-import net.minecraft.util.Formatting;
+package com.g4mesoft.captureplayback.module.server;
 
 public final class GSSequenceCommand {
 
 	private GSSequenceCommand() {
 	}
 	
+	/*
 	public static void registerCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
 		LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("sequence");
 		
@@ -40,7 +22,7 @@ public final class GSSequenceCommand {
 	
 	private static int saveSequence(ServerCommandSource source, String fileName) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		GSCapturePlaybackModule module = extension.getServerModule();
+		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		GSSequence sequence = module.getActiveSequence();
 		
@@ -55,12 +37,12 @@ public final class GSSequenceCommand {
 
 	private static int loadSequence(ServerCommandSource source, String fileName) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		GSCapturePlaybackModule module = extension.getServerModule();
+		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		GSSequence sequence = module.readSequence(fileName);
 
 		if (sequence != null) {
-			module.setActiveSequence(sequence);
+			module.setPrimarySequence(sequence);
 			
 			source.sendFeedback(new LiteralText("Sequence '" + fileName + "' loaded successfully."), true);
 		} else {
@@ -74,15 +56,15 @@ public final class GSSequenceCommand {
 		// TODO: definitely remove this
 
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		GSCapturePlaybackModule module = extension.getServerModule();
+		GSCapturePlaybackServerModule module = extension.getServerModule();
 		
 		try {
-			for (File file : module.getSequenceDirectory().listFiles()) {
+			for (File file : module.getCompositionDirectory().listFiles()) {
 				if (file.isFile()) {
 					String fileName = file.getName();
 					
-					if (fileName.endsWith(GSCapturePlaybackModule.SEQUENCE_EXTENSION)) {
-						int len = fileName.length() - GSCapturePlaybackModule.SEQUENCE_EXTENSION.length();
+					if (fileName.endsWith(GSCapturePlaybackServerModule.COMPOSITION_EXTENSION)) {
+						int len = fileName.length() - GSCapturePlaybackServerModule.COMPOSITION_EXTENSION.length();
 						String sequenceName = fileName.substring(0, len);
 						
 						Text sequenceNameText = Texts.bracketed(new LiteralText(sequenceName).styled((style) -> {
@@ -100,5 +82,5 @@ public final class GSSequenceCommand {
 		}
 		
 		return Command.SINGLE_SUCCESS;
-	}
+	}*/
 }

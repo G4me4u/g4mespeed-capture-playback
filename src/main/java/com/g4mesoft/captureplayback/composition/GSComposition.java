@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.stream.GSBlockRegion;
+import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
+import com.g4mesoft.captureplayback.util.GSMutableLinkedHashMap;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSBufferUtil;
 
@@ -20,12 +23,21 @@ public class GSComposition {
 
 	private final UUID compositionUUID;
 	private String name;
-	
-	private final Map<UUID, GSSequence> sequences;
+
+	private final Map<UUID, GSTrackGroup> groups;
 	private final Map<UUID, GSTrack> tracks;
 	
 	private List<GSICompositionListener> listeners;
 
+	public GSComposition(GSComposition other) {
+		this(other.getCompositionUUID(), other.getName());
+		
+		for (GSTrackGroup group : other.getGroups())
+			addGroupInternal(new GSTrackGroup(group));
+		for (GSTrack track : other.getTracks())
+			addTrackInternal(new GSTrack(track));
+	}
+	
 	public GSComposition(UUID compositionUUID) {
 		this(compositionUUID, "");
 	}
@@ -39,44 +51,94 @@ public class GSComposition {
 		this.compositionUUID = compositionUUID;
 		this.name = name;
 		
-		sequences = new LinkedHashMap<>();
+		groups = new GSMutableLinkedHashMap<>();
+		// TODO: remove linked from hash map.
 		tracks = new LinkedHashMap<>();
 		
 		listeners = null;
 	}
 
-	public void addSequence(GSSequence sequence) {
-		if (hasSequenceUUID(sequence.getSequenceUUID()))
+	public void set(GSComposition other) {
+		clear();
+
+		setName(other.getName());
+		
+		for (GSTrackGroup group : other.getGroups())
+			addGroup(group.getGroupUUID(), group.getName()).set(group);
+		for (GSTrack track : other.getTracks())
+			addTrack(track.getTrackUUID(), track.getName(), track.getColor(), track.getGroupUUID()).set(track);
+	}
+	
+	private void clear() {
+		Iterator<GSTrack> trackItr = tracks.values().iterator();
+		while (trackItr.hasNext()) {
+			GSTrack track = trackItr.next();
+			trackItr.remove();
+			onTrackRemoved(track);
+		}
+
+		Iterator<GSTrackGroup> groupItr = groups.values().iterator();
+		while (groupItr.hasNext()) {
+			GSTrackGroup group = groupItr.next();
+			groupItr.remove();
+			onGroupRemoved(group);
+		}
+	}
+	
+	public GSTrackGroup addGroup(String groupName) {
+		return addGroup(GSUUIDUtil.randomUnique(this::hasGroupUUID), groupName);
+	}
+	
+	public GSTrackGroup addGroup(UUID groupUUID, String groupName) {
+		if (hasGroupUUID(groupUUID))
 			throw new IllegalStateException("Duplicate sequence UUID");
 	
-		addSequenceInternal(sequence);
+		GSTrackGroup group = new GSTrackGroup(groupUUID, groupName);
+		addGroupInternal(group);
 	
-		dispatchSequenceAdded(sequence);
+		dispatchGroupAdded(group);
+	
+		return group;
 	}
 	
-	private void addSequenceInternal(GSSequence sequence) {
-		sequences.put(sequence.getSequenceUUID(), sequence);
+	private void addGroupInternal(GSTrackGroup group) {
+		group.onAdded(this);
+		
+		groups.put(group.getGroupUUID(), group);
 	}
 	
-	public boolean removeSequence(UUID sequenceUUID) {
-		GSSequence sequence = sequences.remove(sequenceUUID);
-		if (sequence != null) {
-			dispatchSequenceRemoved(sequence);
+	public boolean removeGroup(UUID groupUUID) {
+		GSTrackGroup group = groups.get(groupUUID);
+
+		if (group != null) {
+			// Remove all tracks in the group first.
+			for (UUID trackUUID : group.getTrackUUIDs())
+				removeTrack(trackUUID);
+			
+			groups.remove(groupUUID);
+			onGroupRemoved(group);
 			return true;
 		}
 		
 		return false;
 	}
 	
-	public GSTrack addTrack(String trackName, int color) {
-		return addTrack(GSUUIDUtil.randomUnique(this::hasTrackUUID), trackName, color);
+	private void onGroupRemoved(GSTrackGroup group) {
+		dispatchGroupRemoved(group);
+		group.onRemoved(this);
 	}
 	
-	public GSTrack addTrack(UUID trackUUID, String trackName, int color) {
+	public GSTrack addTrack(String trackName, int color, UUID groupUUID) {
+		return addTrack(GSUUIDUtil.randomUnique(this::hasTrackUUID), trackName, color, groupUUID);
+	}
+	
+	public GSTrack addTrack(UUID trackUUID, String trackName, int color, UUID groupUUID) {
 		if (hasTrackUUID(trackUUID))
 			throw new IllegalStateException("Duplicate track UUID");
+		if (!hasGroupUUID(groupUUID))
+			throw new IllegalArgumentException("Group does not exist");
 		
-		GSTrack track = new GSTrack(trackUUID, trackName, color);
+		GSTrack track = new GSTrack(trackUUID, trackName, color, groupUUID);
 		addTrackInternal(track);
 		
 		dispatchTrackAdded(track);
@@ -85,7 +147,7 @@ public class GSComposition {
 	}
 
 	private void addTrackInternal(GSTrack track) {
-		track.setParent(this);
+		track.onAdded(this);
 		
 		tracks.put(track.getTrackUUID(), track);
 	}
@@ -93,13 +155,18 @@ public class GSComposition {
 	public boolean removeTrack(UUID trackUUID) {
 		GSTrack track = tracks.remove(trackUUID);
 		if (track != null) {
-			dispatchTrackRemoved(track);
+			onTrackRemoved(track);
 			return true;
 		}
 		
 		return false;
 	}
 	
+	private void onTrackRemoved(GSTrack track) {
+		dispatchTrackRemoved(track);
+		track.onRemoved(this);
+	}
+
 	public UUID getCompositionUUID() {
 		return compositionUUID;
 	}
@@ -120,12 +187,12 @@ public class GSComposition {
 		}
 	}
 	
-	public GSSequence getSequence(UUID sequenceUUID) {
-		return sequences.get(sequenceUUID);
+	public GSTrackGroup getGroup(UUID groupUUID) {
+		return groups.get(groupUUID);
 	}
 	
-	public boolean hasSequenceUUID(UUID sequenceUUID) {
-		return sequences.containsKey(sequenceUUID);
+	public boolean hasGroupUUID(UUID groupUUID) {
+		return groups.containsKey(groupUUID);
 	}
 
 	public GSTrack getTrack(UUID trackUUID) {
@@ -136,12 +203,12 @@ public class GSComposition {
 		return tracks.containsKey(trackUUID);
 	}
 	
-	public Collection<GSSequence> getSequences() {
-		return Collections.unmodifiableCollection(sequences.values());
+	public Collection<GSTrackGroup> getGroups() {
+		return Collections.unmodifiableCollection(groups.values());
 	}
 
-	public Set<UUID> getSequenceUUIDs() {
-		return Collections.unmodifiableSet(sequences.keySet());
+	public Set<UUID> getGroupUUIDs() {
+		return Collections.unmodifiableSet(groups.keySet());
 	}
 
 	public Collection<GSTrack> getTracks() {
@@ -150,15 +217,6 @@ public class GSComposition {
 	
 	public Set<UUID> getTrackUUIDs() {
 		return Collections.unmodifiableSet(tracks.keySet());
-	}
-	
-	public boolean isComplete() {
-		for (GSTrack track : getTracks()) {
-			if (!track.isComplete())
-				return false;
-		}
-		
-		return true;
 	}
 	
 	public void addCompositionListener(GSICompositionListener listener) {
@@ -182,14 +240,14 @@ public class GSComposition {
 			listener.compositionNameChanged(oldName);
 	}
 
-	private void dispatchSequenceAdded(GSSequence sequence) {
+	private void dispatchGroupAdded(GSTrackGroup group) {
 		for (GSICompositionListener listener : getListeners())
-			listener.sequenceAdded(sequence);
+			listener.groupAdded(group);
 	}
 
-	private void dispatchSequenceRemoved(GSSequence sequence) {
+	private void dispatchGroupRemoved(GSTrackGroup group) {
 		for (GSICompositionListener listener : getListeners())
-			listener.sequenceRemoved(sequence);
+			listener.groupRemoved(group);
 	}
 	
 	private void dispatchTrackAdded(GSTrack track) {
@@ -202,7 +260,7 @@ public class GSComposition {
 			listener.trackRemoved(track);
 	}
 
-	public static GSComposition readComposition(PacketByteBuf buf) throws IOException {
+	public static GSComposition read(PacketByteBuf buf) throws IOException {
 		// Skip reserved byte
 		buf.readByte();
 		
@@ -210,12 +268,12 @@ public class GSComposition {
 		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
 		GSComposition composition = new GSComposition(compositionUUID, name);
 
-		int sequenceCount = buf.readInt();
-		while (sequenceCount-- != 0) {
-			GSSequence sequence = GSSequence.read(buf);
-			if (composition.hasSequenceUUID(sequence.getSequenceUUID()))
-				throw new IOException("Duplicate sequence UUID");
-			composition.addSequenceInternal(sequence);
+		int groupCount = buf.readInt();
+		while (groupCount-- != 0) {
+			GSTrackGroup group = GSTrackGroup.read(buf);
+			if (composition.hasGroupUUID(group.getGroupUUID()))
+				throw new IOException("Duplicate group UUID");
+			composition.addGroupInternal(group);
 		}
 
 		int trackCount = buf.readInt();
@@ -225,9 +283,6 @@ public class GSComposition {
 				throw new IOException("Duplicate track UUID");
 			composition.addTrackInternal(track);
 		}
-		
-		if (!composition.isComplete())
-			throw new IOException("Composition is not complete!");
 		
 		return composition;
 	}
@@ -239,14 +294,49 @@ public class GSComposition {
 		buf.writeUuid(composition.getCompositionUUID());
 		buf.writeString(composition.getName());
 
-		Collection<GSSequence> sequences = composition.getSequences();
-		buf.writeInt(sequences.size());
-		for (GSSequence sequence : sequences)
-			GSSequence.write(buf, sequence);
+		Collection<GSTrackGroup> groups = composition.getGroups();
+		buf.writeInt(groups.size());
+		for (GSTrackGroup group : groups)
+			GSTrackGroup.write(buf, group);
 		
 		Collection<GSTrack> tracks = composition.getTracks();
 		buf.writeInt(tracks.size());
 		for (GSTrack track : tracks)
 			GSTrack.write(buf, track);
+	}
+
+	public GSIPlaybackStream getPlaybackStream() {
+		return new GSCompositionPlaybackStream(this);
+	}
+	
+	/* Method visible for play-back & capture streams */
+	GSBlockRegion getBlockRegion() {
+		int x0 = Integer.MAX_VALUE;
+		int y0 = Integer.MAX_VALUE;
+		int z0 = Integer.MAX_VALUE;
+
+		int x1 = Integer.MIN_VALUE;
+		int y1 = Integer.MIN_VALUE;
+		int z1 = Integer.MIN_VALUE;
+		
+		for (GSTrack track : getTracks()) {
+			GSBlockRegion region = track.getSequence().getBlockRegion();
+			
+			if (region.getX0() < x0)
+				x0 = region.getX0();
+			if (region.getY0() < y0)
+				y0 = region.getY0();
+			if (region.getZ0() < z0)
+				z0 = region.getZ0();
+
+			if (region.getX1() > x1)
+				x1 = region.getX1();
+			if (region.getY1() > y1)
+				y1 = region.getY1();
+			if (region.getZ1() > z1)
+				z1 = region.getZ1();
+		}
+		
+		return new GSBlockRegion(x0, y0, z0, x1, y1, z1);
 	}
 }

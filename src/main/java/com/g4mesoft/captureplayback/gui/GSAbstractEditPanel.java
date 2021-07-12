@@ -1,12 +1,12 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.core.client.GSControllerClient;
-import com.g4mesoft.panel.GSClosableParentPanel;
+import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.panel.GSECursorType;
 import com.g4mesoft.panel.GSETextAlignment;
 import com.g4mesoft.panel.GSIActionListener;
 import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSPanelContext;
+import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.button.GSButton;
 import com.g4mesoft.panel.event.GSFocusEvent;
@@ -20,7 +20,7 @@ import com.g4mesoft.renderer.GSIRenderer2D;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 
-public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
+public abstract class GSAbstractEditPanel extends GSParentPanel {
 
 	private static final int TITLE_HEIGHT = 25;
 	private static final int MAXIMUM_TITLE_WIDTH = 250;
@@ -49,7 +49,7 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 		backButton.addActionListener(new GSIActionListener() {
 			@Override
 			public void actionPerformed() {
-				GSPanelContext.setContent(GSControllerClient.getInstance().getTabbedGUI());
+				GSClientController.getInstance().getMainGUI().back();
 			}
 		});
 		
@@ -79,7 +79,7 @@ public abstract class GSAbstractEditPanel extends GSClosableParentPanel {
 					case GSKeyEvent.KEY_ENTER:
 						handleNameChanged(nameField.getText());
 					case GSKeyEvent.KEY_ESCAPE:
-						nameField.unfocus();
+						GSAbstractEditPanel.this.requestFocus();
 						event.consume();
 					default:
 						break;

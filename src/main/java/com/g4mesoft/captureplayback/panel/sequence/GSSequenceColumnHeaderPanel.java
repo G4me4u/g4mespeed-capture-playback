@@ -119,10 +119,9 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	}
 	
 	@Override
-	public void createRightClickMenu(GSDropdown dropdown, int x, int y) {
+	public void populateRightClickMenu(GSDropdown dropdown, int x, int y) {
 		int hoveredColumn = modelView.getColumnIndexFromView(x);
 		if (hoveredColumn != -1) {
-			dropdown.addItemSeparator();
 			dropdown.addItem(new GSDropdownAction(EXPAND_TEXT, () -> {
 				expandedColumnModel.setExpandedColumn(hoveredColumn);
 			}));
@@ -130,7 +129,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 			dropdown.addItem(collapseAction = new GSDropdownAction(COLLAPSE_TEXT, () -> {
 				expandedColumnModel.toggleExpandedColumn(hoveredColumn);
 			}));
-			dropdown.addItemSeparator();
+			dropdown.separate();
 			dropdown.addItem(new GSDropdownAction(EXPAND_ALL_TEXT, () -> {
 				expandedColumnModel.setExpandedColumnRange(0, Integer.MAX_VALUE);
 			}));
@@ -139,12 +138,6 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 			}));
 			
 			collapseAction.setEnabled(expandedColumnModel.isColumnExpanded(hoveredColumn));
-		}
-		
-		GSPanel parent = getParent();
-		if (parent != null) {
-			// Populate right click menu from parent
-			parent.createRightClickMenu(dropdown, this.x + x, this.y + y);
 		}
 	}
 	
