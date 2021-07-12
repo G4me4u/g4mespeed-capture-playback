@@ -30,7 +30,7 @@ public final class GSPlaybackCommand {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
-		GSComposition composition = module.getPrimaryComposition();
+		GSComposition composition = module.getComposition();
 
 		ServerWorld world = source.getMinecraftServer().getOverworld();
 		((GSIServerWorldAccess)world).addPlaybackStream(composition.getPlaybackStream());

@@ -45,6 +45,15 @@ public class GSSessionManager {
 		}
 	}
 	
+	public void removeComposition(UUID compositionUUID) {
+		GSSessionTracker tracker = sessionTrackers.remove(compositionUUID);
+		
+		if (tracker != null) {
+			tracker.stopAllSessions();
+			tracker.uninstall();
+		}
+	}
+	
 	public void startCompositionSession(ServerPlayerEntity player, UUID compositionUUID) {
 		if (!playerToTracker.containsKey(player.getUuid())) {
 			GSSessionTracker tracker = sessionTrackers.get(compositionUUID);

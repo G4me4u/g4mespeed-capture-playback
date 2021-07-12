@@ -14,6 +14,7 @@ import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
 import com.g4mesoft.captureplayback.module.GSCompositionSession;
 import com.g4mesoft.captureplayback.module.GSSequenceSession;
+import com.g4mesoft.core.GSCoreExtension;
 import com.g4mesoft.core.server.GSIServerModule;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 import com.g4mesoft.util.GSFileUtil;
@@ -26,12 +27,13 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSCapturePlaybackServerModule implements GSIServerModule {
 
-	public static final String PRIMARY_COMPOSITION_FILE_NAME = "primary_composition";
+	public static final String DEFAULT_COMPOSITION_FILE_NAME = "default_composition";
 	public static final String COMPOSITION_EXTENSION = ".gcomp";
 
 	private GSIServerModuleManager manager;
 
-	private GSComposition primaryComposition;
+	private GSComposition composition;
+	private String compositionFileName;
 	private GSSessionManager sessionManager;
 	
 	public GSCapturePlaybackServerModule() {
@@ -41,25 +43,25 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	public void init(GSIServerModuleManager manager) {
 		this.manager = manager;
 
+		compositionFileName = DEFAULT_COMPOSITION_FILE_NAME;
+		
 		try {
-			primaryComposition = readComposition(PRIMARY_COMPOSITION_FILE_NAME);
+			composition = readComposition(DEFAULT_COMPOSITION_FILE_NAME);
 		} catch (IOException e) {
-			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read active composition!");
-			e.printStackTrace();
-			primaryComposition = new GSComposition(UUID.randomUUID());
+			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read default composition!");
+			composition = new GSComposition(UUID.randomUUID(), compositionFileName);
 		}
 
 		sessionManager = new GSSessionManager(manager);
-		sessionManager.addComposition(primaryComposition);
+		sessionManager.addComposition(composition);
 	}
 	
 	@Override
 	public void onClose() {
 		try {
-			writeComposition(primaryComposition, PRIMARY_COMPOSITION_FILE_NAME);
+			writeComposition(composition, DEFAULT_COMPOSITION_FILE_NAME);
 		} catch (IOException e) {
-			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write active composition!");
-			e.printStackTrace();
+			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write default composition!");
 		}
 		
 		sessionManager.stopAllSessions();
@@ -113,11 +115,12 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		GSPlaybackCommand.registerCommand(dispatcher);
 		//GSCaptureCommand.registerCommand(dispatcher);
 		//GSSequenceCommand.registerCommand(dispatcher);
+		GSCompositionCommand.registerCommand(dispatcher);
 	}
 	
 	@Override
 	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSExtensionInfo coreInfo) {
-		sessionManager.startCompositionSession(player, primaryComposition.getCompositionUUID());
+		sessionManager.startCompositionSession(player, composition.getCompositionUUID());
 	}
 	
 	@Override
@@ -149,7 +152,49 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		return manager.getCacheFile();
 	}
 
-	public GSComposition getPrimaryComposition() {
-		return primaryComposition;
+	public GSComposition getComposition() {
+		return composition;
+	}
+	
+	/* Methods for loading and writing compositions. TODO: remove this */
+	
+	public boolean writeComposition() {
+		try {
+			writeComposition(composition, compositionFileName);
+		} catch (IOException e) {
+			return false;
+		}
+		
+		return true;
+	}
+
+	public boolean createComposition(String fileName) {
+		setComposition(new GSComposition(UUID.randomUUID(), fileName), fileName);
+		return true;
+	}
+
+	public boolean setComposition(String fileName) {
+		try {
+			setComposition(readComposition(fileName), fileName);
+		} catch (IOException ignore) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	private void setComposition(GSComposition composition, String fileName) {
+		sessionManager.stopAllSessions();
+		sessionManager.removeComposition(this.composition.getCompositionUUID());
+		
+		this.composition = composition;
+		
+		compositionFileName = fileName;
+		
+		sessionManager.addComposition(composition);
+		for (ServerPlayerEntity player : manager.getAllPlayers()) {
+			if (manager.isExtensionInstalled(player, GSCoreExtension.UID))
+				sessionManager.startCompositionSession(player, composition.getCompositionUUID());
+		}
 	}
 }
