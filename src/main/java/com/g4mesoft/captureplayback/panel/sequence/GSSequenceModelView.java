@@ -13,13 +13,14 @@ import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
+import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSPanelContext;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSMathUtil;
 
-public class GSSequenceModelView {
+public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColumnModelListener {
 
 	private static final int MINIMUM_MICROTICKS = 2;
 	private static final int EXTRA_MICROTICKS = 0;
@@ -76,6 +77,16 @@ public class GSSequenceModelView {
 	
 	/* ******************** MODEL-VIEW initialization ******************** */
 	
+	public void installListeners() {
+		model.addSequenceListener(this);
+		expandedColumnModel.addModelListener(this);
+	}
+
+	public void uninstallListeners() {
+		model.removeSequenceListener(this);
+		expandedColumnModel.removeModelListener(this);
+	}
+	
 	public void updateModelView() {
 		GSIRenderer2D renderer = GSPanelContext.getRenderer();
 		setChannelHeight(renderer.getTextHeight() + CHANNEL_LABEL_PADDING * 2);
@@ -85,7 +96,6 @@ public class GSSequenceModelView {
 		updateChannelIndexLookup();
 		updateMultiCellLookup();
 		
-		// TODO: move all updates into the modelView. :D
 		dispatchModelViewChangedEvent();
 	}
 	
@@ -513,6 +523,45 @@ public class GSSequenceModelView {
 	
 	private void dispatchModelViewChangedEvent() {
 		listenters.forEach(GSIModelViewListener::modelViewChanged);
+	}
+
+	/* ******************** INHERITED LISTENER methods ******************** */
+	
+	@Override
+	public void channelAdded(GSChannel channel, UUID prevUUID) {
+		updateModelView();
+	}
+
+	@Override
+	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
+		updateModelView();
+	}
+	
+	@Override
+	public void channelMoved(GSChannel channel, UUID newPrevUUID, UUID oldPrevUUID) {
+		updateChannelIndexLookup();
+		dispatchModelViewChangedEvent();
+	}
+
+	@Override
+	public void entryAdded(GSChannelEntry entry) {
+		updateModelView();
+	}
+
+	@Override
+	public void entryRemoved(GSChannelEntry entry) {
+		updateModelView();
+	}
+
+	@Override
+	public void entryTimeChanged(GSChannelEntry entry, GSSignalTime oldStart, GSSignalTime oldEnd) {
+		updateModelView();
+	}
+
+	@Override
+	public void onExpandedColumnChanged(int minExpandedColumnIndex, int maxExpandedColumnIndex) {
+		// Minimum content size might have changed
+		dispatchModelViewChangedEvent();
 	}
 	
 	private class GSMultiCellIterator implements Iterator<GSMultiCellInfo> {
