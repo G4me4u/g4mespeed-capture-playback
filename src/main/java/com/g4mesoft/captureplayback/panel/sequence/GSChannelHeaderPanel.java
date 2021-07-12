@@ -104,6 +104,8 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 
 		sequence.removeSequenceListener(this);
 		modelView.removeModelViewListener(this);
+		
+		removeAllChannelLabels();
 	}
 	
 	private void layoutChannelLabels() {
@@ -144,6 +146,12 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			uuidToLabel.put(channelUUID, labelPanel);
 			add(labelPanel);
 		}
+	}
+	
+	private void removeAllChannelLabels() {
+		for (GSChannelLabelPanel labelPanel : uuidToLabel.values())
+			remove(labelPanel);
+		uuidToLabel.clear();
 	}
 	
 	private void removeChannelLabel(UUID channelUUID) {
