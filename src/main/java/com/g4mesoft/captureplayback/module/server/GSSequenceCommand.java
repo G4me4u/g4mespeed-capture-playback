@@ -1,11 +1,8 @@
 package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.UUID;
-
-import org.apache.commons.io.IOUtils;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
@@ -13,13 +10,12 @@ import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackGroup;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.util.GSFileUtil;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import io.netty.buffer.Unpooled;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -49,31 +45,13 @@ public final class GSSequenceCommand {
 	}
 	
 	private static GSSequence readSequence(String fileName) {
-		GSSequence sequence = null;
-		
 		try {
-			sequence = readSequence(getSequenceFile(fileName));
+			return GSFileUtil.readFile(getSequenceFile(fileName), GSSequence::read);
 		} catch (IOException ignore) {
+			return null;
 		}
-		
-		return sequence;
 	}
 	
-	private static GSSequence readSequence(File sequenceFile) throws IOException {
-		GSSequence sequence;
-		
-		try (FileInputStream fis = new FileInputStream(sequenceFile)) {
-			byte[] data = IOUtils.toByteArray(fis);
-			PacketByteBuf buffer = new PacketByteBuf(Unpooled.wrappedBuffer(data));
-			sequence = GSSequence.read(buffer);
-			buffer.release();
-		} catch (Throwable throwable) {
-			throw new IOException("Unable to read sequence", throwable);
-		}
-		
-		return sequence;
-	}
-
 	private static File getSequenceFile(String fileName) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
@@ -89,8 +67,9 @@ public final class GSSequenceCommand {
 		if (sequence != null) {
 			GSComposition composition = new GSComposition(UUID.randomUUID(), fileName);
 			GSTrackGroup group = composition.addGroup("Group #1");
-			GSTrack track = composition.addTrack(sequence.getSequenceUUID(), "Sequence", 0xFFFFFFFF, group.getGroupUUID());
+			GSTrack track = composition.addTrack("Sequence", 0xFFFFFFFF, group.getGroupUUID());
 			track.getSequence().set(sequence);
+			track.addEntry(0L);
 			module.setComposition(composition, fileName);
 			
 			source.sendFeedback(new LiteralText("Sequence '" + fileName + "' loaded successfully."), true);

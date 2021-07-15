@@ -1,18 +1,12 @@
 package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import org.apache.commons.io.IOUtils;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSICompositionListener;
@@ -33,8 +27,6 @@ import com.g4mesoft.core.server.GSIServerModuleManager;
 import com.g4mesoft.packet.GSIPacket;
 import com.g4mesoft.util.GSFileUtil;
 
-import io.netty.buffer.Unpooled;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionTracker implements GSICompositionDeltaListener, GSICompositionListener {
@@ -177,72 +169,34 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 	}
 	
 	public GSCompositionSession readCompositionSession(ServerPlayerEntity player) {
-		return readSession(getCompositionSessionFile(player), buf -> {
-			try {
-				return GSCompositionSession.read(buf);
-			} catch (IOException ignore) {
-			}
-			return null;
-		});
+		try {
+			GSFileUtil.readFile(getCompositionSessionFile(player), GSCompositionSession::read);
+		} catch (IOException ignore) {
+		}
+		
+		return null;
 	}
 
 	public void writeCompositionSession(ServerPlayerEntity player, GSCompositionSession session) {
-		writeSession(getCompositionSessionFile(player), buf -> {
-			try {
-				GSCompositionSession.write(buf, session);
-			} catch (IOException ignore) {
-			}
-		});
+		try {
+			GSFileUtil.writeFile(getCompositionSessionFile(player), session, GSCompositionSession::write);
+		} catch (IOException ignore) {
+		}
 	}
 	
 	public GSSequenceSession readSequenceSession(ServerPlayerEntity player, String trackIdentifier) {
-		return readSession(getSequenceSessionFile(player, trackIdentifier), buf -> {
-			try {
-				return GSSequenceSession.read(buf);
-			} catch (IOException ignore) {
-			}
-			return null;
-		});
+		try {
+			GSFileUtil.readFile(getSequenceSessionFile(player, trackIdentifier), GSSequenceSession::read);
+		} catch (IOException ignore) {
+		}
+		
+		return null;
 	}
 
 	public void writeSequenceSession(ServerPlayerEntity player, String trackIdentifier, GSSequenceSession session) {
-		writeSession(getSequenceSessionFile(player, trackIdentifier), buf -> {
-			try {
-				GSSequenceSession.write(buf, session);
-			} catch (IOException ignore) {
-			}
-		});
-	}
-	
-	private <T> T readSession(File sessionFile, Function<PacketByteBuf, T> decodeFunc) {
-		T session = null;
-		
-		try (FileInputStream fis = new FileInputStream(sessionFile)) {
-			byte[] data = IOUtils.toByteArray(fis);
-			PacketByteBuf buffer = new PacketByteBuf(Unpooled.wrappedBuffer(data));
-			session = decodeFunc.apply(buffer);
-			buffer.release();
-		} catch (Throwable ignore) {
-		}
-		
-		return session;
-	}
-
-	private void writeSession(File sessionFile, Consumer<PacketByteBuf> encodeFunc) {
 		try {
-			GSFileUtil.ensureFileExists(sessionFile);
-		
-			try (FileOutputStream fos = new FileOutputStream(sessionFile)) {
-				PacketByteBuf buffer = new PacketByteBuf(Unpooled.buffer());
-				encodeFunc.accept(buffer);
-				if (buffer.hasArray()) {
-					fos.write(buffer.array(), buffer.arrayOffset(), buffer.writerIndex());
-				} else {
-					fos.getChannel().write(buffer.nioBuffer());
-				}
-				buffer.release();
-			}
-		} catch (Throwable ignore) {
+			GSFileUtil.writeFile(getSequenceSessionFile(player, trackIdentifier), session, GSSequenceSession::write);
+		} catch (IOException ignore) {
 		}
 	}
 	
