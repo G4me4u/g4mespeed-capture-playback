@@ -114,7 +114,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
 		GSPlaybackCommand.registerCommand(dispatcher);
 		//GSCaptureCommand.registerCommand(dispatcher);
-		//GSSequenceCommand.registerCommand(dispatcher);
+		GSSequenceCommand.registerCommand(dispatcher);
 		GSCompositionCommand.registerCommand(dispatcher);
 	}
 	
@@ -183,7 +183,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		return true;
 	}
 	
-	private void setComposition(GSComposition composition, String fileName) {
+	public void setComposition(GSComposition composition, String fileName) {
 		sessionManager.stopAllSessions();
 		sessionManager.removeComposition(this.composition.getCompositionUUID());
 		
