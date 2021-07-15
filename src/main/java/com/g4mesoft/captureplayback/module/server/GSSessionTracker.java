@@ -170,11 +170,10 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 	
 	public GSCompositionSession readCompositionSession(ServerPlayerEntity player) {
 		try {
-			GSFileUtil.readFile(getCompositionSessionFile(player), GSCompositionSession::read);
+			return GSFileUtil.readFile(getCompositionSessionFile(player), GSCompositionSession::read);
 		} catch (IOException ignore) {
+			return null;
 		}
-		
-		return null;
 	}
 
 	public void writeCompositionSession(ServerPlayerEntity player, GSCompositionSession session) {
@@ -186,11 +185,10 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 	
 	public GSSequenceSession readSequenceSession(ServerPlayerEntity player, String trackIdentifier) {
 		try {
-			GSFileUtil.readFile(getSequenceSessionFile(player, trackIdentifier), GSSequenceSession::read);
+			return GSFileUtil.readFile(getSequenceSessionFile(player, trackIdentifier), GSSequenceSession::read);
 		} catch (IOException ignore) {
+			return null;
 		}
-		
-		return null;
 	}
 
 	public void writeSequenceSession(ServerPlayerEntity player, String trackIdentifier, GSSequenceSession session) {

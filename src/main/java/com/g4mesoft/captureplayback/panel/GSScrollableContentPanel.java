@@ -43,12 +43,10 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 	}
 	
 	protected void init() {
-		verticalScrollBar = createVerticalScrollBar(new GSIScrollListener() {
-			@Override
-			public void scrollChanged(float newScroll) {
-				onYOffsetChanged(-newScroll);
-			}
+		verticalScrollBar = createVerticalScrollBar((newScroll) -> {
+			onYOffsetChanged(-newScroll);
 		});
+		
 		horizontalScrollBar = createHorizontalScrollBar(new GSIScrollListener() {
 			@Override
 			public void preScrollChanged(float newScroll) {
