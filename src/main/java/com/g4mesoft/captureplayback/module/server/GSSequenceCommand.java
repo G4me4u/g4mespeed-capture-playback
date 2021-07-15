@@ -71,6 +71,7 @@ public final class GSSequenceCommand {
 			track.getSequence().set(sequence);
 			track.addEntry(0L);
 			module.setComposition(composition, fileName);
+			module.startSequenceSessionForAll(track.getTrackUUID());
 			
 			source.sendFeedback(new LiteralText("Sequence '" + fileName + "' loaded successfully."), true);
 		} else {

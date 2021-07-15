@@ -159,4 +159,9 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 				sessionManager.startCompositionSession(player, composition.getCompositionUUID());
 		}
 	}
+
+	public void startSequenceSessionForAll(UUID trackUUID) {
+		for (ServerPlayerEntity player : manager.getAllPlayers())
+			sessionManager.startSequenceSession(player, trackUUID);
+	}
 }
