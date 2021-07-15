@@ -249,19 +249,19 @@ public class GSCompositionContentPanel extends GSPanel implements GSIMouseListen
 				draggingComposition = true;
 				event.consume();
 			} else if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
-				long oldLeftClickTime = leftClickTime;
-				leftClickTime = System.currentTimeMillis();
-				
-				if (leftClickTime - oldLeftClickTime <= DOUBLE_CLICK_TIME) {
+				long now = System.currentTimeMillis();
+				long dt = now - leftClickTime;
+				leftClickTime = now;
+
+				GSTrackEntry oldClickedEntry = clickedEntry;
+				clickedTrack = modelView.getTrackFromY(event.getY());
+				clickedEntry = modelView.getEntryAt(event.getX(), event.getY());
+
+				if (clickedEntry == oldClickedEntry && dt <= DOUBLE_CLICK_TIME) {
 					leftClickCount++;
 				} else {
 					leftClickCount = 1;
 				}
-
-				GSTrackEntry oldClickedEntry = clickedEntry;
-				
-				clickedTrack = modelView.getTrackFromY(event.getY());
-				clickedEntry = modelView.getEntryAt(event.getX(), event.getY());
 				
 				boolean additiveSelection = Screen.hasControlDown();
 				if (additiveSelection || clickedEntry == null) {
@@ -272,7 +272,7 @@ public class GSCompositionContentPanel extends GSPanel implements GSIMouseListen
 					selectionEndMouseY = event.getY();
 					updateSelection(additiveSelection);
 					event.consume();
-				} else if (oldClickedEntry == clickedEntry && leftClickCount == 2) {
+				} else if (leftClickCount == 2) {
 					GSTrack track = clickedEntry.getParent();
 					if (track != null) {
 						editTrackSequence(track);
