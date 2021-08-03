@@ -337,6 +337,13 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		return gametickWidth;
 	}
 
+	public void setGametickWidth(double gametickWidth) {
+		if (gametickWidth != this.gametickWidth) {
+			this.gametickWidth = gametickWidth;
+			dispatchModelViewChangedEvent();
+		}
+	}
+
 	public void zoomToCenter(double zoom, int x, int y) {
 		double gt = (x - xOffset) / gametickWidth;
 		
