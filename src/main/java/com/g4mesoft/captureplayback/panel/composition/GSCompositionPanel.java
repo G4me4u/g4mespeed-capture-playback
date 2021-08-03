@@ -89,6 +89,7 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIM
 		setXOffset(session.get(GSSession.X_OFFSET));
 		setYOffset(session.get(GSSession.Y_OFFSET));
 		setOpacity(session.get(GSSession.OPACITY));
+		modelView.setGametickWidth(session.get(GSSession.C_GAMETICK_WIDTH));
 	}
 	
 	@Override
@@ -98,6 +99,7 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIM
 		session.set(GSSession.X_OFFSET, getXOffset());
 		session.set(GSSession.Y_OFFSET, getYOffset());
 		session.set(GSSession.OPACITY, getOpacity());
+		session.set(GSSession.C_GAMETICK_WIDTH, modelView.getGametickWidth());
 		session.sync();
 		
 		modelView.uninstallListeners();
