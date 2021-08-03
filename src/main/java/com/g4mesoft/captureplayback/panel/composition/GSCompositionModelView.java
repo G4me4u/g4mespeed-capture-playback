@@ -340,6 +340,7 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 	public void setGametickWidth(double gametickWidth) {
 		if (gametickWidth != this.gametickWidth) {
 			this.gametickWidth = gametickWidth;
+			calculateTimeIndicatorInterval();
 			dispatchModelViewChangedEvent();
 		}
 	}
