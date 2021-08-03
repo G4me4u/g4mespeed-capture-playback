@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
@@ -22,33 +23,33 @@ public abstract class GSTrackEntryDelta extends GSTrackDelta {
 		this.entryUUID = entryUUID;
 	}
 
-	protected GSTrackEntry getEntry(GSComposition composition) throws GSCompositionDeltaException {
+	protected GSTrackEntry getEntry(GSComposition composition) throws GSDeltaException {
 		return getEntry(getTrack(composition));
 	}
 	
-	protected GSTrackEntry getEntry(GSTrack track) throws GSCompositionDeltaException {
+	protected GSTrackEntry getEntry(GSTrack track) throws GSDeltaException {
 		GSTrackEntry entry = track.getEntry(entryUUID);
 		if (entry == null)
-			throw new GSCompositionDeltaException("Expected entry does not exist");
+			throw new GSDeltaException("Expected entry does not exist");
 		
 		return entry;
 	}
 	
-	protected void checkEntryOffset(GSTrackEntry entry, long expectedOffset) throws GSCompositionDeltaException {
+	protected void checkEntryOffset(GSTrackEntry entry, long expectedOffset) throws GSDeltaException {
 		if (entry.getOffset() != expectedOffset)
-			throw new GSCompositionDeltaException("Entry does not have the expected offset");
+			throw new GSDeltaException("Entry does not have the expected offset");
 	}
 	
-	protected void removeEntry(GSComposition composition, long offset) throws GSCompositionDeltaException {
+	protected void removeEntry(GSComposition composition, long offset) throws GSDeltaException {
 		GSTrackEntry entry = getEntry(composition);
 		checkEntryOffset(entry, offset);
 		entry.getParent().removeEntry(entryUUID);
 	}
 	
-	protected GSTrackEntry addEntry(GSComposition composition, long offset) throws GSCompositionDeltaException {
+	protected GSTrackEntry addEntry(GSComposition composition, long offset) throws GSDeltaException {
 		GSTrack track = getTrack(composition);
 		if (track.hasEntryUUID(entryUUID))
-			throw new GSCompositionDeltaException("Entry already exists");
+			throw new GSDeltaException("Entry already exists");
 		return track.addEntry(entryUUID, offset);
 	}
 	

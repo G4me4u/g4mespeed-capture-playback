@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 
@@ -23,19 +24,19 @@ public class GSTrackGroupDelta extends GSTrackDelta {
 		this.oldGroupUUID = oldGroupUUID;
 	}
 
-	private void setTrackGroup(GSComposition composition, UUID newGroupUUID, UUID oldGroupUUID) throws GSCompositionDeltaException {
+	private void setTrackGroup(GSComposition composition, UUID newGroupUUID, UUID oldGroupUUID) throws GSDeltaException {
 		GSTrack track = getTrack(composition);
 		checkGroup(track, oldGroupUUID);
 		track.setGroupUUID(newGroupUUID);
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
 		setTrackGroup(composition, oldGroupUUID, newGroupUUID);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void applyDelta(GSComposition composition) throws GSDeltaException {
 		setTrackGroup(composition, newGroupUUID, oldGroupUUID);
 	}
 	

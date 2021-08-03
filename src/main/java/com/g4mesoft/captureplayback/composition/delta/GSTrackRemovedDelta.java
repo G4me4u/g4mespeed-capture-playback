@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
@@ -47,7 +48,7 @@ public class GSTrackRemovedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
 		GSTrack track = addTrack(composition, name, color, groupUUID);
 		
 		track.getSequence().set(sequence);
@@ -57,7 +58,7 @@ public class GSTrackRemovedDelta extends GSTrackDelta {
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void applyDelta(GSComposition composition) throws GSDeltaException {
 		removeTrack(composition, name, color, groupUUID, sequence.getChannels().size(), 
 				getSequenceEntryCount(sequence), entryDeltas.length);
 	}

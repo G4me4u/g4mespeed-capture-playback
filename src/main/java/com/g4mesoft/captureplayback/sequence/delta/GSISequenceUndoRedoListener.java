@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.module;
+package com.g4mesoft.captureplayback.sequence.delta;
 
 public interface GSISequenceUndoRedoListener {
 

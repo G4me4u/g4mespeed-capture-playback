@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.Objects;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.util.GSBufferUtil;
 
@@ -21,19 +22,19 @@ public class GSCompositionNameDelta implements GSICompositionDelta {
 		this.oldName = oldName;
 	}
 
-	private void setName(String newName, String oldName, GSComposition composition) throws GSCompositionDeltaException {
+	private void setName(String newName, String oldName, GSComposition composition) throws GSDeltaException {
 		if (!Objects.equals(oldName, composition.getName()))
-			throw new GSCompositionDeltaException("Composition does not have the expected name");
+			throw new GSDeltaException("Composition does not have the expected name");
 		composition.setName(newName);
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
 		setName(oldName, newName, composition);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void applyDelta(GSComposition composition) throws GSDeltaException {
 		setName(newName, oldName, composition);
 	}
 

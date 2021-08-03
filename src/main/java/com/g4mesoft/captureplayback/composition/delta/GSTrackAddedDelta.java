@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.util.GSBufferUtil;
@@ -31,12 +32,12 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
 		removeTrack(composition, name, color, groupUUID, 0, 0, 0);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void applyDelta(GSComposition composition) throws GSDeltaException {
 		addTrack(composition, name, color, groupUUID);
 	}
 	

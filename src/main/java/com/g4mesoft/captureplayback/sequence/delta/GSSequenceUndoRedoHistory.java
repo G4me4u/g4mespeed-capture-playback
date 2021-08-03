@@ -1,4 +1,4 @@
-package com.g4mesoft.captureplayback.module;
+package com.g4mesoft.captureplayback.sequence.delta;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,9 +8,8 @@ import java.util.List;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaException;
 
 import net.minecraft.network.PacketByteBuf;
 
@@ -74,7 +73,7 @@ public class GSSequenceUndoRedoHistory {
 				try {
 					tracking = false;
 					action.apply(entry);
-				} catch (GSSequenceDeltaException e) {
+				} catch (GSDeltaException e) {
 					// Unable to apply, break until it is possible.
 					success = false;
 					break;
@@ -99,8 +98,7 @@ public class GSSequenceUndoRedoHistory {
 		return !redoHistory.isEmpty();
 	}
 
-	/* Visible for GSSequenceSession only! */
-	void trackSequenceDelta(GSISequenceDelta delta) {
+	public void trackDelta(GSISequenceDelta delta) {
 		if (tracking) {
 			if (redoHistory.size() != 0)
 				redoHistory.clear();
@@ -178,7 +176,7 @@ public class GSSequenceUndoRedoHistory {
 	
 	private static interface GSAction {
 		
-		public void apply(GSEntry entry) throws GSSequenceDeltaException;
+		public void apply(GSEntry entry) throws GSDeltaException;
 		
 	}
 }

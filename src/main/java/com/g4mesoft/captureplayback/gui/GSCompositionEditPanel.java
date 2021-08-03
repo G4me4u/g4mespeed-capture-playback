@@ -2,25 +2,24 @@ package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSICompositionListener;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
-import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.panel.composition.GSCompositionPanel;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.panel.GSPanel;
 
 public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSICompositionListener {
 
-	private final GSCompositionSession session;
 	private final GSComposition composition;
-	private final GSCapturePlaybackClientModule module;
 	
 	private final GSCompositionPanel contentPanel;
 
-	public GSCompositionEditPanel(GSCapturePlaybackClientModule module, GSCompositionSession session, GSComposition composition) {
-		this.session = session;
-		this.composition = composition;
-		this.module = module;
+	public GSCompositionEditPanel(GSSession session) {
+		if (session.getType() != GSESessionType.COMPOSITION)
+			throw new IllegalArgumentException("Session is not of type composition");
+		
+		this.composition = session.get(GSSession.C_COMPOSITION);
 
-		contentPanel = new GSCompositionPanel(session, composition);
+		contentPanel = new GSCompositionPanel(session);
 		add(contentPanel);
 		
 		nameField.setText(composition.getName());
@@ -45,8 +44,6 @@ public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSICo
 		super.onHidden();
 		
 		composition.removeCompositionListener(this);
-		
-		module.onCompositionSessionChanged(session);
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.sequence.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
@@ -35,14 +36,14 @@ public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 	}
 
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
 		GSChannelEntry entry = addEntry(sequence, startTime, endTime);
 		
 		entry.setType(type);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void applyDelta(GSSequence sequence) throws GSDeltaException {
 		removeEntry(sequence, startTime, endTime, type);
 	}
 	

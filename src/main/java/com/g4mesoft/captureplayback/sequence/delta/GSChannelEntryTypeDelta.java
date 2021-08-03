@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.sequence.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
@@ -25,7 +26,7 @@ public class GSChannelEntryTypeDelta extends GSChannelEntryDelta {
 	}
 
 	private void setEntryType(GSEChannelEntryType newType, GSEChannelEntryType oldType, 
-			GSSequence sequence) throws GSSequenceDeltaException {
+			GSSequence sequence) throws GSDeltaException {
 	
 		GSChannelEntry entry = getEntry(sequence);
 		checkEntryType(entry, oldType);
@@ -33,12 +34,12 @@ public class GSChannelEntryTypeDelta extends GSChannelEntryDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
 		setEntryType(oldType, newType, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void applyDelta(GSSequence sequence) throws GSDeltaException {
 		setEntryType(newType, oldType, sequence);
 	}
 	

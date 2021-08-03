@@ -2,34 +2,31 @@ package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSICompositionListener;
 import com.g4mesoft.captureplayback.composition.GSTrack;
-import com.g4mesoft.captureplayback.composition.delta.GSCompositionDeltaException;
-import com.g4mesoft.captureplayback.composition.delta.GSCompositionDeltaTransformer;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDeltaListener;
-import com.g4mesoft.captureplayback.module.GSCompositionDeltaPacket;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
-import com.g4mesoft.captureplayback.module.GSResetCompositionPacket;
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
-import com.g4mesoft.captureplayback.module.GSStartCompositionSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStartSequenceSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStopCompositionSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStopSequenceSessionPacket;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSISessionDelta;
+import com.g4mesoft.captureplayback.session.GSISessionListener;
+import com.g4mesoft.captureplayback.session.GSSession;
+import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
+import com.g4mesoft.captureplayback.session.GSSessionStartPacket;
+import com.g4mesoft.captureplayback.session.GSSessionStopPacket;
 import com.g4mesoft.core.server.GSIServerModuleManager;
-import com.g4mesoft.packet.GSIPacket;
 import com.g4mesoft.util.GSFileUtil;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 
-public class GSSessionTracker implements GSICompositionDeltaListener, GSICompositionListener {
+public class GSSessionTracker implements GSICompositionListener, GSISessionListener {
 
 	private static final String SEQUENCE_SESSION_DIRECTORY_NAME = "sequence";
 	private static final String LATEST_SESSION_DIRECTORY_NAME = "latest";
@@ -41,12 +38,9 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 	private final File cacheDir;
 	private final File sequenceCacheDir;
 	
-	private final Map<UUID, GSCompositionSession> compositionSessions;
-	private final Map<UUID, GSSequenceSession> sequenceSessions;
-	
-	private final Map<UUID, Set<UUID>> trackToSequenceSession;
-	
-	private final GSCompositionDeltaTransformer transformer;
+	private final Map<GSESessionType, Map<UUID, GSSession>> playerSessionsFromType;
+	private final Map<GSSession, UUID> sessionToPlayerUUID;
+	private final Map<UUID, Set<UUID>> sequenceUUIDToSession;
 	
 	public GSSessionTracker(GSIServerModuleManager manager, GSComposition composition, File cacheDir) {
 		this.manager = manager;
@@ -55,35 +49,62 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 		this.cacheDir = cacheDir;
 		sequenceCacheDir = new File(cacheDir, SEQUENCE_SESSION_DIRECTORY_NAME);
 		
-		compositionSessions = new HashMap<>();
-		sequenceSessions = new HashMap<>();
-		
-		trackToSequenceSession = new HashMap<>();
-		
-		transformer = new GSCompositionDeltaTransformer();
-		transformer.addDeltaListener(this);
+		playerSessionsFromType = new EnumMap<>(GSESessionType.class);
+		sessionToPlayerUUID = new IdentityHashMap<>();
+		sequenceUUIDToSession = new HashMap<>();
 	}
 	
+	/* TODO: rewrite all of this */
+	
 	public void install() {
-		transformer.install(composition);
 		composition.addCompositionListener(this);
 	}
 
 	public void uninstall() {
-		transformer.uninstall(composition);
 		composition.removeCompositionListener(this);
+	}
+	
+	private void addSession(ServerPlayerEntity player, GSSession session) {
+		Map<UUID, GSSession> playerSessions = playerSessionsFromType.get(session.getType());
+		if (playerSessions == null) {
+			playerSessions = new HashMap<>();
+			playerSessionsFromType.put(session.getType(), playerSessions);
+		}
+		playerSessions.put(player.getUuid(), session);
+		
+		if (sessionToPlayerUUID.put(session, player.getUuid()) != null)
+			throw new IllegalStateException("Session is already added");
+	}
+
+	private GSSession removeSession(ServerPlayerEntity player, GSESessionType sessionType) {
+		Map<UUID, GSSession> playerSessions = playerSessionsFromType.get(sessionType);
+		if (playerSessions != null) {
+			GSSession session = playerSessions.remove(player.getUuid());
+			sessionToPlayerUUID.remove(session);
+			return session;
+		}
+		
+		return null;
+	}
+	
+	private GSSession getSession(ServerPlayerEntity player, GSESessionType sessionType) {
+		Map<UUID, GSSession> playerSessions = playerSessionsFromType.get(sessionType);
+		return (playerSessions == null) ? null : playerSessions.get(player.getUuid());
 	}
 
 	public boolean startCompositionSession(ServerPlayerEntity player) {
-		if (compositionSessions.containsKey(player.getUuid()))
+		if (getSession(player, GSESessionType.COMPOSITION) != null)
 			stopCompositionSession(player);
 		
-		GSCompositionSession session = readCompositionSession(player);
+		GSSession session = readCompositionSession(player);
 		if (session == null)
-			session = new GSCompositionSession(composition.getCompositionUUID());
+			session = new GSSession(GSESessionType.COMPOSITION);
+		session.set(GSSession.C_COMPOSITION, composition);
 		
-		compositionSessions.put(player.getUuid(), session);
-		manager.sendPacket(new GSStartCompositionSessionPacket(session, composition), player);
+		addSession(player, session);
+		session.addListener(this);
+
+		manager.sendPacket(new GSSessionStartPacket(session), player);
 		
 		return true;
 	}
@@ -92,108 +113,118 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 		// Stop any potential sequence sessions.
 		stopSequenceSession(player);
 		
-		GSCompositionSession session = compositionSessions.remove(player.getUuid());
+		GSSession session = removeSession(player, GSESessionType.COMPOSITION);
 		if (session != null)
 			onCompositionSessionStopped(player, session);
 	}
 	
-	private void onCompositionSessionStopped(ServerPlayerEntity player, GSCompositionSession session) {
+	private void onCompositionSessionStopped(ServerPlayerEntity player, GSSession session) {
 		writeCompositionSession(player, session);
-		manager.sendPacket(new GSStopCompositionSessionPacket(), player);
+		session.removeListener(this);
+		manager.sendPacket(new GSSessionStopPacket(session.getType()), player);
 	}
 
 	public boolean startSequenceSession(ServerPlayerEntity player, UUID trackUUID) {
-		if (sequenceSessions.containsKey(player.getUuid()))
+		if (getSession(player, GSESessionType.SEQUENCE) != null)
 			stopSequenceSession(player);
 
 		GSTrack track = composition.getTrack(trackUUID);
 		if (track != null) {
-			GSSequenceSession session = readSequenceSession(player, trackUUID.toString());
+			GSSession session = readSequenceSession(player, trackUUID.toString());
 			if (session == null) {
-				UUID sequenceUUID = track.getSequence().getSequenceUUID();
-				session = new GSSequenceSession(composition.getCompositionUUID(), trackUUID, sequenceUUID);
-				
-				// Copy relevant fields from the latest session
-				GSSequenceSession latestSession = readSequenceSession(player, LATEST_SESSION_DIRECTORY_NAME);
-				if (latestSession != null)
-					session.setRelevantRepeatedFields(latestSession);
+				session = readSequenceSession(player, LATEST_SESSION_DIRECTORY_NAME);
+				if (session == null || session.getType() != GSESessionType.SEQUENCE)
+					session = new GSSession(GSESessionType.SEQUENCE);
 			}
-			sequenceSessions.put(player.getUuid(), session);
+			session.set(GSSession.S_SEQUENCE, track.getSequence());
+			addSession(player, session);
 
-			Set<UUID> playerUUIDs = trackToSequenceSession.get(trackUUID);
+			UUID sequenceUUID = track.getSequence().getSequenceUUID();
+			Set<UUID> playerUUIDs = sequenceUUIDToSession.get(sequenceUUID);
 			if (playerUUIDs == null) {
 				playerUUIDs = new HashSet<>();
-				trackToSequenceSession.put(trackUUID, playerUUIDs);
+				sequenceUUIDToSession.put(sequenceUUID, playerUUIDs);
 			}
 			playerUUIDs.add(player.getUuid());
-			
-			manager.sendPacket(new GSStartSequenceSessionPacket(session), player);
+			session.addListener(this);
+
+			manager.sendPacket(new GSSessionStartPacket(session), player);
 		}
 			
 		return true;
 	}
 
 	public void stopSequenceSession(ServerPlayerEntity player) {
-		GSSequenceSession session = sequenceSessions.remove(player.getUuid());
+		GSSession session = removeSession(player, GSESessionType.SEQUENCE);
 		if (session != null)
 			onSequenceSessionStopped(player, session);
 	}
 	
-	private void onSequenceSessionStopped(ServerPlayerEntity player, GSSequenceSession session) {
-		UUID trackUUID = session.getTrackUUID();
+	private void onSequenceSessionStopped(ServerPlayerEntity player, GSSession session) {
+		UUID sequenceUUID = session.get(GSSession.S_SEQUENCE).getSequenceUUID();
 
-		writeSequenceSession(player, trackUUID.toString(), session);
+		writeSequenceSession(player, sequenceUUID.toString(), session);
 		writeSequenceSession(player, LATEST_SESSION_DIRECTORY_NAME, session);
 		
-		Set<UUID> playerUUIDs = trackToSequenceSession.get(trackUUID);
+		Set<UUID> playerUUIDs = sequenceUUIDToSession.get(sequenceUUID);
 		if (playerUUIDs != null && playerUUIDs.remove(player.getUuid()) && playerUUIDs.isEmpty())
-			trackToSequenceSession.remove(trackUUID);
+			sequenceUUIDToSession.remove(sequenceUUID);
 		
-		manager.sendPacket(new GSStopSequenceSessionPacket(), player);
+		session.removeListener(this);
+
+		manager.sendPacket(new GSSessionStopPacket(session.getType()), player);
 	}
-	
+
 	public void stopAllSessions() {
-		for (Map.Entry<UUID, GSSequenceSession> entry : sequenceSessions.entrySet()) {
-			ServerPlayerEntity player = manager.getPlayer(entry.getKey());
-			if (player != null)
-				onSequenceSessionStopped(player, entry.getValue());
+		for (Map<UUID, GSSession> playerSessions : playerSessionsFromType.values()) {
+			for (Map.Entry<UUID, GSSession> entry : playerSessions.entrySet()) {
+				ServerPlayerEntity player = manager.getPlayer(entry.getKey());
+				if (player != null) {
+					switch (entry.getValue().getType()) {
+					case COMPOSITION:
+						onCompositionSessionStopped(player, entry.getValue());
+						break;
+					case SEQUENCE:
+						onSequenceSessionStopped(player, entry.getValue());
+						break;
+					}
+				}
+			}
+			playerSessions.clear();
 		}
-		sequenceSessions.clear();
-			
-		for (Map.Entry<UUID, GSCompositionSession> entry : compositionSessions.entrySet()) {
-			ServerPlayerEntity player = manager.getPlayer(entry.getKey());
-			if (player != null)
-				onCompositionSessionStopped(player, entry.getValue());
-		}
-		compositionSessions.clear();
+		playerSessionsFromType.clear();
+		sessionToPlayerUUID.clear();
+		
+		// Should already be cleared, but clear for safety.
+		sequenceUUIDToSession.clear();
 	}
 	
-	public GSCompositionSession readCompositionSession(ServerPlayerEntity player) {
+	public GSSession readCompositionSession(ServerPlayerEntity player) {
 		try {
-			return GSFileUtil.readFile(getCompositionSessionFile(player), GSCompositionSession::read);
+			return GSFileUtil.readFile(getCompositionSessionFile(player), GSSession::read);
 		} catch (IOException ignore) {
 			return null;
 		}
 	}
 
-	public void writeCompositionSession(ServerPlayerEntity player, GSCompositionSession session) {
+	public void writeCompositionSession(ServerPlayerEntity player, GSSession session) {
 		try {
-			GSFileUtil.writeFile(getCompositionSessionFile(player), session, GSCompositionSession::write);
+			GSFileUtil.writeFile(getCompositionSessionFile(player), session, GSSession::writeCache);
 		} catch (IOException ignore) {
 		}
 	}
 	
-	public GSSequenceSession readSequenceSession(ServerPlayerEntity player, String trackIdentifier) {
+	public GSSession readSequenceSession(ServerPlayerEntity player, String trackIdentifier) {
 		try {
-			return GSFileUtil.readFile(getSequenceSessionFile(player, trackIdentifier), GSSequenceSession::read);
+			return GSFileUtil.readFile(getSequenceSessionFile(player, trackIdentifier), GSSession::read);
 		} catch (IOException ignore) {
 			return null;
 		}
 	}
 
-	public void writeSequenceSession(ServerPlayerEntity player, String trackIdentifier, GSSequenceSession session) {
+	public void writeSequenceSession(ServerPlayerEntity player, String trackIdentifier, GSSession session) {
 		try {
-			GSFileUtil.writeFile(getSequenceSessionFile(player, trackIdentifier), session, GSSequenceSession::write);
+			GSFileUtil.writeFile(getSequenceSessionFile(player, trackIdentifier), session, GSSession::writeCache);
 		} catch (IOException ignore) {
 		}
 	}
@@ -214,72 +245,40 @@ public class GSSessionTracker implements GSICompositionDeltaListener, GSIComposi
 		return composition;
 	}
 	
-	@Override
-	public void onCompositionDelta(GSICompositionDelta delta) {
-		manager.sendPacketToAll(new GSCompositionDeltaPacket(composition.getCompositionUUID(), delta));
-	}
-
-	public void onDeltaReceived(ServerPlayerEntity player, GSICompositionDelta delta) {
-		if (compositionSessions.containsKey(player.getUuid())) {
-			try {
-				transformer.setEnabled(false);
-				delta.applyDelta(composition);
-				
-				GSIPacket deltaPacket = new GSCompositionDeltaPacket(composition.getCompositionUUID(), delta);
-				for (UUID playerUUID : compositionSessions.keySet()) {
-					ServerPlayerEntity otherPlayer = manager.getPlayer(playerUUID);
-					if (otherPlayer != player)
-						manager.sendPacket(deltaPacket, otherPlayer);
+	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
+		GSSession session = getSession(player, sessionType);
+		
+		if (session != null) {
+			for (GSISessionDelta delta : deltas) {
+				try {
+					delta.apply(session);
+				} catch (GSDeltaException ignore) {
 				}
-			} catch (GSCompositionDeltaException ignore) {
-				// The delta could not be applied. Probably because of a de-sync, or
-				// because multiple users are changing the same part of the composition.
-				manager.sendPacket(new GSResetCompositionPacket(composition), player);
-			} finally {
-				transformer.setEnabled(true);
 			}
 		}
 	}
 
-	public void onCompositionSessionChanged(ServerPlayerEntity player, GSCompositionSession session) {
-		GSCompositionSession oldSession = compositionSessions.get(player.getUuid());
-		
-		if (oldSession != null) {
-			// Ensure that it is the same session that is being updated.
-			if (oldSession.getCompositionUUID().equals(session.getCompositionUUID()))
-				compositionSessions.put(player.getUuid(), session);
-		}
-	}
-	
-	public void onSequenceSessionChanged(ServerPlayerEntity player, GSSequenceSession session) {
-		GSSequenceSession oldSession = sequenceSessions.get(player.getUuid());
-		
-		if (oldSession != null) {
-			// Ensure that it is the same session that is being updated.
-			if (!oldSession.getCompositionUUID().equals(session.getCompositionUUID()))
-				return;
-			if (!oldSession.getTrackUUID().equals(session.getTrackUUID()))
-				return;
-			if (!oldSession.getSequenceUUID().equals(session.getSequenceUUID()))
-				return;
-			
-			sequenceSessions.put(player.getUuid(), session);
-		}
-	}
-	
 	@Override
 	public void trackRemoved(GSTrack track) {
-		Set<UUID> playerUUIDs = trackToSequenceSession.get(track.getTrackUUID());
+		Set<UUID> playerUUIDs = sequenceUUIDToSession.remove(track.getSequence().getSequenceUUID());
 
 		if (playerUUIDs != null) {
-			UUID[] playerUUIDArray = playerUUIDs.toArray(new UUID[0]);
-			trackToSequenceSession.remove(track.getTrackUUID());
-			
-			for (UUID playerUUID : playerUUIDArray) {
+			for (UUID playerUUID : playerUUIDs) {
 				ServerPlayerEntity player = manager.getPlayer(playerUUID);
 				if (player != null)
 					stopSequenceSession(player);
 			}
+		}
+	}
+	
+	@Override
+	public void onSessionDeltas(GSSession session, GSISessionDelta[] deltas) {
+		UUID playerUUID = sessionToPlayerUUID.get(session);
+		
+		if (playerUUID != null) {
+			ServerPlayerEntity player = manager.getPlayer(playerUUID);
+			if (player != null)
+				manager.sendPacket(new GSSessionDeltasPacket(session.getType(), deltas), player);
 		}
 	}
 }

@@ -5,9 +5,9 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackGroup;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.panel.GSScrollableContentPanel;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIKeyListener;
@@ -22,7 +22,7 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIM
 	private static final int TRACK_HEADER_WIDTH = 90;
 	private static final int COLUMN_HEADER_HEIGHT = 12;
 	
-	private final GSCompositionSession session;
+	private final GSSession session;
 	private final GSComposition composition;
 	
 	private final GSCompositionModelView modelView;
@@ -32,9 +32,9 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIM
 	
 	private UUID hoveredTrackUUID;
 	
-	public GSCompositionPanel(GSCompositionSession session, GSComposition composition) {
+	public GSCompositionPanel(GSSession session) {
 		this.session = session;
-		this.composition = composition;
+		this.composition = session.get(GSSession.C_COMPOSITION);
 		
 		modelView = new GSCompositionModelView(composition);
 		modelView.addModelViewListener(this);
@@ -86,18 +86,19 @@ public class GSCompositionPanel extends GSScrollableContentPanel implements GSIM
 		modelView.installListeners();
 		modelView.updateModelView();
 		
-		setXOffset(session.getXOffset());
-		setYOffset(session.getYOffset());
-		setOpacity(session.getOpacity());
+		setXOffset(session.get(GSSession.X_OFFSET));
+		setYOffset(session.get(GSSession.Y_OFFSET));
+		setOpacity(session.get(GSSession.OPACITY));
 	}
 	
 	@Override
 	protected void onHidden() {
 		super.onHidden();
 
-		session.setXOffset(getXOffset());
-		session.setYOffset(getYOffset());
-		session.setOpacity(getOpacity());
+		session.set(GSSession.X_OFFSET, getXOffset());
+		session.set(GSSession.Y_OFFSET, getYOffset());
+		session.set(GSSession.OPACITY, getOpacity());
+		session.sync();
 		
 		modelView.uninstallListeners();
 	}

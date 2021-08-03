@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
@@ -42,7 +43,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
 		GSChannel channel = addChannel(sequence, prevUUID, info);
 		
 		channel.setDisabled(disabled);
@@ -52,7 +53,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void applyDelta(GSSequence sequence) throws GSDeltaException {
 		removeChannel(sequence, prevUUID, info, disabled, entryDeltas.length);
 	}
 	
