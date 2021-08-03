@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.sequence.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
@@ -22,18 +23,18 @@ public class GSChannelMovedDelta extends GSChannelDelta {
 		this.oldPrevUUID = oldPrevUUID;
 	}
 	
-	private void moveChannel(UUID newPrevUUID, UUID oldPrevUUID, GSSequence sequence) throws GSSequenceDeltaException {
+	private void moveChannel(UUID newPrevUUID, UUID oldPrevUUID, GSSequence sequence) throws GSDeltaException {
 		checkPreviousChannel(getChannel(sequence), oldPrevUUID);
 		sequence.moveChannelAfter(channelUUID, newPrevUUID);
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
 		moveChannel(oldPrevUUID, newPrevUUID, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSSequenceDeltaException {
+	public void applyDelta(GSSequence sequence) throws GSDeltaException {
 		moveChannel(newPrevUUID, oldPrevUUID, sequence);
 	}
 	

@@ -2,12 +2,12 @@ package com.g4mesoft.captureplayback.panel.sequence;
 
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.panel.GSScrollableContentPanel;
 import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIKeyListener;
@@ -30,7 +30,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 	private static final int CHANNEL_HEADER_WIDTH = 130;
 	private static final int COLUMN_HEADER_HEIGHT = 30;
 	
-	private final GSSequenceSession session;
+	private final GSSession session;
 	private final GSSequence sequence;
 	private final GSIChannelProvider channelProvider;
 	
@@ -52,9 +52,9 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 	private UUID draggedChannelUUID;
 	private int draggedChannelY;
 	
-	public GSSequencePanel(GSSequenceSession session, GSSequence sequence, GSIChannelProvider channelProvider) {
+	public GSSequencePanel(GSSession session, GSIChannelProvider channelProvider) {
 		this.session = session;
-		this.sequence = sequence;
+		this.sequence = session.get(GSSession.S_SEQUENCE);
 		this.channelProvider = channelProvider;
 
 		expandedColumnModel = new GSExpandedColumnModel();
@@ -119,18 +119,19 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 		modelView.installListeners();
 		modelView.updateModelView();
 		
-		setXOffset(session.getXOffset());
-		setYOffset(session.getYOffset());
-		setOpacity(session.getOpacity());
+		setXOffset(session.get(GSSession.X_OFFSET));
+		setYOffset(session.get(GSSession.Y_OFFSET));
+		setOpacity(session.get(GSSession.OPACITY));
 	}
 
 	@Override
 	public void onHidden() {
 		super.onHidden();
 
-		session.setXOffset(getXOffset());
-		session.setYOffset(getYOffset());
-		session.setOpacity(getOpacity());
+		session.set(GSSession.X_OFFSET, getXOffset());
+		session.set(GSSession.Y_OFFSET, getYOffset());
+		session.set(GSSession.OPACITY, getOpacity());
+		session.sync();
 		
 		modelView.uninstallListeners();
 		
@@ -302,9 +303,9 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 				
 				// Allow for redo with CTRL + SHIFT + Z
 				if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
-					session.getUndoRedoHistory().redo(sequence);
+					session.get(GSSession.S_UNDO_REDO_HISTORY).redo(sequence);
 				} else {
-					session.getUndoRedoHistory().undo(sequence);
+					session.get(GSSession.S_UNDO_REDO_HISTORY).undo(sequence);
 				}
 			}
 			break;
@@ -312,7 +313,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 			if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
 				event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
 				
-				session.getUndoRedoHistory().redo(sequence);
+				session.get(GSSession.S_UNDO_REDO_HISTORY).redo(sequence);
 			}
 			break;
 		}

@@ -1,26 +1,25 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
-import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.panel.sequence.GSSequencePanel;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.panel.GSPanel;
 
 public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISequenceListener {
 
-	private final GSCapturePlaybackClientModule module;
-	private final GSSequenceSession session;
 	private final GSSequence sequence;
 	
 	private final GSPanel contentPanel;
 
-	public GSSequenceEditPanel(GSCapturePlaybackClientModule module, GSSequenceSession session, GSSequence sequence) {
-		this.module = module;
-		this.session = session;
-		this.sequence = sequence;
+	public GSSequenceEditPanel(GSSession session) {
+		if (session.getType() != GSESessionType.SEQUENCE)
+			throw new IllegalArgumentException("Session is not of type sequence");
 		
-		contentPanel = new GSSequencePanel(session, sequence, new GSDefaultChannelProvider());
+		this.sequence = session.get(GSSession.S_SEQUENCE);
+		
+		contentPanel = new GSSequencePanel(session, new GSDefaultChannelProvider());
 
 		nameField.setText(sequence.getName());
 
@@ -46,8 +45,6 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		super.onHidden();
 		
 		sequence.removeSequenceListener(this);
-		
-		module.onSequenceSessionChanged(session);
 	}
 
 	@Override

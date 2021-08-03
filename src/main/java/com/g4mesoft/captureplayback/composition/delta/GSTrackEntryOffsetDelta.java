@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
 
@@ -23,19 +24,19 @@ public class GSTrackEntryOffsetDelta extends GSTrackEntryDelta {
 		this.oldOffset = oldOffset;
 	}
 
-	private void setEntryOffset(GSComposition composition, long newOffset, long oldOffset) throws GSCompositionDeltaException {
+	private void setEntryOffset(GSComposition composition, long newOffset, long oldOffset) throws GSDeltaException {
 		GSTrackEntry entry = getEntry(composition);
 		checkEntryOffset(entry, oldOffset);
 		entry.setOffset(newOffset);
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
 		setEntryOffset(composition, oldOffset, newOffset);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSCompositionDeltaException {
+	public void applyDelta(GSComposition composition) throws GSDeltaException {
 		setEntryOffset(composition, newOffset, oldOffset);
 	}
 	

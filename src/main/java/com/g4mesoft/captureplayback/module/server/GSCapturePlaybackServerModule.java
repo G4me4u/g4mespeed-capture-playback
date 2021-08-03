@@ -4,12 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
+import com.g4mesoft.captureplayback.session.GSESessionRequestType;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSISessionDelta;
 import com.g4mesoft.core.GSCoreExtension;
 import com.g4mesoft.core.server.GSIServerModule;
 import com.g4mesoft.core.server.GSIServerModuleManager;
@@ -40,9 +39,9 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		compositionFileName = DEFAULT_COMPOSITION_FILE_NAME;
 		
 		try {
-			composition = readComposition(DEFAULT_COMPOSITION_FILE_NAME);
+			composition = readComposition(compositionFileName);
 		} catch (IOException e) {
-			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read default composition!");
+			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read composition!");
 			composition = new GSComposition(UUID.randomUUID(), compositionFileName);
 		}
 
@@ -53,9 +52,9 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	@Override
 	public void onClose() {
 		try {
-			writeComposition(composition, DEFAULT_COMPOSITION_FILE_NAME);
+			writeComposition(composition, compositionFileName);
 		} catch (IOException e) {
-			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write default composition!");
+			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write composition!");
 		}
 		
 		sessionManager.stopAllSessions();
@@ -81,29 +80,20 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	}
 	
 	@Override
-	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSExtensionInfo coreInfo) {
-		sessionManager.startCompositionSession(player, composition.getCompositionUUID());
-	}
-	
-	@Override
 	public void onPlayerLeave(ServerPlayerEntity player) {
-		sessionManager.stopCompositionSession(player);
+		sessionManager.stopAllSessions(player);
 	}
 	
-	public void onSequenceSessionRequest(UUID trackUUID, ServerPlayerEntity player) {
-		sessionManager.startSequenceSession(player, trackUUID);
+	public void onSessionRequest(ServerPlayerEntity player, GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
+		if (sessionType == GSESessionType.COMPOSITION) {
+			// TODO: fix this, such that the client knows what compositions are available
+			structureUUID = composition.getCompositionUUID();
+		}
+		sessionManager.onSessionRequest(player, sessionType, requestType, structureUUID);
 	}
-	
-	public void onDeltaReceived(GSICompositionDelta delta, ServerPlayerEntity player) {
-		sessionManager.onDeltaReceived(player, delta);
-	}
-	
-	public void onCompositionSessionChanged(GSCompositionSession session, ServerPlayerEntity player) {
-		sessionManager.onCompositionSessionChanged(player, session);
-	}
-	
-	public void onSequenceSessionChanged(GSSequenceSession session, ServerPlayerEntity player) {
-		sessionManager.onSequenceSessionChanged(player, session);
+
+	public void onSessionDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
+		sessionManager.onDeltasReceived(player, sessionType, deltas);
 	}
 	
 	private File getCompositionFile(String fileName) {
@@ -155,13 +145,17 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		
 		sessionManager.addComposition(composition);
 		for (ServerPlayerEntity player : manager.getAllPlayers()) {
-			if (manager.isExtensionInstalled(player, GSCoreExtension.UID))
-				sessionManager.startCompositionSession(player, composition.getCompositionUUID());
+			if (manager.isExtensionInstalled(player, GSCoreExtension.UID)) {
+				sessionManager.onSessionRequest(player, GSESessionType.COMPOSITION,
+						GSESessionRequestType.REQUEST_START, composition.getCompositionUUID());
+			}
 		}
 	}
 
 	public void startSequenceSessionForAll(UUID trackUUID) {
-		for (ServerPlayerEntity player : manager.getAllPlayers())
-			sessionManager.startSequenceSession(player, trackUUID);
+		for (ServerPlayerEntity player : manager.getAllPlayers()) {
+			sessionManager.onSessionRequest(player, GSESessionType.SEQUENCE,
+					GSESessionRequestType.REQUEST_START, trackUUID);
+		}
 	}
 }

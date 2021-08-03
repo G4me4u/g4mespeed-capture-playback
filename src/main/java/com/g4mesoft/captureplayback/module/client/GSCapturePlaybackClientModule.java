@@ -7,34 +7,31 @@ import java.util.function.Function;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.composition.GSTrack;
-import com.g4mesoft.captureplayback.composition.delta.GSCompositionDeltaException;
-import com.g4mesoft.captureplayback.composition.delta.GSCompositionDeltaTransformer;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDeltaListener;
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
+import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
 import com.g4mesoft.captureplayback.gui.GSSequenceEditPanel;
-import com.g4mesoft.captureplayback.module.GSCompositionDeltaPacket;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
-import com.g4mesoft.captureplayback.module.GSCompositionSessionChangedPacket;
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
-import com.g4mesoft.captureplayback.module.GSSequenceSessionChangedPacket;
-import com.g4mesoft.captureplayback.module.GSSequenceSessionRequestPacket;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
+import com.g4mesoft.captureplayback.session.GSESessionRequestType;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSISessionDelta;
+import com.g4mesoft.captureplayback.session.GSISessionListener;
+import com.g4mesoft.captureplayback.session.GSSession;
+import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
+import com.g4mesoft.captureplayback.session.GSSessionRequestPacket;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.client.GSIClientModule;
 import com.g4mesoft.core.client.GSIClientModuleManager;
-import com.g4mesoft.gui.GSContentHistoryGUI;
 import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSEKeyEventType;
 import com.g4mesoft.hotkey.GSKeyManager;
+import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.setting.GSSettingCategory;
 import com.g4mesoft.setting.GSSettingManager;
@@ -48,7 +45,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 @Environment(EnvType.CLIENT)
-public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompositionDeltaListener, GSISequenceDeltaListener {
+public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequenceDeltaListener, GSISessionListener {
 
 	public static final int RENDERING_DISABLED = 0;
 	public static final int RENDERING_DEPTH    = 1;
@@ -58,30 +55,21 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 	public static final String KEY_CATEGORY = "capture-playback";
 	public static final GSSettingCategory CAPTURE_PLAYBACK_CATEGORY = new GSSettingCategory("capture-playback");
 	
-	private final GSCompositionDeltaTransformer compositionTransformer;
 	private final GSSequenceDeltaTransformer sequenceTransformer;
 
-	private GSCompositionSession compositionSession;
-	private GSSequenceSession sequenceSession;
-	
-	private final Map<UUID, GSComposition> activeCompositions;
-	private final Map<UUID, GSSequence> activeSequences;
+	private final Map<GSESessionType, GSSession> sessions;
+	private final Map<GSESessionType, GSPanel> sessionPanels;
 	
 	private GSIClientModuleManager manager;
 	
 	public final GSIntegerSetting cChannelRenderingType;
 	
 	public GSCapturePlaybackClientModule() {
-		compositionTransformer = new GSCompositionDeltaTransformer();
-		compositionTransformer.addDeltaListener(this);
 		sequenceTransformer = new GSSequenceDeltaTransformer();
 		sequenceTransformer.addDeltaListener(this);
 
-		compositionSession = null;
-		sequenceSession = null;
-		
-		activeCompositions = new HashMap<>();
-		activeSequences = new HashMap<>();
+		sessions = new HashMap<>();
+		sessionPanels = new HashMap<>();
 		
 		manager = null;
 		
@@ -121,16 +109,18 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 		keyManager.registerKey("unextendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::unextendChannel, GSEKeyEventType.PRESS);
 
 		keyManager.registerKey("selectChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
-			GSChannel channel = getSessionChannelAtCrosshair();
-			if (channel != null)
-				sequenceSession.setSelectedChannelUUID(channel.getChannelUUID());
+			GSSession session = getSession(GSESessionType.SEQUENCE);
+			GSChannel channel = getChannelAtCrosshair(session);
+			if (channel != null && session != null)
+				session.set(GSSession.S_SELECTED_CHANNEL, channel.getChannelUUID());
 		}, GSEKeyEventType.PRESS);
 		
 		keyManager.registerKey("pasteChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
-			GSSequence sequence = getSessionSequence();
+			GSSession session = getSession(GSESessionType.SEQUENCE);
 			
-			if (sequence != null && sequenceSession != null) {
-				GSChannel selectedChannel = sequence.getChannel(sequenceSession.getSelectedChannelUUID());
+			if (session != null) {
+				GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+				GSChannel selectedChannel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
 				if (selectedChannel != null)
 					return channel.getInfo().withColor(selectedChannel.getInfo().getColor());
 			}
@@ -151,9 +141,10 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 	}
 	
 	private void createNewChannel() {
-		GSSequence sequence = getSessionSequence();
+		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
-		if (sequence != null) {
+		if (session != null) {
+			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
 			BlockPos position = getCrosshairTarget();
 			// Only add channels if we have a crosshair target
 			if (position != null) {
@@ -162,18 +153,19 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 				GSChannel channel = sequence.addChannel(new GSChannelInfo(name, color, position));
 				
 				// Automatically select the new channel
-				if (channel != null && sequenceSession != null)
-					sequenceSession.setSelectedChannelUUID(channel.getChannelUUID());
+				if (channel != null && session != null)
+					session.set(GSSession.S_SELECTED_CHANNEL, channel.getChannelUUID());
 			}
 		}
 	}
 	
 	private void extendChannel() {
-		GSSequence sequence = getSessionSequence();
+		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
-		if (sequence != null && sequenceSession != null) {
+		if (session != null) {
+			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
 			BlockPos position = getCrosshairTarget();
-			GSChannel channel = sequence.getChannel(sequenceSession.getSelectedChannelUUID());
+			GSChannel channel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
 			
 			if (position != null && channel != null)
 				channel.setInfo(channel.getInfo().addPosition(position));
@@ -181,11 +173,12 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 	}
 
 	private void unextendChannel() {
-		GSSequence sequence = getSessionSequence();
+		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
-		if (sequence != null && sequenceSession != null) {
+		if (session != null) {
+			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
 			BlockPos position = getCrosshairTarget();
-			GSChannel channel = sequence.getChannel(sequenceSession.getSelectedChannelUUID());
+			GSChannel channel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
 			
 			if (position != null && channel != null) {
 				GSChannelInfo info = channel.getInfo();
@@ -196,12 +189,11 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 		}
 	}
 	
-	private GSChannel getSessionChannelAtCrosshair() {
-		GSSequence sequence = getSessionSequence();
-		
-		if (sequence != null) {
+	private GSChannel getChannelAtCrosshair(GSSession session) {
+		if (session != null && session.getType() == GSESessionType.SEQUENCE) {
+			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			
 			BlockPos position = getCrosshairTarget();
-
 			if (position != null) {
 				for (GSChannel channel : sequence.getChannels()) {
 					if (channel.getInfo().getPositions().contains(position))
@@ -214,7 +206,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 	}
 	
 	private void modifyCrosshairChannel(Function<GSChannel, GSChannelInfo> modifier) {
-		GSChannel channel = getSessionChannelAtCrosshair();
+		GSChannel channel = getChannelAtCrosshair(getSession(GSESessionType.SEQUENCE));
 		if (channel != null)
 			channel.setInfo(modifier.apply(channel));
 	}
@@ -235,144 +227,97 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSICompos
 	
 	@Override
 	public void onDisconnectServer() {
-		onStopSequenceSession();
-		onStopCompositionSession();
+		GSESessionType[] sessionTypes = sessions.keySet().toArray(new GSESessionType[0]);
+		for (GSESessionType sessionType : sessionTypes)
+			onSessionStop(sessionType);
 	}
 	
-	public void onStartCompositionSession(GSCompositionSession session, GSComposition composition) {
-		this.compositionSession = session;
-		activeCompositions.put(composition.getCompositionUUID(), composition);
-		compositionTransformer.install(composition);
-	}
-	
-	public void onStopCompositionSession() {
-		if (compositionSession != null) {
-			UUID compositionUUID = compositionSession.getCompositionUUID();
-			GSComposition composition = activeCompositions.remove(compositionUUID);
-			if (composition != null)
-				compositionTransformer.uninstall(composition);
-			
-			compositionSession = null;
-		}
-	}
-	
-	public void onCompositionSessionChanged(GSCompositionSession session) {
-		manager.sendPacket(new GSCompositionSessionChangedPacket(session));
-	}
-
-	public void onStartSequenceSession(GSSequenceSession session) {
-		GSComposition composition = activeCompositions.get(session.getCompositionUUID());
-		if (composition != null) {
-			GSTrack track = composition.getTrack(session.getTrackUUID());
-			
-			if (track != null) {
-				this.sequenceSession = session;
-				GSSequence sequence = track.getSequence();
-				activeSequences.put(sequence.getSequenceUUID(), sequence);
-				sequenceTransformer.install(sequence);
-
-				openSequenceEditor();
-			}
-		}
-	}
-	
-	public void openSequenceEditor() {
-		GSSequence sequence = getSessionSequence();
+	public void onSessionStart(GSSession session) {
+		if (sessions.containsKey(session.getType()))
+			onSessionStop(session.getType());
 		
-		if (sequenceSession != null && sequence != null) {
-			GSContentHistoryGUI primaryGUI = GSClientController.getInstance().getPrimaryGUI();
-			primaryGUI.setContent(new GSSequenceEditPanel(this, sequenceSession, getSessionSequence()));
+		sessions.put(session.getType(), session);
+		session.addListener(this);
+	
+		switch (session.getType()) {
+		case COMPOSITION:
+			openSessionPanel(session.getType(), new GSCompositionEditPanel(session));
+			break;
+		case SEQUENCE:
+			sequenceTransformer.install(session.get(GSSession.S_SEQUENCE));
+			openSessionPanel(session.getType(), new GSSequenceEditPanel(session));
+			break;
+		}
+	}
+
+	public void onSessionStop(GSESessionType sessionType) {
+		GSSession session = sessions.remove(sessionType);
+
+		if (session != null) {
+			switch (sessionType) {
+			case COMPOSITION:
+				break;
+			case SEQUENCE:
+				sequenceTransformer.uninstall(session.get(GSSession.S_SEQUENCE));
+				break;
+			}
+			
+			closeSessionPanel(sessionType);
 		}
 	}
 	
-	public void onStopSequenceSession() {
-		if (sequenceSession != null) {
-			UUID sequenceUUID = sequenceSession.getSequenceUUID();
-			GSSequence sequence = activeSequences.remove(sequenceUUID);
-			if (sequence != null)
-				sequenceTransformer.uninstall(sequence);
-
-			sequenceSession = null;
-		}
+	private void openSessionPanel(GSESessionType sessionType, GSPanel panel) {
+		if (sessionPanels.containsKey(sessionType))
+			closeSessionPanel(sessionType);
+		sessionPanels.put(sessionType, panel);
+		
+		GSClientController.getInstance().getPrimaryGUI().setContent(panel);
 	}
 	
-	public void onSequenceSessionChanged(GSSequenceSession session) {
-		manager.sendPacket(new GSSequenceSessionChangedPacket(session));
-	}
-
-	public void requestSequenceSession(UUID trackUUID) {
-		manager.sendPacket(new GSSequenceSessionRequestPacket(trackUUID));
-	}
-
-	public GSCompositionSession getCompositionSession() {
-		return compositionSession;
+	private void closeSessionPanel(GSESessionType sessionType) {
+		GSPanel panel = sessionPanels.remove(sessionType);
+		if (panel != null)
+			GSClientController.getInstance().getPrimaryGUI().removeHistory(panel);
 	}
 	
-	public GSSequenceSession getSequenceSession() {
-		return sequenceSession;
+	public void requestSession(GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
+		manager.sendPacket(new GSSessionRequestPacket(sessionType, requestType, structureUUID));
 	}
 	
-	public GSComposition getSessionComposition() {
-		if (compositionSession != null)
-			return getComposition(compositionSession.getCompositionUUID());
-		return null;
+	public GSSession getSession(GSESessionType type) {
+		return sessions.get(type);
 	}
-	
-	public GSComposition getComposition(UUID compositionUUID) {
-		return activeCompositions.get(compositionUUID);
-	}
-
-	public GSSequence getSessionSequence() {
-		if (sequenceSession != null)
-			return getSequence(sequenceSession.getSequenceUUID());
-		return null;
-	}
-
-	public GSSequence getSequence(UUID sequenceUUID) {
-		return activeSequences.get(sequenceUUID);
-	}
-	
+		
 	@Override
 	public void onSequenceDelta(GSISequenceDelta delta) {
-		if (sequenceSession != null)
-			sequenceSession.trackSequenceDelta(delta);
-	}
-	
-	@Override
-	public void onCompositionDelta(GSICompositionDelta delta) {
-		if (compositionSession != null)
-			manager.sendPacket(new GSCompositionDeltaPacket(compositionSession.getCompositionUUID(), delta));
-	}
-	
-	public void onDeltaReceived(UUID compositionUUID, GSICompositionDelta delta) {
-		GSComposition composition = getComposition(compositionUUID);
-		
-		if (composition != null) {
-			try {
-				setTransformerEnabled(false);
-				delta.applyDelta(composition);
-			} catch (GSCompositionDeltaException ignore) {
-			} finally {
-				setTransformerEnabled(true);
-			}
-		}
+		GSSession session = getSession(GSESessionType.SEQUENCE);
+		if (session != null)
+			session.get(GSSession.S_UNDO_REDO_HISTORY).trackDelta(delta);
 	}
 
-	public void onCompositionReset(GSComposition expectedComposition) {
-		GSComposition composition = getComposition(expectedComposition.getCompositionUUID());
-		
-		if (composition != null) {
-			try {
-				setTransformerEnabled(false);
-				composition.set(expectedComposition);
-			} finally {
-				setTransformerEnabled(true);
-			}
-		}
+	@Override
+	public void onSessionDeltas(GSSession session, GSISessionDelta[] deltas) {
+		manager.sendPacket(new GSSessionDeltasPacket(session.getType(), deltas));
 	}
 	
-	private void setTransformerEnabled(boolean enabled) {
-		compositionTransformer.setEnabled(enabled);
-		sequenceTransformer.setEnabled(enabled);
+	public void onSessionDeltasReceived(GSESessionType sessionType, GSISessionDelta[] deltas) {
+		GSSession session = getSession(sessionType);
+		
+		if (session != null) {
+			try {
+				if (sessionType == GSESessionType.SEQUENCE)
+					sequenceTransformer.setEnabled(false);
+				
+				for (GSISessionDelta delta : deltas) {
+					try {
+						delta.apply(session);
+					} catch (GSDeltaException ignore) {
+					}
+				}
+			} finally {
+				if (sessionType == GSESessionType.SEQUENCE)
+					sequenceTransformer.setEnabled(true);
+			}
+		}
 	}
 }

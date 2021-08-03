@@ -20,15 +20,6 @@ import com.g4mesoft.captureplayback.composition.delta.GSTrackGroupDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackNameDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackRemovedDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackSequenceDelta;
-import com.g4mesoft.captureplayback.module.GSCompositionDeltaPacket;
-import com.g4mesoft.captureplayback.module.GSCompositionSessionChangedPacket;
-import com.g4mesoft.captureplayback.module.GSResetCompositionPacket;
-import com.g4mesoft.captureplayback.module.GSSequenceSessionChangedPacket;
-import com.g4mesoft.captureplayback.module.GSSequenceSessionRequestPacket;
-import com.g4mesoft.captureplayback.module.GSStartCompositionSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStartSequenceSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStopCompositionSessionPacket;
-import com.g4mesoft.captureplayback.module.GSStopSequenceSessionPacket;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.captureplayback.sequence.delta.GSChannelAddedDelta;
@@ -42,6 +33,14 @@ import com.g4mesoft.captureplayback.sequence.delta.GSChannelMovedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSChannelRemovedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceNameDelta;
+import com.g4mesoft.captureplayback.session.GSCompositionSessionDelta;
+import com.g4mesoft.captureplayback.session.GSFieldSessionDelta;
+import com.g4mesoft.captureplayback.session.GSISessionDelta;
+import com.g4mesoft.captureplayback.session.GSSequenceSessionDelta;
+import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
+import com.g4mesoft.captureplayback.session.GSSessionRequestPacket;
+import com.g4mesoft.captureplayback.session.GSSessionStartPacket;
+import com.g4mesoft.captureplayback.session.GSSessionStopPacket;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSNoteBlockSignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPistonSignalEventHandler;
@@ -61,7 +60,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	public static final String NAME = "Capture & Playback";
 	/* "CAPL" in ASCII as HEX */
 	public static final GSExtensionUID UID = new GSExtensionUID(0x4341504C);
-	public static final GSVersion VERSION = new GSVersion(0, 2, 0);
+	public static final GSVersion VERSION = new GSVersion(0, 2, 1);
 	
 	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
 	
@@ -69,6 +68,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	private GSSupplierRegistry<Integer, GSISequenceDelta> sequenceDeltaRegistry;
 	private GSSupplierRegistry<Integer, GSICompositionDelta> compositionDeltaRegistry;
+	private GSSupplierRegistry<Integer, GSISessionDelta> sessionDeltaRegistry;
 	private Map<Block, GSISignalEventHandler> signalEventHandlerRegistry;
 	
 	@Environment(EnvType.CLIENT)
@@ -78,7 +78,6 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	@Override
 	public void init() {
 		sequenceDeltaRegistry = new GSSupplierRegistry<>();
-		
 		sequenceDeltaRegistry.register(0, GSSequenceNameDelta.class, GSSequenceNameDelta::new);
 		sequenceDeltaRegistry.register(1, GSChannelAddedDelta.class, GSChannelAddedDelta::new);
 		sequenceDeltaRegistry.register(2, GSChannelRemovedDelta.class, GSChannelRemovedDelta::new);
@@ -91,7 +90,6 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		sequenceDeltaRegistry.register(9, GSChannelMovedDelta.class, GSChannelMovedDelta::new);
 		
 		compositionDeltaRegistry = new GSSupplierRegistry<>();
-		
 		compositionDeltaRegistry.register( 0, GSCompositionNameDelta.class, GSCompositionNameDelta::new);
 		compositionDeltaRegistry.register( 1, GSGroupAddedDelta.class, GSGroupAddedDelta::new);
 		compositionDeltaRegistry.register( 2, GSGroupRemovedDelta.class, GSGroupRemovedDelta::new);
@@ -106,6 +104,11 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		compositionDeltaRegistry.register(11, GSTrackEntryRemovedDelta.class, GSTrackEntryRemovedDelta::new);
 		compositionDeltaRegistry.register(12, GSTrackEntryOffsetDelta.class, GSTrackEntryOffsetDelta::new);
 		
+		sessionDeltaRegistry = new GSSupplierRegistry<>();
+		sessionDeltaRegistry.register(0, GSFieldSessionDelta.class, GSFieldSessionDelta::new);
+		sessionDeltaRegistry.register(1, GSSequenceSessionDelta.class, GSSequenceSessionDelta::new);
+		sessionDeltaRegistry.register(2, GSCompositionSessionDelta.class, GSCompositionSessionDelta::new);
+		
 		signalEventHandlerRegistry = new IdentityHashMap<>();
 		
 		signalEventHandlerRegistry.put(Blocks.PISTON, new GSPistonSignalEventHandler());
@@ -115,15 +118,10 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	@Override
 	public void registerPackets(GSSupplierRegistry<Integer, GSIPacket> registry) {
-		registry.register(1, GSStartCompositionSessionPacket.class, GSStartCompositionSessionPacket::new);
-		registry.register(2, GSStopCompositionSessionPacket.class, GSStopCompositionSessionPacket::new);
-		registry.register(3, GSStartSequenceSessionPacket.class, GSStartSequenceSessionPacket::new);
-		registry.register(4, GSStopSequenceSessionPacket.class, GSStopSequenceSessionPacket::new);
-		registry.register(5, GSCompositionDeltaPacket.class, GSCompositionDeltaPacket::new);
-		registry.register(6, GSResetCompositionPacket.class, GSResetCompositionPacket::new);
-		registry.register(7, GSCompositionSessionChangedPacket.class, GSCompositionSessionChangedPacket::new);
-		registry.register(8, GSSequenceSessionChangedPacket.class, GSSequenceSessionChangedPacket::new);
-		registry.register(9, GSSequenceSessionRequestPacket.class, GSSequenceSessionRequestPacket::new);
+		registry.register(10, GSSessionRequestPacket.class, GSSessionRequestPacket::new);
+		registry.register(11, GSSessionStartPacket.class, GSSessionStartPacket::new);
+		registry.register(12, GSSessionStopPacket.class, GSSessionStopPacket::new);
+		registry.register(13, GSSessionDeltasPacket.class, GSSessionDeltasPacket::new);
 	}
 	
 	@Override
@@ -165,6 +163,10 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 
 	public GSSupplierRegistry<Integer, GSICompositionDelta> getCompositionDeltaRegistry() {
 		return compositionDeltaRegistry;
+	}
+	
+	public GSSupplierRegistry<Integer, GSISessionDelta> getSessionDeltaRegistry() {
+		return sessionDeltaRegistry;
 	}
 	
 	public Map<Block, GSISignalEventHandler> getSignalEventHandlerRegistry() {

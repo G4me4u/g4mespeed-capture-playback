@@ -6,8 +6,11 @@ import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
+import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
+import com.g4mesoft.captureplayback.session.GSESessionRequestType;
+import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.event.GSEvent;
@@ -295,7 +298,8 @@ public class GSCompositionContentPanel extends GSPanel implements GSIMouseListen
 	}
 	
 	private void editTrackSequence(GSTrack track) {
-		CapturePlaybackMod.getInstance().getExtension().getClientModule().requestSequenceSession(track.getTrackUUID());
+		GSCapturePlaybackClientModule module = CapturePlaybackMod.getInstance().getExtension().getClientModule();
+		module.requestSession(GSESessionType.SEQUENCE, GSESessionRequestType.REQUEST_START, track.getTrackUUID());
 	}
 
 	@Override

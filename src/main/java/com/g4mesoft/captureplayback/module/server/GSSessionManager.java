@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
+import com.g4mesoft.captureplayback.session.GSESessionRequestType;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSISessionDelta;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -54,15 +54,35 @@ public class GSSessionManager {
 		}
 	}
 	
-	public void startCompositionSession(ServerPlayerEntity player, UUID compositionUUID) {
-		if (!playerToTracker.containsKey(player.getUuid())) {
-			GSSessionTracker tracker = sessionTrackers.get(compositionUUID);
-			if (tracker != null && tracker.startCompositionSession(player))
-				playerToTracker.put(player.getUuid(), tracker);
+	public void onSessionRequest(ServerPlayerEntity player, GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
+		switch (sessionType) {
+		case COMPOSITION:
+			if (requestType == GSESessionRequestType.REQUEST_START) {
+				startCompositionSession(player, structureUUID);
+			} else {
+				stopCompositionSession(player);
+			}
+			break;
+		case SEQUENCE:
+			if (requestType == GSESessionRequestType.REQUEST_START) {
+				startSequenceSession(player, structureUUID);
+			} else {
+				stopSequenceSession(player);
+			}
+			break;
 		}
 	}
 
-	public void stopCompositionSession(ServerPlayerEntity player) {
+	private void startCompositionSession(ServerPlayerEntity player, UUID compositionUUID) {
+		if (playerToTracker.containsKey(player.getUuid()))
+			stopCompositionSession(player);
+		
+		GSSessionTracker tracker = sessionTrackers.get(compositionUUID);
+		if (tracker != null && tracker.startCompositionSession(player))
+			playerToTracker.put(player.getUuid(), tracker);
+	}
+	
+	private void stopCompositionSession(ServerPlayerEntity player) {
 		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
 		if (tracker != null) {
 			tracker.stopCompositionSession(player);
@@ -70,16 +90,24 @@ public class GSSessionManager {
 		}
 	}
 
-	public void startSequenceSession(ServerPlayerEntity player, UUID trackUUID) {
+	private void startSequenceSession(ServerPlayerEntity player, UUID trackUUID) {
 		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
 		if (tracker != null)
 			tracker.startSequenceSession(player, trackUUID);
 	}
 	
-	public void stopSequenceSession(ServerPlayerEntity player) {
+	private void stopSequenceSession(ServerPlayerEntity player) {
 		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
 		if (tracker != null)
 			tracker.stopSequenceSession(player);
+	}
+
+	public void stopAllSessions(ServerPlayerEntity player) {
+		GSSessionTracker tracker = playerToTracker.remove(player.getUuid());
+		if (tracker != null) {
+			tracker.stopSequenceSession(player);
+			tracker.stopCompositionSession(player);
+		}
 	}
 	
 	public void stopAllSessions() {
@@ -88,21 +116,9 @@ public class GSSessionManager {
 		playerToTracker.clear();
 	}
 	
-	public void onDeltaReceived(ServerPlayerEntity player, GSICompositionDelta delta) {
+	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
 		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
 		if (tracker != null)
-			tracker.onDeltaReceived(player, delta);
-	}
-
-	public void onCompositionSessionChanged(ServerPlayerEntity player, GSCompositionSession session) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null)
-			tracker.onCompositionSessionChanged(player, session);
-	}
-
-	public void onSequenceSessionChanged(ServerPlayerEntity player, GSSequenceSession session) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null)
-			tracker.onSequenceSessionChanged(player, session);
+			tracker.onDeltasReceived(player, sessionType, deltas);
 	}
 }

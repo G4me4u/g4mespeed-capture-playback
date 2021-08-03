@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
@@ -21,41 +22,41 @@ public abstract class GSTrackDelta implements GSICompositionDelta {
 		this.trackUUID = trackUUID;
 	}
 	
-	protected GSTrack getTrack(GSComposition composition) throws GSCompositionDeltaException {
+	protected GSTrack getTrack(GSComposition composition) throws GSDeltaException {
 		GSTrack track = composition.getTrack(trackUUID);
 		if (track == null)
-			throw new GSCompositionDeltaException("Expected track does not exist");
+			throw new GSDeltaException("Expected track does not exist");
 		return track;
 	}
 	
-	protected void checkTrackName(GSTrack track, String expectedName) throws GSCompositionDeltaException {
+	protected void checkTrackName(GSTrack track, String expectedName) throws GSDeltaException {
 		if (!track.getName().equals(expectedName))
-			throw new GSCompositionDeltaException("Track does not have the expected name");
+			throw new GSDeltaException("Track does not have the expected name");
 	}
 
-	protected void checkTrackColor(GSTrack track, int expectedColor) throws GSCompositionDeltaException {
+	protected void checkTrackColor(GSTrack track, int expectedColor) throws GSDeltaException {
 		if (track.getColor() != expectedColor)
-			throw new GSCompositionDeltaException("Track does not have the expected color");
+			throw new GSDeltaException("Track does not have the expected color");
 	}
 
-	protected void checkGroup(GSTrack track, UUID expectedGroupUUID) throws GSCompositionDeltaException {
+	protected void checkGroup(GSTrack track, UUID expectedGroupUUID) throws GSDeltaException {
 		if (!track.getGroupUUID().equals(expectedGroupUUID))
-			throw new GSCompositionDeltaException("Track is not in the expected group");
+			throw new GSDeltaException("Track is not in the expected group");
 	}
 	
-	protected void checkSequenceChannelCount(GSTrack track, int expectedCount) throws GSCompositionDeltaException {
+	protected void checkSequenceChannelCount(GSTrack track, int expectedCount) throws GSDeltaException {
 		if (track.getSequence().getChannels().size() != expectedCount)
-			throw new GSCompositionDeltaException("Track sequence does not have the expected channel count");
+			throw new GSDeltaException("Track sequence does not have the expected channel count");
 	}
 
-	protected void checkSequenceEntryCount(GSTrack track, int expectedCount) throws GSCompositionDeltaException {
+	protected void checkSequenceEntryCount(GSTrack track, int expectedCount) throws GSDeltaException {
 		if (getSequenceEntryCount(track.getSequence()) != expectedCount)
-			throw new GSCompositionDeltaException("Track sequence does not have the expected entry count");
+			throw new GSDeltaException("Track sequence does not have the expected entry count");
 	}
 	
-	protected void checkTrackEntryCount(GSTrack track, int expectedCount) throws GSCompositionDeltaException {
+	protected void checkTrackEntryCount(GSTrack track, int expectedCount) throws GSDeltaException {
 		if (track.getEntries().size() != expectedCount)
-			throw new GSCompositionDeltaException("Track does not have the expected entry count");
+			throw new GSDeltaException("Track does not have the expected entry count");
 	}
 	
 	protected int getSequenceEntryCount(GSSequence sequence) {
@@ -67,7 +68,7 @@ public abstract class GSTrackDelta implements GSICompositionDelta {
 	
 	protected void removeTrack(GSComposition composition, String name, int color, UUID groupUUID,
 	                           int expectedSequenceChannelCount, int expectedSequenceEntryCount,
-	                           int expectedEntryCount) throws GSCompositionDeltaException {
+	                           int expectedEntryCount) throws GSDeltaException {
 		
 		GSTrack track = getTrack(composition);
 		checkTrackName(track, name);
@@ -79,11 +80,11 @@ public abstract class GSTrackDelta implements GSICompositionDelta {
 		composition.removeTrack(trackUUID);
 	}
 	
-	protected GSTrack addTrack(GSComposition composition, String name, int color, UUID groupUUID) throws GSCompositionDeltaException {
+	protected GSTrack addTrack(GSComposition composition, String name, int color, UUID groupUUID) throws GSDeltaException {
 		if (composition.hasTrackUUID(trackUUID))
-			throw new GSCompositionDeltaException("Track already exists");
+			throw new GSDeltaException("Track already exists");
 		if (!composition.hasGroupUUID(groupUUID))
-			throw new GSCompositionDeltaException("Track group does not exist");
+			throw new GSDeltaException("Track group does not exist");
 		
 		return composition.addTrack(trackUUID, name, color, groupUUID);
 	}

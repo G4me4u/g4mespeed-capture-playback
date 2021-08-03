@@ -1,10 +1,10 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.module.GSCompositionSession;
+import java.util.UUID;
+
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
-import com.g4mesoft.core.client.GSClientController;
-import com.g4mesoft.gui.GSContentHistoryGUI;
+import com.g4mesoft.captureplayback.session.GSESessionRequestType;
+import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.legend.GSButtonPanel;
 
@@ -16,13 +16,7 @@ public class GSCapturePlaybackPanel extends GSParentPanel {
 
 	public GSCapturePlaybackPanel(GSCapturePlaybackClientModule module) {
 		editCompositionButton = new GSButtonPanel("Edit Composition", () -> {
-			GSContentHistoryGUI primaryGUI = GSClientController.getInstance().getPrimaryGUI();
-			
-			GSCompositionSession session = module.getCompositionSession();
-			GSComposition composition = module.getSessionComposition();
-			
-			if (session != null && composition != null)
-				primaryGUI.setContent(new GSCompositionEditPanel(module, session, composition));
+			module.requestSession(GSESessionType.COMPOSITION, GSESessionRequestType.REQUEST_START, UUID.randomUUID());
 		});
 		
 		add(editCompositionButton);

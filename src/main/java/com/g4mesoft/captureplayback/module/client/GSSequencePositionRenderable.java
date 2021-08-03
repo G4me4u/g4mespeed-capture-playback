@@ -1,12 +1,15 @@
 package com.g4mesoft.captureplayback.module.client;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
-import com.g4mesoft.captureplayback.module.GSSequenceSession;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.captureplayback.session.GSESessionType;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.renderer.GSERenderPhase;
 import com.g4mesoft.renderer.GSIRenderable3D;
 import com.g4mesoft.renderer.GSIRenderer3D;
@@ -37,10 +40,10 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	
 	@Override
 	public void render(GSIRenderer3D renderer) {
-		GSSequenceSession session = module.getSequenceSession();
-		GSSequence sequence = module.getSessionSequence();
-		
-		if (session != null && sequence != null) {
+		GSSession session = module.getSession(GSESessionType.SEQUENCE);
+		if (session != null) {
+			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			
 			switch(module.cChannelRenderingType.getValue()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
 				renderCubes(renderer, session, sequence);
@@ -58,15 +61,17 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		}
 	}
 	
-	private void renderCubes(GSIRenderer3D renderer, GSSequenceSession session, GSSequence sequence) {
+	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
 		float viewDistance = client.gameRenderer.getViewDistance();
 		
+		UUID selectedChannelUUID = session.get(GSSession.S_SELECTED_CHANNEL);
+		
 		Set<GSCubeEntry> cubes = new TreeSet<>();
 		for (GSChannel channel : sequence.getChannels()) {
 			GSChannelInfo info = channel.getInfo();
-			boolean selected = session.isSelected(channel.getChannelUUID());
+			boolean selected = Objects.equals(selectedChannelUUID, channel.getChannelUUID());
 			
 			for (BlockPos position : info.getPositions()) {
 				// Distance measured relative to center of block
