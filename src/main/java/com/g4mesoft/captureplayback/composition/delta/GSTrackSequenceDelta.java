@@ -3,56 +3,48 @@ package com.g4mesoft.captureplayback.composition.delta;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSDeltaRegistries;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
+import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
 public class GSTrackSequenceDelta extends GSTrackDelta {
 
-	private GSISequenceDelta delta;
+	private GSIDelta<GSSequence> delta;
 
 	public GSTrackSequenceDelta() {
 	}
 	
-	public GSTrackSequenceDelta(UUID trackUUID, GSISequenceDelta delta) {
+	public GSTrackSequenceDelta(UUID trackUUID, GSIDelta<GSSequence> delta) {
 		super(trackUUID);
 		
 		this.delta = delta;
 	}
 
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
-		delta.unapplyDelta(getTrack(composition).getSequence());
+	public void unapply(GSComposition composition) throws GSDeltaException {
+		delta.unapply(getTrack(composition).getSequence());
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
-		delta.applyDelta(getTrack(composition).getSequence());
+	public void apply(GSComposition composition) throws GSDeltaException {
+		delta.apply(getTrack(composition).getSequence());
 	}
 	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		super.read(buf);
 		
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		
-		delta = extension.getSequenceDeltaRegistry().createNewElement(buf.readInt());
-		if (delta == null)
-			throw new IOException("Invalid delta ID");
-		delta.read(buf);
+		delta = GSDeltaRegistries.SEQUENCE_DELTA_REGISTRY.read(buf);
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
 		super.write(buf);
 
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		
-		buf.writeInt(extension.getSequenceDeltaRegistry().getIdentifier(delta));
-		delta.write(buf);
+		GSDeltaRegistries.SEQUENCE_DELTA_REGISTRY.write(buf, delta);
 	}
 }

@@ -31,12 +31,12 @@ public class GSTrackColorDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		setTrackColor(composition, oldColor, newColor);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		setTrackColor(composition, newColor, oldColor);
 	}
 	

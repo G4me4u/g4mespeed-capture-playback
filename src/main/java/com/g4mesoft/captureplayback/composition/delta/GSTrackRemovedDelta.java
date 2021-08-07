@@ -48,17 +48,17 @@ public class GSTrackRemovedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		GSTrack track = addTrack(composition, name, color, groupUUID);
 		
 		track.getSequence().set(sequence);
 		
 		for (GSTrackEntryDelta entryDelta : entryDeltas)
-			entryDelta.unapplyDelta(composition);
+			entryDelta.unapply(composition);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		removeTrack(composition, name, color, groupUUID, sequence.getChannels().size(), 
 				getSequenceEntryCount(sequence), entryDeltas.length);
 	}

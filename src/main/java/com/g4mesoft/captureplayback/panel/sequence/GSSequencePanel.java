@@ -54,7 +54,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 	
 	public GSSequencePanel(GSSession session, GSIChannelProvider channelProvider) {
 		this.session = session;
-		this.sequence = session.get(GSSession.S_SEQUENCE);
+		this.sequence = session.get(GSSession.SEQUENCE);
 		this.channelProvider = channelProvider;
 
 		expandedColumnModel = new GSExpandedColumnModel();
@@ -65,7 +65,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 		channelHeader = new GSChannelHeaderPanel(sequence, modelView, this);
 		columnHeader = new GSSequenceColumnHeaderPanel(sequence, expandedColumnModel, modelView);
 		
-		infoPanel = new GSSequenceInfoPanel(session, sequence);
+		infoPanel = new GSSequenceInfoPanel(session);
 		buttonPanel = new GSSequenceButtonPanel();
 		
 		init();
@@ -303,9 +303,9 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 				
 				// Allow for redo with CTRL + SHIFT + Z
 				if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
-					session.get(GSSession.S_UNDO_REDO_HISTORY).redo(sequence);
+					session.get(GSSession.UNDO_REDO_HISTORY).redo();
 				} else {
-					session.get(GSSession.S_UNDO_REDO_HISTORY).undo(sequence);
+					session.get(GSSession.UNDO_REDO_HISTORY).undo();
 				}
 			}
 			break;
@@ -313,7 +313,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 			if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
 				event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
 				
-				session.get(GSSession.S_UNDO_REDO_HISTORY).redo(sequence);
+				session.get(GSSession.UNDO_REDO_HISTORY).redo();
 			}
 			break;
 		}

@@ -1,11 +1,8 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
-import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceUndoRedoListener;
-import com.g4mesoft.captureplayback.sequence.delta.GSSequenceUndoRedoHistory;
-import com.g4mesoft.captureplayback.session.GSISessionListener;
+import com.g4mesoft.captureplayback.session.GSIUndoRedoListener;
 import com.g4mesoft.captureplayback.session.GSSession;
-import com.g4mesoft.captureplayback.session.GSSessionFieldType;
+import com.g4mesoft.captureplayback.session.GSUndoRedoHistory;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSECursorType;
 import com.g4mesoft.panel.GSEIconAlignment;
@@ -18,7 +15,7 @@ import com.g4mesoft.renderer.GSIRenderer2D;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 
-public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionListener, GSISequenceUndoRedoListener {
+public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoListener {
 
 	private static final GSIcon UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 27, 9, 9));
 	private static final GSIcon HOVERED_UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 36, 9, 9));
@@ -32,19 +29,13 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 	
 	private static final int BUTTON_MARGIN = 2;
 	
-	private final GSSession session;
-	private final GSSequence sequence;
-	
-	private GSSequenceUndoRedoHistory undoRedoHistory;
+	private final GSUndoRedoHistory history;
 	
 	private final GSButton undoButton;
 	private final GSButton redoButton;
 	
-	public GSSequenceInfoPanel(GSSession session, GSSequence sequence) {
-		this.session = session;
-		this.sequence = sequence;
-		
-		undoRedoHistory = session.get(GSSession.S_UNDO_REDO_HISTORY);
+	public GSSequenceInfoPanel(GSSession session) {
+		history = session.get(GSSession.UNDO_REDO_HISTORY);
 		
 		undoButton = new GSButton(UNDO_ICON, UNDO_TEXT);
 		undoButton.setHoveredIcon(HOVERED_UNDO_ICON);
@@ -55,9 +46,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 		undoButton.setHoveredBackgroundColor(0);
 		undoButton.setDisabledBackgroundColor(0);
 		undoButton.setBorderWidth(0);
-		undoButton.addActionListener(() -> {
-			this.undoRedoHistory.undo(this.sequence);
-		});
+		undoButton.addActionListener(history::undo);
 		
 		redoButton = new GSButton(REDO_ICON, REDO_TEXT);
 		redoButton.setHoveredIcon(HOVERED_REDO_ICON);
@@ -68,9 +57,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 		redoButton.setHoveredBackgroundColor(0);
 		redoButton.setDisabledBackgroundColor(0);
 		redoButton.setBorderWidth(0);
-		redoButton.addActionListener(() -> {
-			this.undoRedoHistory.redo(this.sequence);
-		});
+		redoButton.addActionListener(history::redo);
 		
 		add(undoButton);
 		add(redoButton);
@@ -92,7 +79,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 	protected void onShown() {
 		super.onShown();
 		
-		undoRedoHistory.addUndoRedoListener(this);
+		history.addUndoRedoListener(this);
 		
 		onHistoryChanged();
 	}
@@ -101,7 +88,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 	protected void onHidden() {
 		super.onHidden();
 		
-		undoRedoHistory.removeUndoRedoListener(this);
+		history.removeUndoRedoListener(this);
 	}
 	
 	@Override
@@ -116,16 +103,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSISessionList
 
 	@Override
 	public void onHistoryChanged() {
-		undoButton.setEnabled(undoRedoHistory.hasUndoHistory());
-		redoButton.setEnabled(undoRedoHistory.hasRedoHistory());
-	}
-
-	@Override
-	public void onFieldChanged(GSSession session, GSSessionFieldType<?> type) {
-		if (type == GSSession.S_UNDO_REDO_HISTORY) {
-			undoRedoHistory.removeUndoRedoListener(this);
-			undoRedoHistory = this.session.get(GSSession.S_UNDO_REDO_HISTORY);
-			undoRedoHistory.addUndoRedoListener(this);
-		}
+		undoButton.setEnabled(history.hasUndoHistory());
+		redoButton.setEnabled(history.hasRedoHistory());
 	}
 }

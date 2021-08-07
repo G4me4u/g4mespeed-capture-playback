@@ -32,12 +32,12 @@ public class GSChannelInfoDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		setChannelInfo(oldInfo, newInfo, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		setChannelInfo(newInfo, oldInfo, sequence);
 	}
 	

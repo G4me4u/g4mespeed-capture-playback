@@ -29,12 +29,12 @@ public class GSChannelMovedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		moveChannel(oldPrevUUID, newPrevUUID, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		moveChannel(newPrevUUID, oldPrevUUID, sequence);
 	}
 	

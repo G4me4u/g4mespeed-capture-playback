@@ -2,6 +2,7 @@ package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,70 +10,73 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSSequenceUndoRedoHistory;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.network.PacketByteBuf;
 
 public class GSSession {
 
-	private static final GSISessionFieldCodec<Float>                     FLOAT_CODEC               = new GSFloatSessionFieldCodec();
-	private static final GSISessionFieldCodec<Double>                    DOUBLE_CODEC              = new GSDoubleSessionFieldCodec();
-	private static final GSISessionFieldCodec<GSEContentOpacity>         OPACITY_CODEC             = new GSOpacitySessionFieldCodec();
-	private static final GSISessionFieldCodec<GSComposition>             COMPOSITION_CODEC         = new GSBasicSessionFieldCodec<>(GSComposition::read, GSComposition::write);
-	private static final GSISessionFieldCodec<GSSequence>                SEQUENCE_CODEC            = new GSBasicSessionFieldCodec<>(GSSequence::read, GSSequence::write);
-	private static final GSISessionFieldCodec<UUID>                      UUID_CODEC                = new GSBasicSessionFieldCodec<>(PacketByteBuf::readUuid, PacketByteBuf::writeUuid);
-	private static final GSISessionFieldCodec<GSSequenceUndoRedoHistory> S_UNDO_REDO_HISTORY_CODEC = new GSBasicSessionFieldCodec<>(GSSequenceUndoRedoHistory::read, GSSequenceUndoRedoHistory::write);
+	private static final GSISessionFieldCodec<Float>             FLOAT_CODEC             = new GSFloatSessionFieldCodec();
+	private static final GSISessionFieldCodec<Double>            DOUBLE_CODEC            = new GSDoubleSessionFieldCodec();
+	private static final GSISessionFieldCodec<GSEContentOpacity> OPACITY_CODEC           = new GSOpacitySessionFieldCodec();
+	private static final GSISessionFieldCodec<GSComposition>     COMPOSITION_CODEC       = new GSBasicSessionFieldCodec<>(GSComposition::read, GSComposition::write);
+	private static final GSISessionFieldCodec<GSSequence>        SEQUENCE_CODEC          = new GSBasicSessionFieldCodec<>(GSSequence::read, GSSequence::write);
+	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(PacketByteBuf::readUuid, PacketByteBuf::writeUuid);
+	private static final GSISessionFieldCodec<GSUndoRedoHistory> UNDO_REDO_HISTORY_CODEC = new GSBasicSessionFieldCodec<>(GSUndoRedoHistory::read, GSUndoRedoHistory::write);
 	
-	public static final GSSessionFieldType<Float>                     X_OFFSET;
-	public static final GSSessionFieldType<Float>                     Y_OFFSET;
-	public static final GSSessionFieldType<GSEContentOpacity>         OPACITY;
+	public static final GSSessionFieldType<Float>             X_OFFSET;
+	public static final GSSessionFieldType<Float>             Y_OFFSET;
+	public static final GSSessionFieldType<GSEContentOpacity> OPACITY;
 	
-	public static final GSSessionFieldType<GSComposition>             C_COMPOSITION;
-	public static final GSSessionFieldType<Double>                    C_GAMETICK_WIDTH;
+	public static final GSSessionFieldType<GSComposition>     COMPOSITION;
+	public static final GSSessionFieldType<Double>            GAMETICK_WIDTH;
 	
-	public static final GSSessionFieldType<GSSequence>                S_SEQUENCE;
-	public static final GSSessionFieldType<UUID>                      S_SELECTED_CHANNEL;
-	public static final GSSessionFieldType<GSSequenceUndoRedoHistory> S_UNDO_REDO_HISTORY;
+	public static final GSSessionFieldType<GSSequence>        SEQUENCE;
+	public static final GSSessionFieldType<UUID>              SELECTED_CHANNEL;
+	public static final GSSessionFieldType<GSUndoRedoHistory> UNDO_REDO_HISTORY;
 
 	private static final Map<String, GSSessionFieldType<?>> nameToType;
 	private static final Map<GSESessionType, Set<GSSessionFieldType<?>>> sessionFieldTypes;
 	
 	static {
 		nameToType = new HashMap<>();
-		sessionFieldTypes = new HashMap<>();
+		sessionFieldTypes = new EnumMap<>(GSESessionType.class);
 		
 		GSSessionFieldTypeBuilder<?> builder = new GSSessionFieldTypeBuilder<>(nameToType, sessionFieldTypes);
 		
-		X_OFFSET = builder.<Float>as().name("xOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-		Y_OFFSET = builder.<Float>as().name("yOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-		OPACITY  = builder.<GSEContentOpacity>as().name("opacity").def(GSEContentOpacity.FULLY_OPAQUE).codec(OPACITY_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
+		X_OFFSET = builder.<Float>cast().name("xOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
+		Y_OFFSET = builder.<Float>cast().name("yOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
+		OPACITY  = builder.<GSEContentOpacity>cast().name("opacity").def(GSEContentOpacity.FULLY_OPAQUE).codec(OPACITY_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 	
-		C_COMPOSITION = builder.<GSComposition>as().name("composition").constr(GSCompositionSessionField::new).nullable().codec(COMPOSITION_CODEC).noCache().noSync().session(GSESessionType.COMPOSITION).build();
-		C_GAMETICK_WIDTH = builder.<Double>as().name("gametickWidth").def(8.0).codec(DOUBLE_CODEC).session(GSESessionType.COMPOSITION).build();
+		COMPOSITION = builder.<GSComposition>cast().name("composition").constr(GSCompositionSessionField::new).nullable().assignOnce().codec(COMPOSITION_CODEC).noCache().noSync().session(GSESessionType.COMPOSITION).build();
+		GAMETICK_WIDTH = builder.<Double>cast().name("gametickWidth").def(8.0).codec(DOUBLE_CODEC).session(GSESessionType.COMPOSITION).build();
 		
-		S_SEQUENCE = builder.<GSSequence>as().name("sequence").constr(GSSequenceSessionField::new).nullable().codec(SEQUENCE_CODEC).noCache().noSync().session(GSESessionType.SEQUENCE).build();
-		S_SELECTED_CHANNEL = builder.<UUID>as().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
-		S_UNDO_REDO_HISTORY = builder.<GSSequenceUndoRedoHistory>as().name("s_urHistory").constr(GSSequenceUndoRedoHistorySessionField::new).def(GSSequenceUndoRedoHistory::new).codec(S_UNDO_REDO_HISTORY_CODEC).session(GSESessionType.SEQUENCE).build();
+		SEQUENCE = builder.<GSSequence>cast().name("sequence").constr(GSSequenceSessionField::new).nullable().assignOnce().codec(SEQUENCE_CODEC).noCache().noSync().session(GSESessionType.SEQUENCE).build();
+		SELECTED_CHANNEL = builder.<UUID>cast().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
+		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.SEQUENCE).build();
 	}
 	
 	private final GSESessionType type;
+	private GSSessionSide side;
 	
 	private final GSSessionFields fields;
 	private List<GSISessionListener> listeners;
 	
 	private Set<GSSessionFieldType<?>> fieldsToSync;
-	
+
 	public GSSession(GSESessionType type) {
 		if (type == null)
 			throw new IllegalArgumentException("type is null");
 		
 		this.type = type;
+		side = GSSessionSide.UNKNOWN;
 		
-		fields = new GSSessionFields(this);
+		this.fields = new GSSessionFields(this);
 		listeners = null;
 		
 		fieldsToSync = new HashSet<>();
@@ -93,28 +97,40 @@ public class GSSession {
 		return type;
 	}
 	
+	public GSSessionSide getSide() {
+		return side;
+	}
+
+	public void setSide(GSSessionSide side) {
+		if (side == null)
+			throw new IllegalArgumentException("side is null");
+		this.side = side;
+	}
+	
 	public <T> boolean contains(GSSessionFieldType<T> type) {
 		return fields.contains(type);
 	}
+
+	/* Visible for GSFieldSessionDelta */
+	<T> void forceSet(GSSessionFieldPair<T> pair) {
+		fields.forceSet(pair);
+		onFieldChanged(pair.getType(), true);
+	}
 	
-	private <T> boolean set(GSSessionFieldPair<T> pair) {
+	/* Visible for GSFieldSessionDelta */
+	<T> boolean set(GSSessionFieldPair<T> pair) {
 		return set(pair.getType(), pair.getValue());
 	}
 	
 	public <T> boolean set(GSSessionFieldType<T> type, T value) {
 		if (fields.set(type, value)) {
-			onFieldChanged(type);
+			onFieldChanged(type, true);
 			return true;
 		}
 		
 		return false;
 	}
 
-	private void setAll(GSSessionFields fields) {
-		for (GSSessionFieldPair<?> pair : fields)
-			set(pair);
-	}
-	
 	public <T> T get(GSSessionFieldType<T> type) {
 		return fields.get(type);
 	}
@@ -123,20 +139,26 @@ public class GSSession {
 	GSSessionField<?> getField(GSSessionFieldType<?> type) {
 		return fields.getField(type);
 	}
-
-	private void onFieldChanged(GSSessionFieldType<?> type) {
-		if (type.isSynced())
+	
+	private void onFieldChanged(GSSessionFieldType<?> type, boolean shouldRequestSync) {
+		if (shouldRequestSync)
 			requestSync(type);
 		dispatchFieldChanged(type);
 	}
 	
 	public void requestSync(GSSessionFieldType<?> type) {
-		fieldsToSync.add(type);
+		if (type.isSynced())
+			fieldsToSync.add(type);
+	}
+	
+	public void cancelSync(GSSessionFieldType<?> type) {
+		fieldsToSync.remove(type);
 	}
 	
 	public void sync() {
 		if (!fieldsToSync.isEmpty()) {
-			GSISessionDelta[] deltas = new GSISessionDelta[fieldsToSync.size()];
+			@SuppressWarnings("unchecked")
+			GSIDelta<GSSession>[] deltas = new GSIDelta[fieldsToSync.size()];
 			int i = 0;
 			for (GSSessionFieldType<?> type : fieldsToSync) {
 				GSSessionFieldPair<?> pair = new GSSessionFieldPair<>(type, get(type));
@@ -167,14 +189,25 @@ public class GSSession {
 	}
 
 	/* Visible for sub-classes of GSSessionField */
-	void dispatchSessionDelta(GSISessionDelta delta) {
-		dispatchSessionDeltas(new GSISessionDelta[] { delta });
+	void dispatchSessionDelta(GSIDelta<GSSession> delta) {
+		@SuppressWarnings("unchecked")
+		GSIDelta<GSSession>[] deltas = new GSIDelta[] { delta };
+		dispatchSessionDeltas(deltas);
 	}
 	
-	private void dispatchSessionDeltas(GSISessionDelta[] deltas) {
+	private void dispatchSessionDeltas(GSIDelta<GSSession>[] deltas) {
 		if (listeners != null) {
 			for (GSISessionListener listener : listeners)
 				listener.onSessionDeltas(this, deltas);
+		}
+	}
+	
+	public void applySessionDeltas(GSIDelta<GSSession>[] deltas) {
+		for (GSIDelta<GSSession> delta : deltas) {
+			try {
+				delta.apply(this);
+			} catch (GSDeltaException ignore) {
+			}
 		}
 	}
 	
@@ -213,11 +246,13 @@ public class GSSession {
 		GSESessionType sessionType = GSESessionType.fromIndex(buf.readInt());
 		if (sessionType == null)
 			throw new IOException("Unknown session type");
-
-		GSSessionFields fields = GSSessionFields.read(buf);
 		
 		GSSession session = new GSSession(sessionType);
-		session.setAll(fields);
+		
+		GSSessionFields fields = GSSessionFields.read(buf);
+		for (GSSessionFieldPair<?> pair : fields)
+			session.forceSet(pair);
+		
 		return session;
 	}
 

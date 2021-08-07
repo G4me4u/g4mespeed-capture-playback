@@ -1,12 +1,12 @@
 package com.g4mesoft.captureplayback.session;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.GSIDeltaListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 
-public class GSSequenceSessionField extends GSSessionField<GSSequence> implements GSISequenceDeltaListener {
+public class GSSequenceSessionField extends GSSessionField<GSSequence> implements GSIDeltaListener<GSSequence> {
 
 	private GSSession session;
 	
@@ -40,16 +40,23 @@ public class GSSequenceSessionField extends GSSessionField<GSSequence> implement
 	}
 
 	@Override
-	public void onSequenceDelta(GSISequenceDelta delta) {
-		if (session != null)
+	public void onDelta(GSIDelta<GSSequence> delta) {
+		if (session != null) {
 			session.dispatchSessionDelta(new GSSequenceSessionDelta(type, delta));
+
+			if (session.getSide() == GSSessionSide.CLIENT_SIDE) {
+				GSUndoRedoHistory history = session.get(GSSession.UNDO_REDO_HISTORY);
+				if (history != null)
+					history.addEntry(new GSSequenceUndoRedoEntry(delta));
+			}
+		}
 	}
 
-	public void applyDelta(GSISequenceDelta delta) throws GSDeltaException {
+	public void applyDelta(GSIDelta<GSSequence> delta) throws GSDeltaException {
 		if (value != null) {
 			try {
 				transformer.setEnabled(false);
-				delta.applyDelta(value);
+				delta.apply(value);
 			} finally {
 				transformer.setEnabled(true);
 			}

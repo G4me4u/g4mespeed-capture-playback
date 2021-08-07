@@ -36,9 +36,9 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		return fields.containsKey(field);
 	}
 
-	public <T> boolean add(GSSessionFieldType<T> type) {
-		@SuppressWarnings("unchecked")
-		GSSessionField<T> field = (GSSessionField<T>)fields.get(type);
+	/* Visible for GSSession */
+	<T> boolean add(GSSessionFieldType<T> type) {
+		GSSessionField<T> field = getField(type);
 		
 		if (field == null) {
 			field = type.create();
@@ -50,15 +50,22 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		return false;
 	}
 
-	private <T> boolean set(GSSessionFieldPair<T> pair) {
-		return set(pair.getType(), pair.getValue());
+	/* Visible for GSSession */
+	<T> void forceSet(GSSessionFieldPair<T> pair) {
+		GSSessionField<T> field = getField(pair.getType());
+		if (field != null)
+			field.set(pair.getValue());
 	}
 	
 	public <T> boolean set(GSSessionFieldType<T> type, T value) {
-		@SuppressWarnings("unchecked")
-		GSSessionField<T> field = (GSSessionField<T>)fields.get(type);
+		if (!type.isNullable() && value == null)
+			throw new IllegalArgumentException("value is null");
 		
+		GSSessionField<T> field = getField(type);
 		if (field != null && !Objects.equals(field.get(), value)) {
+			if (type.isAssignableOnce() && field.get() != null)
+				throw new IllegalStateException("value already assigned");
+			
 			field.set(value);
 			return true;
 		}
@@ -71,7 +78,8 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		return (field == null) ? null : field.get();
 	}
 
-	public <T> GSSessionField<T> getField(GSSessionFieldType<T> type) {
+	/* Visible for GSSession */
+	<T> GSSessionField<T> getField(GSSessionFieldType<T> type) {
 		@SuppressWarnings("unchecked")
 		GSSessionField<T> field = (GSSessionField<T>)fields.get(type);
 		return field;
@@ -108,7 +116,7 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 				throw new IOException("Duplicate field type");
 			
 			fields.add(pair.getType());
-			fields.set(pair);
+			fields.forceSet(pair);
 		}
 		
 		return fields;

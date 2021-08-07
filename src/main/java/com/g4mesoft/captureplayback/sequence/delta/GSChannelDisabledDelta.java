@@ -31,12 +31,12 @@ public class GSChannelDisabledDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		setChannelDisabled(oldDisabled, newDisabled, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		setChannelDisabled(newDisabled, oldDisabled, sequence);
 	}
 	

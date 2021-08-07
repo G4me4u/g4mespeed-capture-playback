@@ -2,22 +2,22 @@ package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
-import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.common.GSDeltaException;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
+import com.g4mesoft.captureplayback.common.GSDeltaRegistries;
+import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.composition.GSComposition;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSCompositionSessionDelta implements GSISessionDelta {
+public class GSCompositionSessionDelta implements GSIDelta<GSSession> {
 
 	private GSSessionFieldType<?> type;
-	private GSICompositionDelta delta;
+	private GSIDelta<GSComposition> delta;
 	
 	public GSCompositionSessionDelta() {
 	}
 	
-	public GSCompositionSessionDelta(GSSessionFieldType<?> type, GSICompositionDelta delta) {
+	public GSCompositionSessionDelta(GSSessionFieldType<GSComposition> type, GSIDelta<GSComposition> delta) {
 		this.type = type;
 		this.delta = delta;
 	}
@@ -29,30 +29,21 @@ public class GSCompositionSessionDelta implements GSISessionDelta {
 			throw new GSDeltaException("Field '" + type.getName() + "' is not a composition.");
 		((GSCompositionSessionField)field).applyDelta(delta);
 	}
+	
+	@Override
+	public void unapply(GSSession session) throws GSDeltaException {
+		throw new GSDeltaException("Unapply unsupported.");
+	}
 
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
 		type = GSSession.readFieldType(buf);
-		
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		
-		delta = extension.getCompositionDeltaRegistry().createNewElement(buf.readInt());
-		if (delta == null)
-			throw new IOException("Invalid delta ID");
-		delta.read(buf);
+		delta = GSDeltaRegistries.COMPOSITION_DELTA_REGISTRY.read(buf);
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
 		GSSession.writeFieldType(buf, type);
-		
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
-		buf.writeInt(extension.getCompositionDeltaRegistry().getIdentifier(delta));
-		delta.write(buf);
-	}
-
-	@Override
-	public GSSessionFieldType<?> getType() {
-		return type;
+		GSDeltaRegistries.COMPOSITION_DELTA_REGISTRY.write(buf, delta);
 	}
 }

@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 import org.lwjgl.glfw.GLFW;
 
-import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
@@ -15,16 +15,13 @@ import com.g4mesoft.captureplayback.gui.GSSequenceEditPanel;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
-import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSESessionType;
-import com.g4mesoft.captureplayback.session.GSISessionDelta;
 import com.g4mesoft.captureplayback.session.GSISessionListener;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
 import com.g4mesoft.captureplayback.session.GSSessionRequestPacket;
+import com.g4mesoft.captureplayback.session.GSSessionSide;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.client.GSIClientModule;
 import com.g4mesoft.core.client.GSIClientModuleManager;
@@ -45,7 +42,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 @Environment(EnvType.CLIENT)
-public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequenceDeltaListener, GSISessionListener {
+public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessionListener {
 
 	public static final int RENDERING_DISABLED = 0;
 	public static final int RENDERING_DEPTH    = 1;
@@ -55,8 +52,6 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 	public static final String KEY_CATEGORY = "capture-playback";
 	public static final GSSettingCategory CAPTURE_PLAYBACK_CATEGORY = new GSSettingCategory("capture-playback");
 	
-	private final GSSequenceDeltaTransformer sequenceTransformer;
-
 	private final Map<GSESessionType, GSSession> sessions;
 	private final Map<GSESessionType, GSPanel> sessionPanels;
 	
@@ -65,9 +60,6 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 	public final GSIntegerSetting cChannelRenderingType;
 	
 	public GSCapturePlaybackClientModule() {
-		sequenceTransformer = new GSSequenceDeltaTransformer();
-		sequenceTransformer.addDeltaListener(this);
-
 		sessions = new HashMap<>();
 		sessionPanels = new HashMap<>();
 		
@@ -112,15 +104,15 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 			GSSession session = getSession(GSESessionType.SEQUENCE);
 			GSChannel channel = getChannelAtCrosshair(session);
 			if (channel != null && session != null)
-				session.set(GSSession.S_SELECTED_CHANNEL, channel.getChannelUUID());
+				session.set(GSSession.SELECTED_CHANNEL, channel.getChannelUUID());
 		}, GSEKeyEventType.PRESS);
 		
 		keyManager.registerKey("pasteChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
 			GSSession session = getSession(GSESessionType.SEQUENCE);
 			
 			if (session != null) {
-				GSSequence sequence = session.get(GSSession.S_SEQUENCE);
-				GSChannel selectedChannel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
+				GSSequence sequence = session.get(GSSession.SEQUENCE);
+				GSChannel selectedChannel = sequence.getChannel(session.get(GSSession.SELECTED_CHANNEL));
 				if (selectedChannel != null)
 					return channel.getInfo().withColor(selectedChannel.getInfo().getColor());
 			}
@@ -144,7 +136,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
 		if (session != null) {
-			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			BlockPos position = getCrosshairTarget();
 			// Only add channels if we have a crosshair target
 			if (position != null) {
@@ -154,7 +146,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 				
 				// Automatically select the new channel
 				if (channel != null && session != null)
-					session.set(GSSession.S_SELECTED_CHANNEL, channel.getChannelUUID());
+					session.set(GSSession.SELECTED_CHANNEL, channel.getChannelUUID());
 			}
 		}
 	}
@@ -163,9 +155,9 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
 		if (session != null) {
-			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			BlockPos position = getCrosshairTarget();
-			GSChannel channel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
+			GSChannel channel = sequence.getChannel(session.get(GSSession.SELECTED_CHANNEL));
 			
 			if (position != null && channel != null)
 				channel.setInfo(channel.getInfo().addPosition(position));
@@ -176,9 +168,9 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 		GSSession session = getSession(GSESessionType.SEQUENCE);
 		
 		if (session != null) {
-			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			BlockPos position = getCrosshairTarget();
-			GSChannel channel = sequence.getChannel(session.get(GSSession.S_SELECTED_CHANNEL));
+			GSChannel channel = sequence.getChannel(session.get(GSSession.SELECTED_CHANNEL));
 			
 			if (position != null && channel != null) {
 				GSChannelInfo info = channel.getInfo();
@@ -191,7 +183,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 	
 	private GSChannel getChannelAtCrosshair(GSSession session) {
 		if (session != null && session.getType() == GSESessionType.SEQUENCE) {
-			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			
 			BlockPos position = getCrosshairTarget();
 			if (position != null) {
@@ -237,6 +229,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 			onSessionStop(session.getType());
 		
 		sessions.put(session.getType(), session);
+		session.setSide(GSSessionSide.CLIENT_SIDE);
 		session.addListener(this);
 	
 		switch (session.getType()) {
@@ -244,7 +237,6 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 			openSessionPanel(session.getType(), new GSCompositionEditPanel(session));
 			break;
 		case SEQUENCE:
-			sequenceTransformer.install(session.get(GSSession.S_SEQUENCE));
 			openSessionPanel(session.getType(), new GSSequenceEditPanel(session));
 			break;
 		}
@@ -252,18 +244,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 
 	public void onSessionStop(GSESessionType sessionType) {
 		GSSession session = sessions.remove(sessionType);
-
-		if (session != null) {
-			switch (sessionType) {
-			case COMPOSITION:
-				break;
-			case SEQUENCE:
-				sequenceTransformer.uninstall(session.get(GSSession.S_SEQUENCE));
-				break;
-			}
-			
+		if (session != null)
 			closeSessionPanel(sessionType);
-		}
 	}
 	
 	private void openSessionPanel(GSESessionType sessionType, GSPanel panel) {
@@ -289,35 +271,13 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISequen
 	}
 		
 	@Override
-	public void onSequenceDelta(GSISequenceDelta delta) {
-		GSSession session = getSession(GSESessionType.SEQUENCE);
-		if (session != null)
-			session.get(GSSession.S_UNDO_REDO_HISTORY).trackDelta(delta);
-	}
-
-	@Override
-	public void onSessionDeltas(GSSession session, GSISessionDelta[] deltas) {
+	public void onSessionDeltas(GSSession session, GSIDelta<GSSession>[] deltas) {
 		manager.sendPacket(new GSSessionDeltasPacket(session.getType(), deltas));
 	}
 	
-	public void onSessionDeltasReceived(GSESessionType sessionType, GSISessionDelta[] deltas) {
+	public void onSessionDeltasReceived(GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
 		GSSession session = getSession(sessionType);
-		
-		if (session != null) {
-			try {
-				if (sessionType == GSESessionType.SEQUENCE)
-					sequenceTransformer.setEnabled(false);
-				
-				for (GSISessionDelta delta : deltas) {
-					try {
-						delta.apply(session);
-					} catch (GSDeltaException ignore) {
-					}
-				}
-			} finally {
-				if (sessionType == GSESessionType.SEQUENCE)
-					sequenceTransformer.setEnabled(true);
-			}
-		}
+		if (session != null)
+			session.applySessionDeltas(deltas);
 	}
 }

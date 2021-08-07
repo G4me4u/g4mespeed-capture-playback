@@ -17,7 +17,7 @@ public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSICo
 		if (session.getType() != GSESessionType.COMPOSITION)
 			throw new IllegalArgumentException("Session is not of type composition");
 		
-		this.composition = session.get(GSSession.C_COMPOSITION);
+		this.composition = session.get(GSSession.COMPOSITION);
 
 		contentPanel = new GSCompositionPanel(session);
 		add(contentPanel);

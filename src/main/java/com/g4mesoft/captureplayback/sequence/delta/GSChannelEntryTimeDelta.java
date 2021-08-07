@@ -42,12 +42,12 @@ public class GSChannelEntryTimeDelta extends GSChannelEntryDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		setEntryTime(oldStartTime, oldEndTime, newStartTime, newEndTime, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		setEntryTime(newStartTime, newEndTime, oldStartTime, oldEndTime, sequence);
 	}
 	

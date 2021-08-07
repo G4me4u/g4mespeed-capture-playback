@@ -5,12 +5,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrackGroup;
 
 import net.minecraft.network.PacketByteBuf;
 
-public abstract class GSGroupDelta implements GSICompositionDelta {
+public abstract class GSGroupDelta implements GSIDelta<GSComposition> {
 
 	private UUID groupUUID;
 

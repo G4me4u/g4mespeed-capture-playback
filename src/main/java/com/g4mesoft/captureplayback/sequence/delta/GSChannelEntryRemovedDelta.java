@@ -36,14 +36,14 @@ public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 	}
 
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		GSChannelEntry entry = addEntry(sequence, startTime, endTime);
 		
 		entry.setType(type);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		removeEntry(sequence, startTime, endTime, type);
 	}
 	

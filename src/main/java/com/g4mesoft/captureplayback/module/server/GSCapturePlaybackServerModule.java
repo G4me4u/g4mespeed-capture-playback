@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSESessionType;
-import com.g4mesoft.captureplayback.session.GSISessionDelta;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.GSCoreExtension;
 import com.g4mesoft.core.server.GSIServerModule;
 import com.g4mesoft.core.server.GSIServerModuleManager;
@@ -92,7 +93,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		sessionManager.onSessionRequest(player, sessionType, requestType, structureUUID);
 	}
 
-	public void onSessionDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
+	public void onSessionDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
 		sessionManager.onDeltasReceived(player, sessionType, deltas);
 	}
 	

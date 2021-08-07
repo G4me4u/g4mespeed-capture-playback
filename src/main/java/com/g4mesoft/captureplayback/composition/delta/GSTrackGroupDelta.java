@@ -31,12 +31,12 @@ public class GSTrackGroupDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		setTrackGroup(composition, oldGroupUUID, newGroupUUID);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		setTrackGroup(composition, newGroupUUID, oldGroupUUID);
 	}
 	

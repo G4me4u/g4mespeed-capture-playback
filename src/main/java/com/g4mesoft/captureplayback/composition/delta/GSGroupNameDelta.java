@@ -32,12 +32,12 @@ public class GSGroupNameDelta extends GSGroupDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		setGroupName(composition, oldName, newName);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		setGroupName(composition, newName, oldName);
 	}
 

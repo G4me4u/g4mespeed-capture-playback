@@ -1,71 +1,46 @@
 package com.g4mesoft.captureplayback.composition.delta;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSDeltaTransformer;
+import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.GSIDeltaListener;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSICompositionListener;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
 import com.g4mesoft.captureplayback.composition.GSTrackGroup;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDelta;
-import com.g4mesoft.captureplayback.sequence.delta.GSISequenceDeltaListener;
 import com.g4mesoft.captureplayback.sequence.delta.GSSequenceDeltaTransformer;
 
-public class GSCompositionDeltaTransformer implements GSICompositionListener {
+public class GSCompositionDeltaTransformer extends GSDeltaTransformer<GSComposition> implements GSICompositionListener {
 
-	private final List<GSICompositionDeltaListener> listeners;
-	
 	private final Map<UUID, GSTrackSequenceDeltaListener> sequenceDeltaListeners;
 	
-	private GSComposition composition;
-	private boolean enabled;
-	
 	public GSCompositionDeltaTransformer() {
-		listeners = new ArrayList<>();
-		
 		sequenceDeltaListeners = new HashMap<>();
-	
-		composition = null;
-		enabled = true;
 	}
 	
-	public void addDeltaListener(GSICompositionDeltaListener listener) {
-		listeners.add(listener);
-	}
-
-	public void removeDeltaListener(GSICompositionDeltaListener listener) {
-		listeners.remove(listener);
-	}
-	
-	public void install(GSComposition composition) {
-		if (this.composition != null)
-			throw new IllegalStateException("Already installed");
+	@Override
+	public void install(GSComposition model) {
+		super.install(model);
 		
-		this.composition = composition;
-
-		for (GSTrack track : composition.getTracks())
+		for (GSTrack track : model.getTracks())
 			installSequenceListener(track);
 	
-		composition.addCompositionListener(this);
+		model.addCompositionListener(this);
 	}
 	
-	public void uninstall(GSComposition composition) {
-		if (this.composition == null)
-			throw new IllegalStateException("Not installed");
-		if (this.composition != composition)
-			throw new IllegalStateException("Composition is not the one that is installed");
+	@Override
+	public void uninstall(GSComposition model) {
+		super.uninstall(model);
 		
-		this.composition.removeCompositionListener(this);
+		model.removeCompositionListener(this);
 		
-		for (GSTrack track : this.composition.getTracks())
+		for (GSTrack track : model.getTracks())
 			uninstallSequenceListener(track);
-			
-		this.composition = null;
 	}
 	
 	private void installSequenceListener(GSTrack track) {
@@ -81,14 +56,11 @@ public class GSCompositionDeltaTransformer implements GSICompositionListener {
 		if (listener != null)
 			listener.uninstall();
 	}
-	
-	public boolean isEnabled() {
-		return enabled;
-	}
-	
+
+	@Override
 	public void setEnabled(boolean enabled) {
-		if (enabled != this.enabled) {
-			this.enabled = enabled;
+		if (enabled != isEnabled()) {
+			super.setEnabled(enabled);
 			
 			for (GSTrackSequenceDeltaListener listener : sequenceDeltaListeners.values())
 				listener.setEnabled(enabled);
@@ -97,88 +69,68 @@ public class GSCompositionDeltaTransformer implements GSICompositionListener {
 	
 	@Override
 	public void compositionNameChanged(String oldName) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSCompositionNameDelta(composition.getName(), oldName));
+		dispatchDeltaEvent(new GSCompositionNameDelta(model.getName(), oldName));
 	}
 
 	@Override
 	public void groupAdded(GSTrackGroup group) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSGroupAddedDelta(group));
+		dispatchDeltaEvent(new GSGroupAddedDelta(group));
 	}
 
 	@Override
 	public void groupRemoved(GSTrackGroup group) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSGroupRemovedDelta(group));
+		dispatchDeltaEvent(new GSGroupRemovedDelta(group));
 	}
 	
 	@Override
 	public void groupNameChanged(GSTrackGroup group, String oldName) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSGroupNameDelta(group.getGroupUUID(), group.getName(), oldName));
+		dispatchDeltaEvent(new GSGroupNameDelta(group.getGroupUUID(), group.getName(), oldName));
 	}
 	
 	@Override
 	public void trackAdded(GSTrack track) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackAddedDelta(track));
-		
+		dispatchDeltaEvent(new GSTrackAddedDelta(track));
 		installSequenceListener(track);
 	}
 
 	@Override
 	public void trackRemoved(GSTrack track) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackRemovedDelta(track));
-
+		dispatchDeltaEvent(new GSTrackRemovedDelta(track));
 		uninstallSequenceListener(track);
 	}
 
 	@Override
 	public void trackNameChanged(GSTrack track, String oldName) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackNameDelta(track.getTrackUUID(), track.getName(), oldName));
+		dispatchDeltaEvent(new GSTrackNameDelta(track.getTrackUUID(), track.getName(), oldName));
 	}
 
 	@Override
 	public void trackColorChanged(GSTrack track, int oldColor) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackColorDelta(track.getTrackUUID(), track.getColor(), oldColor));
+		dispatchDeltaEvent(new GSTrackColorDelta(track.getTrackUUID(), track.getColor(), oldColor));
 	}
 
 	@Override
 	public void trackGroupChanged(GSTrack track, UUID oldGroupUUID) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackGroupDelta(track.getTrackUUID(), track.getGroupUUID(), oldGroupUUID));
+		dispatchDeltaEvent(new GSTrackGroupDelta(track.getTrackUUID(), track.getGroupUUID(), oldGroupUUID));
 	}
 	
 	@Override
 	public void entryAdded(GSTrackEntry entry) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackEntryAddedDelta(entry));
+		dispatchDeltaEvent(new GSTrackEntryAddedDelta(entry));
 	}
 
 	@Override
 	public void entryRemoved(GSTrackEntry entry) {
-		if (enabled)
-			dispatchCompositionDeltaEvent(new GSTrackEntryRemovedDelta(entry));
+		dispatchDeltaEvent(new GSTrackEntryRemovedDelta(entry));
 	}
 
 	@Override
 	public void entryOffsetChanged(GSTrackEntry entry, long oldOffset) {
-		if (enabled) {
-			dispatchCompositionDeltaEvent(new GSTrackEntryOffsetDelta(entry.getParent().getTrackUUID(), 
-					entry.getEntryUUID(), entry.getOffset(), oldOffset));
-		}
+		dispatchDeltaEvent(new GSTrackEntryOffsetDelta(entry.getParent().getTrackUUID(), 
+				entry.getEntryUUID(), entry.getOffset(), oldOffset));
 	}
 	
-	private void dispatchCompositionDeltaEvent(GSICompositionDelta delta) {
-		for (GSICompositionDeltaListener listener : listeners)
-			listener.onCompositionDelta(delta);
-	}
-	
-	private class GSTrackSequenceDeltaListener implements GSISequenceDeltaListener {
+	private class GSTrackSequenceDeltaListener implements GSIDeltaListener<GSSequence> {
 
 		private final UUID trackUUID;
 		private final GSSequence sequence;
@@ -206,8 +158,8 @@ public class GSCompositionDeltaTransformer implements GSICompositionListener {
 		}
 		
 		@Override
-		public void onSequenceDelta(GSISequenceDelta delta) {
-			dispatchCompositionDeltaEvent(new GSTrackSequenceDelta(trackUUID, delta));
+		public void onDelta(GSIDelta<GSSequence> delta) {
+			dispatchDeltaEvent(new GSTrackSequenceDelta(trackUUID, delta));
 		}
 	}
 }
