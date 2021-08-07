@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
@@ -11,7 +12,7 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public abstract class GSTrackDelta implements GSICompositionDelta {
+public abstract class GSTrackDelta implements GSIDelta<GSComposition> {
 	
 	protected UUID trackUUID;
 

@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.util.Objects;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSCompositionNameDelta implements GSICompositionDelta {
+public class GSCompositionNameDelta implements GSIDelta<GSComposition> {
 
 	private String newName;
 	private String oldName;
@@ -29,12 +30,12 @@ public class GSCompositionNameDelta implements GSICompositionDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		setName(oldName, newName, composition);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		setName(newName, oldName, composition);
 	}
 

@@ -32,12 +32,12 @@ public class GSTrackAddedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		removeTrack(composition, name, color, groupUUID, 0, 0, 0);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		addTrack(composition, name, color, groupUUID);
 	}
 	

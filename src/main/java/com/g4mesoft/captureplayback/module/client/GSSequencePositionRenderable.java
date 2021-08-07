@@ -42,7 +42,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	public void render(GSIRenderer3D renderer) {
 		GSSession session = module.getSession(GSESessionType.SEQUENCE);
 		if (session != null) {
-			GSSequence sequence = session.get(GSSession.S_SEQUENCE);
+			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			
 			switch(module.cChannelRenderingType.getValue()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
@@ -66,7 +66,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
 		float viewDistance = client.gameRenderer.getViewDistance();
 		
-		UUID selectedChannelUUID = session.get(GSSession.S_SELECTED_CHANNEL);
+		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
 		
 		Set<GSCubeEntry> cubes = new TreeSet<>();
 		for (GSChannel channel : sequence.getChannels()) {

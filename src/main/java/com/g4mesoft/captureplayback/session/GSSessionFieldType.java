@@ -9,12 +9,13 @@ public class GSSessionFieldType<T> {
 	private final Function<GSSessionFieldType<T>, GSSessionField<T>> constructor;
 	private final Supplier<T> defaultSupplier;
 	private final boolean nullable;
+	private final boolean assignOnce;
 	private final GSISessionFieldCodec<T> codec;
 	private final boolean cached;
 	private final boolean synced;
 	
-	public GSSessionFieldType(String name, Function<GSSessionFieldType<T>, GSSessionField<T>> constructor,
-			Supplier<T> defaultSupplier, boolean nullable, GSISessionFieldCodec<T> codec, boolean cached, boolean synced) {
+	public GSSessionFieldType(String name, Function<GSSessionFieldType<T>, GSSessionField<T>> constructor, Supplier<T> defaultSupplier,
+			boolean nullable, boolean assignOnce, GSISessionFieldCodec<T> codec, boolean cached, boolean synced) {
 		
 		if (name == null)
 			throw new IllegalArgumentException("name is null");
@@ -29,6 +30,7 @@ public class GSSessionFieldType<T> {
 		this.constructor = constructor;
 		this.defaultSupplier = defaultSupplier;
 		this.nullable = nullable;
+		this.assignOnce = assignOnce;
 		this.codec = codec;
 		this.cached = cached;
 		this.synced = synced;
@@ -37,9 +39,22 @@ public class GSSessionFieldType<T> {
 	public String getName() {
 		return name;
 	}
+	
+	public GSSessionField<T> create() {
+		GSSessionField<T> field = constructor.apply(this);
+		T value = defaultSupplier.get();
+		if (!nullable && value == null)
+			throw new IllegalStateException("value is null");
+		field.set(value);
+		return field;
+	}
 
 	public boolean isNullable() {
 		return nullable;
+	}
+
+	public boolean isAssignableOnce() {
+		return assignOnce;
 	}
 	
 	public GSISessionFieldCodec<T> getCodec() {
@@ -54,15 +69,6 @@ public class GSSessionFieldType<T> {
 		return synced;
 	}
 
-	public GSSessionField<T> create() {
-		GSSessionField<T> field = constructor.apply(this);
-		T value = defaultSupplier.get();
-		if (!nullable && value == null)
-			throw new IllegalStateException("value is null");
-		field.set(value);
-		return field;
-	}
-	
 	@Override
 	public int hashCode() {
 		return name.hashCode();

@@ -1,12 +1,12 @@
 package com.g4mesoft.captureplayback.session;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.GSIDeltaListener;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.delta.GSCompositionDeltaTransformer;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDelta;
-import com.g4mesoft.captureplayback.composition.delta.GSICompositionDeltaListener;
 
-public class GSCompositionSessionField extends GSSessionField<GSComposition> implements GSICompositionDeltaListener {
+public class GSCompositionSessionField extends GSSessionField<GSComposition> implements GSIDeltaListener<GSComposition> {
 
 	private GSSession session;
 	
@@ -40,16 +40,23 @@ public class GSCompositionSessionField extends GSSessionField<GSComposition> imp
 	}
 
 	@Override
-	public void onCompositionDelta(GSICompositionDelta delta) {
-		if (session != null)
+	public void onDelta(GSIDelta<GSComposition> delta) {
+		if (session != null) {
 			session.dispatchSessionDelta(new GSCompositionSessionDelta(type, delta));
+
+			if (session.getSide() == GSSessionSide.CLIENT_SIDE) {
+				GSUndoRedoHistory history = session.get(GSSession.UNDO_REDO_HISTORY);
+				if (history != null)
+					history.addEntry(new GSCompositionUndoRedoEntry(delta));
+			}
+		}
 	}
 
-	public void applyDelta(GSICompositionDelta delta) throws GSDeltaException {
+	public void applyDelta(GSIDelta<GSComposition> delta) throws GSDeltaException {
 		if (value != null) {
 			try {
 				transformer.setEnabled(false);
-				delta.applyDelta(value);
+				delta.apply(value);
 			} finally {
 				transformer.setEnabled(true);
 			}

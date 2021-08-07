@@ -30,12 +30,12 @@ public class GSChannelAddedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		removeChannel(sequence, prevUUID, info, GSChannel.DEFAULT_DISABLED, 0);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		addChannel(sequence, prevUUID, info);
 	}
 	

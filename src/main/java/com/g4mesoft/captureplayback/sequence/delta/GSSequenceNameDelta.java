@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.util.Objects;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.util.GSBufferUtil;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSSequenceNameDelta implements GSISequenceDelta {
+public class GSSequenceNameDelta implements GSIDelta<GSSequence> {
 
 	private String newName;
 	private String oldName;
@@ -29,12 +30,12 @@ public class GSSequenceNameDelta implements GSISequenceDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		setName(oldName, newName, sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		setName(newName, oldName, sequence);
 	}
 

@@ -28,12 +28,12 @@ public class GSGroupAddedDelta extends GSGroupDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		removeGroup(composition, groupName);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		addGroup(composition, groupName);
 	}
 

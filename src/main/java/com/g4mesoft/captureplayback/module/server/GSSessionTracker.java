@@ -10,15 +10,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSICompositionListener;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.session.GSESessionType;
-import com.g4mesoft.captureplayback.session.GSISessionDelta;
 import com.g4mesoft.captureplayback.session.GSISessionListener;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
+import com.g4mesoft.captureplayback.session.GSSessionSide;
 import com.g4mesoft.captureplayback.session.GSSessionStartPacket;
 import com.g4mesoft.captureplayback.session.GSSessionStopPacket;
 import com.g4mesoft.core.server.GSIServerModuleManager;
@@ -71,6 +71,7 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 			playerSessionsFromType.put(session.getType(), playerSessions);
 		}
 		playerSessions.put(player.getUuid(), session);
+		session.setSide(GSSessionSide.SERVER_SIDE);
 		
 		if (sessionToPlayerUUID.put(session, player.getUuid()) != null)
 			throw new IllegalStateException("Session is already added");
@@ -99,7 +100,7 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 		GSSession session = readCompositionSession(player);
 		if (session == null)
 			session = new GSSession(GSESessionType.COMPOSITION);
-		session.set(GSSession.C_COMPOSITION, composition);
+		session.set(GSSession.COMPOSITION, composition);
 		
 		addSession(player, session);
 		session.addListener(this);
@@ -136,7 +137,7 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 				if (session == null || session.getType() != GSESessionType.SEQUENCE)
 					session = new GSSession(GSESessionType.SEQUENCE);
 			}
-			session.set(GSSession.S_SEQUENCE, track.getSequence());
+			session.set(GSSession.SEQUENCE, track.getSequence());
 			addSession(player, session);
 
 			UUID sequenceUUID = track.getSequence().getSequenceUUID();
@@ -161,7 +162,7 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 	}
 	
 	private void onSequenceSessionStopped(ServerPlayerEntity player, GSSession session) {
-		UUID sequenceUUID = session.get(GSSession.S_SEQUENCE).getSequenceUUID();
+		UUID sequenceUUID = session.get(GSSession.SEQUENCE).getSequenceUUID();
 
 		writeSequenceSession(player, sequenceUUID.toString(), session);
 		writeSequenceSession(player, LATEST_SESSION_DIRECTORY_NAME, session);
@@ -245,17 +246,10 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 		return composition;
 	}
 	
-	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
+	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
 		GSSession session = getSession(player, sessionType);
-		
-		if (session != null) {
-			for (GSISessionDelta delta : deltas) {
-				try {
-					delta.apply(session);
-				} catch (GSDeltaException ignore) {
-				}
-			}
-		}
+		if (session != null)
+			session.applySessionDeltas(deltas);
 	}
 
 	@Override
@@ -272,7 +266,7 @@ public class GSSessionTracker implements GSICompositionListener, GSISessionListe
 	}
 	
 	@Override
-	public void onSessionDeltas(GSSession session, GSISessionDelta[] deltas) {
+	public void onSessionDeltas(GSSession session, GSIDelta<GSSession>[] deltas) {
 		UUID playerUUID = sessionToPlayerUUID.get(session);
 		
 		if (playerUUID != null) {

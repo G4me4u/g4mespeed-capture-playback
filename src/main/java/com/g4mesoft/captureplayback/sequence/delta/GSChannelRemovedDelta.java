@@ -43,17 +43,17 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSSequence sequence) throws GSDeltaException {
+	public void unapply(GSSequence sequence) throws GSDeltaException {
 		GSChannel channel = addChannel(sequence, prevUUID, info);
 		
 		channel.setDisabled(disabled);
 		
 		for (GSChannelEntryDelta entryDelta : entryDeltas)
-			entryDelta.unapplyDelta(sequence);
+			entryDelta.unapply(sequence);
 	}
 
 	@Override
-	public void applyDelta(GSSequence sequence) throws GSDeltaException {
+	public void apply(GSSequence sequence) throws GSDeltaException {
 		removeChannel(sequence, prevUUID, info, disabled, entryDeltas.length);
 	}
 	

@@ -3,52 +3,48 @@ package com.g4mesoft.captureplayback.session;
 import java.io.IOException;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSFieldSessionDelta implements GSISessionDelta {
+public class GSFieldSessionDelta implements GSIDelta<GSSession> {
 
-	private GSSessionFieldType<?> type;
-	private Object value;
+	private GSSessionFieldPair<?> pair;
 
 	public GSFieldSessionDelta() {
 	}
 
-	public <T> GSFieldSessionDelta(GSSessionFieldPair<T> pair) {
-		this(pair.getType(), pair.getValue());
-	}
-	
 	public <T> GSFieldSessionDelta(GSSessionFieldType<T> type, T value) {
-		this.type = type;
-		this.value = value;
+		this(new GSSessionFieldPair<>(type, value));
+	}
+
+	public <T> GSFieldSessionDelta(GSSessionFieldPair<T> pair) {
+		this.pair = pair;
 	}
 	
 	@Override
 	public void apply(GSSession session) throws GSDeltaException {
-		applyUnchecked(session);
+		if (session.getSide() == GSSessionSide.CLIENT_SIDE) {
+			session.forceSet(pair);
+		} else {
+			session.set(pair);
+		}
+		
+		session.cancelSync(pair.getType());
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T> void applyUnchecked(GSSession session) throws GSDeltaException {
-		// We are guaranteed to have the same types, given that
-		// GSSession.readField keeps its type-related promises.
-		session.set((GSSessionFieldType<T>)type, (T)value);
+	@Override
+	public void unapply(GSSession session) throws GSDeltaException {
+		throw new GSDeltaException("Unapply unsupported.");
 	}
-
+	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
-		GSSessionFieldPair<?> pair = GSSession.readFieldPair(buf);
-		type = pair.getType();
-		value = pair.getValue();
+		pair = GSSession.readFieldPair(buf);
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
-		GSSession.writeFieldPair(buf, new GSSessionFieldPair<>(type, value));
-	}
-	
-	@Override
-	public GSSessionFieldType<?> getType() {
-		return type;
+		GSSession.writeFieldPair(buf, pair);
 	}
 }

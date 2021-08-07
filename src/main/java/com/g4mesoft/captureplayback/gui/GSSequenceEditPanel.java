@@ -17,7 +17,7 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		if (session.getType() != GSESessionType.SEQUENCE)
 			throw new IllegalArgumentException("Session is not of type sequence");
 		
-		this.sequence = session.get(GSSession.S_SEQUENCE);
+		this.sequence = session.get(GSSession.SEQUENCE);
 		
 		contentPanel = new GSSequencePanel(session, new GSDefaultChannelProvider());
 

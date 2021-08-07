@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSESessionType;
-import com.g4mesoft.captureplayback.session.GSISessionDelta;
+import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -116,7 +117,7 @@ public class GSSessionManager {
 		playerToTracker.clear();
 	}
 	
-	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSISessionDelta[] deltas) {
+	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
 		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
 		if (tracker != null)
 			tracker.onDeltasReceived(player, sessionType, deltas);

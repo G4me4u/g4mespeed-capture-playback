@@ -27,12 +27,12 @@ public class GSTrackEntryAddedDelta extends GSTrackEntryDelta {
 	}
 	
 	@Override
-	public void unapplyDelta(GSComposition composition) throws GSDeltaException {
+	public void unapply(GSComposition composition) throws GSDeltaException {
 		removeEntry(composition, offset);
 	}
 
 	@Override
-	public void applyDelta(GSComposition composition) throws GSDeltaException {
+	public void apply(GSComposition composition) throws GSDeltaException {
 		addEntry(composition, offset);
 	}
 	

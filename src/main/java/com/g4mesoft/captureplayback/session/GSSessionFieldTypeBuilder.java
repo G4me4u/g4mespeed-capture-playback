@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.session;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +20,7 @@ public final class GSSessionFieldTypeBuilder<T> {
 	private Function<GSSessionFieldType<T>, GSSessionField<T>> constructor;
 	private Supplier<T> defaultSupplier;
 	private boolean nullable;
+	private boolean assignOnce;
 	private GSISessionFieldCodec<T> codec;
 	private boolean cached;
 	private boolean synced;
@@ -34,7 +36,7 @@ public final class GSSessionFieldTypeBuilder<T> {
 		this.nameToType = nameToType;
 		this.sessionFieldTypes = sessionFieldTypes;
 		
-		sessionTypes = new HashSet<>();
+		sessionTypes = EnumSet.noneOf(GSESessionType.class);
 		
 		reset();
 	}
@@ -46,6 +48,7 @@ public final class GSSessionFieldTypeBuilder<T> {
 		Supplier<T> nullSupplier = (Supplier<T>)NULL_SUPPLIER;
 		defaultSupplier = nullSupplier;
 		nullable = false;
+		assignOnce = false;
 		codec = null;
 		cached = true;
 		synced = true;
@@ -74,9 +77,7 @@ public final class GSSessionFieldTypeBuilder<T> {
 	}
 
 	public GSSessionFieldTypeBuilder<T> def(T defaultValue) {
-		this.defaultSupplier = Suppliers.ofInstance(defaultValue);
-		hasDefaultSupplier = true;
-		return this;
+		return def(Suppliers.ofInstance(defaultValue));
 	}
 
 	public GSSessionFieldTypeBuilder<T> def(Supplier<T> defaultSupplier) {
@@ -90,6 +91,11 @@ public final class GSSessionFieldTypeBuilder<T> {
 	
 	public GSSessionFieldTypeBuilder<T> nullable() {
 		nullable = true;
+		return this;
+	}
+
+	public GSSessionFieldTypeBuilder<T> assignOnce() {
+		assignOnce = true;
 		return this;
 	}
 
@@ -124,7 +130,9 @@ public final class GSSessionFieldTypeBuilder<T> {
 		if (sessionTypes.isEmpty())
 			throw new IllegalStateException("must specify a session type");
 		
-		GSSessionFieldType<T> type = new GSSessionFieldType<>(name, constructor, defaultSupplier, nullable, codec, cached, synced);
+		GSSessionFieldType<T> type = new GSSessionFieldType<>(name, constructor, defaultSupplier,
+				nullable, assignOnce, codec, cached, synced);
+		
 		if (nameToType.put(name, type) != null)
 			throw new IllegalStateException("Duplicate type with name: " + name);
 		
@@ -142,7 +150,7 @@ public final class GSSessionFieldTypeBuilder<T> {
 		return type;
 	}
 	
-	public <V> GSSessionFieldTypeBuilder<V> as() {
+	public <V> GSSessionFieldTypeBuilder<V> cast() {
 		@SuppressWarnings("unchecked")
 		GSSessionFieldTypeBuilder<V> builder = (GSSessionFieldTypeBuilder<V>)this;
 		return builder;

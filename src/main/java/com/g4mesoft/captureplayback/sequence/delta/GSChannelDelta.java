@@ -5,13 +5,14 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
+import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 
 import net.minecraft.network.PacketByteBuf;
 
-public abstract class GSChannelDelta implements GSISequenceDelta {
+public abstract class GSChannelDelta implements GSIDelta<GSSequence> {
 
 	protected UUID channelUUID;
 
