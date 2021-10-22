@@ -85,7 +85,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 
 		String title = Long.toString(modelView.getColumnGametick(columnIndex));
 		int ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
-		renderer.drawText(title, cx + COLUMN_TITLE_LEFT_MARGIN, ty, color, false);
+		renderer.drawTextNoStyle(title, cx + COLUMN_TITLE_LEFT_MARGIN, ty, color, false);
 		
 		if (columnIndex == hoveredColumnIndex) {
 			renderer.drawVLine(cx - 1, 0, height, COLUMN_LINE_COLOR);

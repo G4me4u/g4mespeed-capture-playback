@@ -14,7 +14,6 @@ import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.scroll.GSIScrollListener;
 import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
@@ -83,8 +82,8 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 	}
 	
 	@Override
-	public GSScrollBar createHorizontalScrollBar(GSIScrollListener listener) {
-		return new GSSequencePreviewScrollBar(sequence, modelView, this, listener);
+	public GSScrollBar createHorizontalScrollBar() {
+		return new GSSequencePreviewScrollBar(sequence, modelView);
 	}
 	
 	@Override
@@ -121,7 +120,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 		
 		setXOffset(session.get(GSSession.X_OFFSET));
 		setYOffset(session.get(GSSession.Y_OFFSET));
-		setOpacity(session.get(GSSession.OPACITY));
+		setContentOpacity(session.get(GSSession.OPACITY));
 	}
 
 	@Override
@@ -130,7 +129,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 
 		session.set(GSSession.X_OFFSET, getXOffset());
 		session.set(GSSession.Y_OFFSET, getYOffset());
-		session.set(GSSession.OPACITY, getOpacity());
+		session.set(GSSession.OPACITY, getContentOpacity());
 		session.sync();
 		
 		modelView.uninstallListeners();
@@ -149,9 +148,7 @@ public class GSSequencePanel extends GSScrollableContentPanel implements GSIMode
 	}
 	
 	@Override
-	public void onBoundsChanged() {
-		super.onBoundsChanged();
-
+	public void onResized(int oldWidth, int oldHeight) {
 		if (isVisible())
 			modelView.updateModelView();
 	}

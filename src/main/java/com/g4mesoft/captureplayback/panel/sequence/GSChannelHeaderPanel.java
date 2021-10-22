@@ -82,9 +82,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	}
 	
 	@Override
-	protected void onBoundsChanged() {
-		super.onBoundsChanged();
-
+	protected void layout() {
 		layoutChannelLabels();
 	}
 
@@ -94,8 +92,8 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 
 		sequence.addSequenceListener(this);
 		modelView.addModelViewListener(this);
-		
-		layoutChannelLabels();
+
+		invalidate();
 	}
 	
 	@Override
@@ -339,7 +337,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 				public void mousePressed(GSMouseEvent event) {
 					if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
 						int draggedChannelY = GSChannelLabelPanel.this.getY();
-						int dragMouseOffsetY = moveButton.getViewOffsetY() + event.getY();
+						int dragMouseOffsetY = moveButton.getY() + event.getY();
 						startDragging(channel.getChannelUUID(), draggedChannelY, dragMouseOffsetY);
 						event.consume();
 					}
@@ -479,7 +477,6 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 				add(deleteButton);
 				add(editButton);
 				add(moveButton);
-				requestLayout();
 			}
 		}
 
@@ -494,7 +491,6 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 				remove(deleteButton);
 				remove(editButton);
 				remove(moveButton);
-				requestLayout();
 			}
 		}
 		

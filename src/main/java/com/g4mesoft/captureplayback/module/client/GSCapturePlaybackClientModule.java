@@ -9,7 +9,7 @@ import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
-import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
+import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel2;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
 import com.g4mesoft.captureplayback.gui.GSSequenceEditPanel;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
@@ -234,7 +234,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 		switch (session.getType()) {
 		case COMPOSITION:
-			openSessionPanel(session.getType(), new GSCompositionEditPanel(session));
+			openSessionPanel(session.getType(), new GSCompositionEditPanel2(session));
 			break;
 		case SEQUENCE:
 			openSessionPanel(session.getType(), new GSSequenceEditPanel(session));

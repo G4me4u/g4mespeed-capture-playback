@@ -5,8 +5,6 @@ import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.scroll.GSIScrollListener;
-import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
@@ -38,9 +36,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	
 	private final GSRectangle tmpEntryRect;
 	
-	public GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView, GSIScrollable parent, GSIScrollListener listener) {
-		super(parent, listener);
-		
+	public  GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView) {
 		this.sequence = sequence;
 		this.modelView = modelView;
 	
@@ -128,7 +124,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	protected int getKnobColor(boolean hovered) {
 		if (!isEnabled())
 			return DISABLED_KNOB_COLOR;
-		if (isScrollDragActive() || hovered)
+		if (scrollDragActive || hovered)
 			return HOVERED_KNOB_COLOR;
 		return KNOB_COLOR;
 	}
@@ -157,11 +153,13 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 		// Translate into static view
 		x -= modelView.getXOffset();
 	
-		x = x * getKnobAreaSize() / getContentSize();
+		float scrollInterval = model.getMaxScroll() - model.getMinScroll();
+		x = Math.round(x * knobAreaSize / (scrollInterval + viewSize));
 		return SCROLL_BUTTON_WIDTH + x;
 	}
 
 	private int mapEntryY(int y) {
+		// TODO: remove these
 		// Translate into static view
 		y -= modelView.getYOffset();
 		
@@ -169,10 +167,10 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 
 		// Ensure that we can see the top channel when vertical scroll
 		// is zero and bottom channel when vertical scroll is maxScroll.
-		int hiddenVerticalContent = parent.getContentHeight() - parent.getContentViewHeight();
+		float scrollInterval = model.getMaxScroll() - model.getMinScroll();
 		int hiddenChannelCount = sequence.getChannels().size() - PREVIEW_CHANNEL_COUNT;
-		if (hiddenVerticalContent > 0 && hiddenChannelCount > 0)
-			y += hiddenChannelCount * modelView.getYOffset() / hiddenVerticalContent;
+		if (scrollInterval > 0.0f && hiddenChannelCount > 0)
+			y += hiddenChannelCount * modelView.getYOffset() / scrollInterval;
 		
 		return VERTICAL_BORDER_HEIGHT + y;
 	}

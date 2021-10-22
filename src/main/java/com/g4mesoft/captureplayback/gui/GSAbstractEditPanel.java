@@ -95,10 +95,10 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	protected abstract void handleNameChanged(String name);
 	
 	@Override
-	public void onBoundsChanged() {
+	public void layout() {
 		layoutContent(0, TITLE_HEIGHT, width, Math.max(height - TITLE_HEIGHT, 0));
 		
-		backButton.setBounds(new GSRectangle(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, backButton.getPreferredSize()));
+		backButton.setBounds(new GSRectangle(0, (TITLE_HEIGHT - GSButtonPanel.BUTTON_HEIGHT) / 2, backButton.getProperty(PREFERRED_SIZE)));
 		nameField.setBounds((width - MAXIMUM_TITLE_WIDTH) / 2, 0, MAXIMUM_TITLE_WIDTH, TITLE_HEIGHT);
 	}
 	

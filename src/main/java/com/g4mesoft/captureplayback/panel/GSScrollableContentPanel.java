@@ -43,14 +43,16 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 	}
 	
 	protected void init() {
-		verticalScrollBar = createVerticalScrollBar((newScroll) -> {
+		verticalScrollBar = createVerticalScrollBar();
+		verticalScrollBar.getModel().addScrollListener((newScroll) -> {
 			onYOffsetChanged(-newScroll);
 		});
 		
-		horizontalScrollBar = createHorizontalScrollBar(new GSIScrollListener() {
+		horizontalScrollBar = createHorizontalScrollBar();
+		horizontalScrollBar.getModel().addScrollListener(new GSIScrollListener() {
 			@Override
 			public void preScrollChanged(float newScroll) {
-				contentWidth = Math.max(minContentWidth, (int)newScroll + getContentViewWidth());
+				contentWidth = Math.max(minContentWidth, (int)newScroll + getContent().getWidth());
 			}
 
 			@Override
@@ -70,12 +72,12 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		add(horizontalScrollBar);
 	}
 	
-	protected GSScrollBar createVerticalScrollBar(GSIScrollListener listener) {
-		return new GSScrollBar(this, listener);
+	protected GSScrollBar createVerticalScrollBar() {
+		return new GSScrollBar();
 	}
 
-	protected GSScrollBar createHorizontalScrollBar(GSIScrollListener listener) {
-		return new GSScrollBar(this, listener);
+	protected GSScrollBar createHorizontalScrollBar() {
+		return new GSScrollBar();
 	}
 	
 	protected abstract GSPanel getContent();
@@ -102,8 +104,8 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		int chh = getColumnHeaderHeight();
 		int rhw = getRowHeaderWidth();
 	
-		GSDimension vs = verticalScrollBar.getPreferredSize();
-		GSDimension hs = horizontalScrollBar.getPreferredSize();
+		GSDimension vs = verticalScrollBar.getProperty(PREFERRED_SIZE);
+		GSDimension hs = horizontalScrollBar.getProperty(PREFERRED_SIZE);
 		int cw = Math.max(1, width - rhw - vs.getWidth());
 		int ch = Math.max(1, height - chh - hs.getHeight());
 
@@ -137,10 +139,9 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 	
 	@Override
 	public final void render(GSIRenderer2D renderer) {
-		float oldOpacity = renderer.getOpacity();
-		renderer.setOpacity(opacity.getOpacity());
+		renderer.pushOpacity(opacity.getOpacity());
 		renderTranslucent(renderer);
-		renderer.setOpacity(oldOpacity);
+		renderer.popOpacity();
 	}
 	
 	public void renderTranslucent(GSIRenderer2D renderer) {
@@ -152,7 +153,7 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		int cy = height - sh;
 
 		// Bottom right corner
-		renderer.fillRect(cx, cy, sw, sh, BOTTOM_RIGHT_CORNER_COLOR);		
+		renderer.fillRect(cx, cy, sw, sh, BOTTOM_RIGHT_CORNER_COLOR);
 	}
 	
 	@Override
@@ -162,26 +163,26 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
 			Text text = new TranslatableText(opacity.getName());
 			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
-				setOpacity(opacity);
+				setContentOpacity(opacity);
 			}));
 		}
 		dropdown.addItem(new GSDropdownSubMenu(OPACITY_TEXT, opacityMenu));
 	}
 	
 	protected float getXOffset() {
-		return -horizontalScrollBar.getScrollOffset();
+		return -horizontalScrollBar.getScroll();
 	}
 	
 	protected void setXOffset(float xOffset) {
-		horizontalScrollBar.setScrollOffset(-xOffset);
+		horizontalScrollBar.setScroll(-xOffset);
 	}
 
 	protected float getYOffset() {
-		return -verticalScrollBar.getScrollOffset();
+		return -verticalScrollBar.getScroll();
 	}
 
 	protected void setYOffset(float yOffset) {
-		verticalScrollBar.setScrollOffset(-yOffset);
+		verticalScrollBar.setScroll(-yOffset);
 	}
 	
 	protected abstract void onXOffsetChanged(float xOffset);
@@ -200,19 +201,22 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 	}
 	
 	public void setContentSize(int contentWidth, int contentHeight) {
-		setMinContentWidth(Math.max(getContentViewWidth(), contentWidth));
+		setMinContentWidth(Math.max(getContent().getWidth(), contentWidth));
 		
-		if (contentHeight > getContentViewHeight()) {
+		if (contentHeight > getContent().getHeight()) {
 			this.contentHeight = contentHeight;
 			verticalScrollBar.setEnabled(true);
 		} else {
-			this.contentHeight = getContentViewHeight();
+			this.contentHeight = getContent().getHeight();
 			verticalScrollBar.setEnabled(false);
 		}
 		
 		// Updating the scroll will ensure it is within bounds.
 		setXOffset(getXOffset());
 		setYOffset(getYOffset());
+		
+		verticalScrollBar.getModel().setMaxScroll(contentHeight);
+		horizontalScrollBar.getModel().setMaxScroll(contentWidth);
 	}
 	
 	public boolean isEditable() {
@@ -223,33 +227,13 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		this.editable = editable;
 	}
 	
-	public GSEContentOpacity getOpacity() {
+	public GSEContentOpacity getContentOpacity() {
 		return opacity;
 	}
 	
-	public void setOpacity(GSEContentOpacity opacity) {
+	public void setContentOpacity(GSEContentOpacity opacity) {
 		if (opacity == null)
 			throw new IllegalArgumentException("opacity is null");
 		this.opacity = opacity;
-	}
-	
-	@Override
-	public int getContentWidth() {
-		return contentWidth;
-	}
-
-	@Override
-	public int getContentHeight() {
-		return contentHeight;
-	}
-	
-	@Override
-	public int getContentViewWidth() {
-		return getContent().getWidth();
-	}
-
-	@Override
-	public int getContentViewHeight() {
-		return getContent().getHeight();
 	}
 }

@@ -65,8 +65,8 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoLis
 	
 	@Override
 	protected void layout() {
-		GSDimension undoPrefS = undoButton.getPreferredSize();
-		GSDimension redoPrefS = redoButton.getPreferredSize();
+		GSDimension undoPrefS = undoButton.getProperty(PREFERRED_SIZE);
+		GSDimension redoPrefS = redoButton.getProperty(PREFERRED_SIZE);
 
 		int bx = BUTTON_MARGIN;
 		int by = Math.min(height - undoPrefS.getHeight(), height - redoPrefS.getHeight()) - BUTTON_MARGIN;

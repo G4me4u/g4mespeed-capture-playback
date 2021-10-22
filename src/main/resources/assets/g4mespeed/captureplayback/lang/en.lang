@@ -33,6 +33,11 @@ panel.edit.undo=Undo
 panel.edit.redo=Redo
 panel.edit.back=Back
 
+panel.edit.channel.title=Edit Channel
+panel.edit.channel.name=Name:
+panel.edit.channel.color=Color:
+panel.edit.channel.positions=Positions (WIP):
+
 ############ Hotkeys ############
 
 hotkey.capture-playback.title=Capture & Playback
