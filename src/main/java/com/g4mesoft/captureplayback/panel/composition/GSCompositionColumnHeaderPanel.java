@@ -68,15 +68,12 @@ public class GSCompositionColumnHeaderPanel extends GSPanel implements GSIScroll
 	}
 	
 	@Override
-	public boolean isScrollableWidthFixed() {
+	public boolean isScrollableWidthFilled() {
 		return true;
 	}
 	
 	@Override
 	public void modelViewChanged() {
-		// Preferred size might have changed.
 		invalidate();
-		// Request layout from parent (GSViewport)
-		invalidateParent();
 	}
 }

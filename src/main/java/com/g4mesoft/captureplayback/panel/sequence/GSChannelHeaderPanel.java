@@ -5,12 +5,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSECursorType;
 import com.g4mesoft.panel.GSETextAlignment;
 import com.g4mesoft.panel.GSIcon;
@@ -26,23 +28,23 @@ import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.panel.field.GSTextField;
+import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.util.math.BlockPos;
 
-public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceListener, 
-                                                                   GSIModelViewListener,
-                                                                   GSIMouseListener {
+public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable, GSISequenceListener, 
+                                                                   GSIModelViewListener, GSIMouseListener {
 
-	private static final GSIcon EDIT_ICON            = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 0,  0, 9, 9));
-	private static final GSIcon HOVERED_EDIT_ICON    = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 0,  9, 9, 9));
-	private static final GSIcon DISABLED_EDIT_ICON   = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 0, 18, 9, 9));
-	private static final GSIcon DELETE_ICON          = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 9,  0, 9, 9));
-	private static final GSIcon HOVERED_DELETE_ICON  = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 9,  9, 9, 9));
-	private static final GSIcon DISABLED_DELETE_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion( 9, 18, 9, 9));
-	private static final GSIcon MOVE_ICON            = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(18,  0, 9, 9));
-	private static final GSIcon HOVERED_MOVE_ICON    = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(18,  9, 9, 9));
-	private static final GSIcon DISABLED_MOVE_ICON   = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(18, 18, 9, 9));
+	private static final GSIcon EDIT_ICON            = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 0,  0, 9, 9));
+	private static final GSIcon HOVERED_EDIT_ICON    = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 0,  9, 9, 9));
+	private static final GSIcon DISABLED_EDIT_ICON   = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 0, 18, 9, 9));
+	private static final GSIcon DELETE_ICON          = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 9,  0, 9, 9));
+	private static final GSIcon HOVERED_DELETE_ICON  = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 9,  9, 9, 9));
+	private static final GSIcon DISABLED_DELETE_ICON = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion( 9, 18, 9, 9));
+	private static final GSIcon MOVE_ICON            = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(18,  0, 9, 9));
+	private static final GSIcon HOVERED_MOVE_ICON    = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(18,  9, 9, 9));
+	private static final GSIcon DISABLED_MOVE_ICON   = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(18, 18, 9, 9));
 	
 	private static final int BUTTON_MARGIN = 1;
 	private static final int NAME_FIELD_HORIZONTAL_MARGIN = 4;
@@ -52,6 +54,8 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	public static final int CHANNEL_SPACING_COLOR = 0xFF202020;
 	
 	private static final int CROSSHAIR_TARGET_BORDER_COLOR = 0xFFE0E0E0;
+	
+	private static final int CHANNEL_HEADER_PREFERRED_WIDTH = 130;
 	
 	private final GSSequence sequence;
 	private final GSSequenceModelView modelView;
@@ -107,19 +111,13 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	}
 	
 	private void layoutChannelLabels() {
-		int ch = modelView.getChannelHeight();
-
+		// TODO: make this better :-)
+		
 		for (GSChannel channel : sequence.getChannels()) {
 			UUID channelUUID = channel.getChannelUUID();
 
-			if (!channelUUID.equals(sequencePanel.getDraggedChannelUUID())) {
-				int cy = modelView.getChannelY(channelUUID);
-				if (cy + ch >= 0 && cy < height) {
-					layoutChannelLabel(channelUUID);
-				} else {
-					removeChannelLabel(channelUUID);
-				}
-			}
+			if (!channelUUID.equals(sequencePanel.getDraggedChannelUUID()))
+				layoutChannelLabel(channelUUID);
 		}
 	}
 
@@ -163,12 +161,8 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 		renderer.fillRect(0, 0, width, height, CHANNEL_HEADER_COLOR);
 		renderer.drawVLine(width - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
 		
-		renderer.pushClip(0, 0, width, height);
-		
 		renderChannelSpacing(renderer);
 		super.render(renderer);
-		
-		renderer.popClip();
 	}
 	
 	protected void renderChannelSpacing(GSIRenderer2D renderer) {
@@ -178,6 +172,11 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			int cy = modelView.getChannelY(channelUUID);
 			renderer.fillRect(0, cy + ch, width, cs, CHANNEL_SPACING_COLOR);
 		}
+	}
+	
+	@Override
+	protected GSDimension calculatePreferredSize() {
+		return new GSDimension(CHANNEL_HEADER_PREFERRED_WIDTH, modelView.getMinimumHeight());
 	}
 
 	private void startDragging(UUID channelUUID, int draggedChannelY, int dragMouseOffsetY) {
@@ -223,7 +222,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 		}
 	}
 	
-	void setHoveredChannelUUID(UUID hoveredChannelUUID) {
+	public void setHoveredChannelUUID(UUID hoveredChannelUUID) {
 		if (!Objects.equals(this.hoveredChannelUUID, hoveredChannelUUID)) {
 			GSChannelLabelPanel labelPanel = uuidToLabel.get(this.hoveredChannelUUID);
 			if (labelPanel != null)
@@ -245,6 +244,11 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	}
 	
 	@Override
+	public boolean isScrollableHeightFilled() {
+		return true;
+	}
+	
+	@Override
 	public void channelRemoved(GSChannel channel, UUID oldPrevUUID) {
 		removeChannelLabel(channel.getChannelUUID());
 		layoutChannelLabels();
@@ -260,6 +264,8 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 	@Override
 	public void modelViewChanged() {
 		layoutChannelLabels();
+		
+		invalidate();
 	}
 	
 	@Override
@@ -320,7 +326,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			editButton.setDisabledBackgroundColor(0);
 			editButton.setBorderWidth(0);
 			editButton.addActionListener(() -> {
-				sequencePanel.editChannel(this.channel.getChannelUUID());
+				new GSChannelEditorPanel(this.channel).show(null);
 			});
 			
 			moveButton = new GSButton(MOVE_ICON);
@@ -374,7 +380,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSISequenceLi
 			nameField.setUneditableTextColor(info.getColor());
 			nameField.setText(info.getName());
 		}
-
+		
 		@Override
 		protected void layout() {
 			int bs = Math.max(1, height - 2 * BUTTON_MARGIN);

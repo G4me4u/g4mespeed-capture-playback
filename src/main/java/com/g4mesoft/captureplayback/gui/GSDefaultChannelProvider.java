@@ -19,13 +19,16 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	private static String defaultChannelName;
 	
 	@Override
-	public GSChannelInfo createNextChannelInfo(GSSequence sequence) {
-		return new GSChannelInfo(getDefaultChannelName(), 
-		                         getUniqueColor(sequence),
-		                         getChannelPosition());
+	public GSChannelInfo createChannelInfo(GSSequence sequence) {
+		BlockPos pos = GSCapturePlaybackClientModule.getCrosshairTarget();
+		return createChannelInfo(sequence, (pos == null) ? BlockPos.ORIGIN : pos);
 	}
 
-	public static String getDefaultChannelName() {
+	public GSChannelInfo createChannelInfo(GSSequence sequence, BlockPos pos) {
+		return new GSChannelInfo(getDefaultChannelName(), getUniqueColor(sequence), pos);
+	}
+
+	private static String getDefaultChannelName() {
 		GSTranslationModule translationModule = GSClientController.getInstance().getTranslationModule();
 		if (defaultChannelName == null && translationModule.hasTranslation(DEFAULT_CHANNEL_NAME))
 			defaultChannelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
@@ -36,7 +39,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 		return getUniqueColor(sequence, MAX_COLOR_TRIES);
 	}
 
-	public static int getUniqueColor(GSSequence sequence, int maxTries) {
+	private static int getUniqueColor(GSSequence sequence, int maxTries) {
 		int color;
 
 		do {
@@ -55,10 +58,5 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 		}
 
 		return true;
-	}
-	
-	private static BlockPos getChannelPosition() {
-		BlockPos position = GSCapturePlaybackClientModule.getCrosshairTarget();
-		return (position == null) ? BlockPos.ORIGIN : position;
 	}
 }

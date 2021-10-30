@@ -50,10 +50,11 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		
 		horizontalScrollBar = createHorizontalScrollBar();
 		horizontalScrollBar.getModel().addScrollListener(new GSIScrollListener() {
+			/*
 			@Override
 			public void preScrollChanged(float newScroll) {
 				contentWidth = Math.max(minContentWidth, (int)newScroll + getContent().getWidth());
-			}
+			}*/
 
 			@Override
 			public void scrollChanged(float newScroll) {

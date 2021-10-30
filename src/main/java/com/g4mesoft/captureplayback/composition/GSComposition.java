@@ -52,7 +52,7 @@ public class GSComposition {
 		this.name = name;
 		
 		groups = new GSMutableLinkedHashMap<>();
-		// TODO: remove linked from hash map.
+		// TODO: remove linked from hash map (once panel supports group rendering).
 		tracks = new LinkedHashMap<>();
 		
 		listeners = null;

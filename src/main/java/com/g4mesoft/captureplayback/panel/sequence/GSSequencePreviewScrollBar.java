@@ -4,8 +4,10 @@ import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSDimension;
+import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.scroll.GSScrollBar;
+import com.g4mesoft.panel.scroll.GSScrollPanel;
 import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
@@ -36,7 +38,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	
 	private final GSRectangle tmpEntryRect;
 	
-	public  GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView) {
+	public GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView) {
 		this.sequence = sequence;
 		this.modelView = modelView;
 	
@@ -150,19 +152,12 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private int mapEntryX(int x) {
-		// Translate into static view
-		x -= modelView.getXOffset();
-	
 		float scrollInterval = model.getMaxScroll() - model.getMinScroll();
 		x = Math.round(x * knobAreaSize / (scrollInterval + viewSize));
 		return SCROLL_BUTTON_WIDTH + x;
 	}
 
 	private int mapEntryY(int y) {
-		// TODO: remove these
-		// Translate into static view
-		y -= modelView.getYOffset();
-		
 		y /= (modelView.getChannelHeight() + modelView.getChannelSpacing());
 
 		// Ensure that we can see the top channel when vertical scroll
@@ -170,9 +165,19 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 		float scrollInterval = model.getMaxScroll() - model.getMinScroll();
 		int hiddenChannelCount = sequence.getChannels().size() - PREVIEW_CHANNEL_COUNT;
 		if (scrollInterval > 0.0f && hiddenChannelCount > 0)
-			y += hiddenChannelCount * modelView.getYOffset() / scrollInterval;
+			y -= hiddenChannelCount * getScrollPanelYOffset() / scrollInterval;
 		
 		return VERTICAL_BORDER_HEIGHT + y;
+	}
+	
+	private int getScrollPanelYOffset() {
+		GSPanel parent = getParent();
+		if (parent instanceof GSScrollPanel) {
+			// Retrieve offset from scroll panel. This will be the
+			// same offset used for the sequence panel viewport.
+			return ((GSScrollPanel)parent).getViewportOffsetY();
+		}
+		return 0;
 	}
 	
 	@Override

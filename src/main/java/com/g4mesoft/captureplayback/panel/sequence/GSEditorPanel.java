@@ -6,6 +6,7 @@ import com.g4mesoft.panel.GSEFill;
 import com.g4mesoft.panel.GSGridLayoutManager;
 import com.g4mesoft.panel.GSLocation;
 import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.GSPanelContext;
 import com.g4mesoft.panel.GSPanelUtil;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.GSPopup;
@@ -114,13 +115,15 @@ public abstract class GSEditorPanel extends GSParentPanel {
 	
 	public void show(GSPanel source) {
 		GSPopup popup = new GSPopup(this);
-
-		GSLocation location = GSPanelUtil.getViewLocation(source);
-		GSDimension popupSize = popup.getProperty(PREFERRED_SIZE);
-		int px = location.getX() + (source.getWidth() - popupSize.getWidth()) / 2;
-		int py = location.getY() + (source.getHeight() - popupSize.getHeight()) / 2;
 		
-		popup.show(source, px, py);
+		// Show popup centered relative to source, or root panel (if source is null).
+		GSPanel relative = (source != null) ? source : GSPanelContext.getRootPanel();
+		GSLocation location = GSPanelUtil.getViewLocation(relative);
+		GSDimension popupSize = popup.getProperty(PREFERRED_SIZE);
+		int cx = location.getX() + (relative.getWidth()  - popupSize.getWidth()) / 2;
+		int cy = location.getY() + (relative.getHeight() - popupSize.getHeight()) / 2;
+		
+		popup.show(source, cx, cy);
 	}
 	
 	protected void close() {

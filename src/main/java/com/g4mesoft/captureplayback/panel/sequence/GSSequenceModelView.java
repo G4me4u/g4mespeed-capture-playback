@@ -50,8 +50,6 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	private final Map<Integer, UUID> channelIndexToUUID;
 	private final Map<UUID, Map<Integer, Integer>> multiCellLookup;
 	
-	private int xOffset;
-	private int yOffset;
 	private int channelHeight;
 	private int channelSpacing;
 
@@ -311,24 +309,20 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	}
 	
 	public int getColumnX(int columnIndex) {
-		return xOffset + getColumnOffset(columnIndex);
-	}
-	
-	private int getColumnOffset(int columnIndex) {
 		if (expandedColumnModel.hasExpandedColumn() && columnIndex >= expandedColumnModel.getMinColumnIndex()) {
 			int minIndex = expandedColumnModel.getMinColumnIndex();
 			int maxIndex = expandedColumnModel.getMaxColumnIndex();
-
-			int columnOffset = minIndex * GAMETICK_COLUMN_WIDTH;
+			
+			int columnX = minIndex * GAMETICK_COLUMN_WIDTH;
 			for (int i = minIndex; i <= maxIndex && i < columnIndex; i++)
-				columnOffset += getColumnDuration(i) * MT_COLUMN_WIDTH;
+				columnX += getColumnDuration(i) * MT_COLUMN_WIDTH;
 			
 			// We should not include the columnIndex itself.
 			int trailingColumnCount = columnIndex - maxIndex - 1;
 			if (trailingColumnCount > 0)
-				columnOffset += trailingColumnCount * GAMETICK_COLUMN_WIDTH;
+				columnX += trailingColumnCount * GAMETICK_COLUMN_WIDTH;
 			
-			return columnOffset;
+			return columnX;
 		}
 		
 		return columnIndex * GAMETICK_COLUMN_WIDTH;
@@ -353,7 +347,7 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 		if (channelIndex == null)
 			return -1;
 		
-		return yOffset + channelIndex.intValue() * (channelHeight + channelSpacing);
+		return channelIndex.intValue() * (channelHeight + channelSpacing);
 	}
 	
 	public int getEntryY(UUID channelUUID) {
@@ -369,7 +363,7 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	}
 	
 	public int getMinimumWidth() {
-		return getColumnOffset(minimumColumnCount);
+		return getColumnX(minimumColumnCount);
 	}
 
 	public int getMinimumHeight() {
@@ -379,7 +373,7 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	/* ******************** VIEW TO MODEL methods ******************** */
 	
 	public GSSignalTime viewToModel(int x, int y) {
-		int columnIndex = getColumnIndexFromView(x);
+		int columnIndex = getColumnIndexFromX(x);
 		if (columnIndex == -1)
 			return null;
 		
@@ -406,11 +400,11 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 		return getColumnTime(columnIndex, mt);
 	}
 	
-	public int getColumnIndexFromView(int x) {
-		if (x < xOffset)
+	public int getColumnIndexFromX(int x) {
+		if (x < 0)
 			return -1;
 		
-		int columnIndex = (x - xOffset) / GAMETICK_COLUMN_WIDTH;
+		int columnIndex = x / GAMETICK_COLUMN_WIDTH;
 		if (expandedColumnModel.hasExpandedColumn() && columnIndex >= expandedColumnModel.getMinColumnIndex()) {
 			columnIndex = expandedColumnModel.getMinColumnIndex();
 			int maxIndex = expandedColumnModel.getMaxColumnIndex();
@@ -429,10 +423,10 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	}
 	
 	public UUID getChannelUUIDFromView(int y) {
-		if (y < yOffset)
+		if (y < 0)
 			return null;
 		
-		int channelIndex = (y - yOffset) / (channelHeight + channelSpacing);
+		int channelIndex = y / (channelHeight + channelSpacing);
 		return channelIndexToUUID.get(Integer.valueOf(channelIndex));
 	}
 	
@@ -440,7 +434,7 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 		if (expandedColumnModel.isSingleExpandedColumn()) {
 			int minIndex = expandedColumnModel.getMinColumnIndex();
 			int maxIndex = expandedColumnModel.getMaxColumnIndex();
-			int columnIndex = GSMathUtil.clamp(getColumnIndexFromView(x), minIndex, maxIndex);
+			int columnIndex = GSMathUtil.clamp(getColumnIndexFromX(x), minIndex, maxIndex);
 			
 			int columnOffset = x - getColumnX(columnIndex);
 			if (columnOffset < 0)
@@ -460,6 +454,10 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	}
 	
 	/* ******************** GETTER & SETTER methods ******************** */
+	
+	public GSExpandedColumnModel getExpandedColumnModel() {
+		return expandedColumnModel;
+	}
 	
 	public int getChannelHeight() {
 		return channelHeight;
@@ -485,28 +483,6 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 		
 		if (channelSpacing != this.channelSpacing) {
 			this.channelSpacing = channelSpacing;
-			dispatchModelViewChangedEvent();
-		}
-	}
-	
-	public int getXOffset() {
-		return xOffset;
-	}
-
-	public void setXOffset(int xOffset) {
-		if (xOffset != this.xOffset) {
-			this.xOffset = xOffset;
-			dispatchModelViewChangedEvent();
-		}
-	}
-
-	public int getYOffset() {
-		return yOffset;
-	}
-
-	public void setYOffset(int yOffset) {
-		if (yOffset != this.yOffset) {
-			this.yOffset = yOffset;
 			dispatchModelViewChangedEvent();
 		}
 	}

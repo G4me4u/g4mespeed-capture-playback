@@ -71,15 +71,12 @@ public class GSCompositionTrackHeaderPanel extends GSPanel implements GSIScrolla
 	}
 	
 	@Override
-	public boolean isScrollableHeightFixed() {
+	public boolean isScrollableHeightFilled() {
 		return true;
 	}
 	
 	@Override
 	public void modelViewChanged() {
-		// Preferred size might have changed.
 		invalidate();
-		// Request layout from parent (GSViewport)
-		invalidateParent();
 	}
 }

@@ -13,7 +13,7 @@ import com.g4mesoft.panel.event.GSIKeyListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.scroll.GSScrollPanelCorner;
 
-public class GSCompositionEditPanel2 extends GSAbstractEditPanel2 implements GSIKeyListener, GSICompositionListener {
+public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSIKeyListener, GSICompositionListener {
 
 	private final GSComposition composition;
 	
@@ -24,7 +24,7 @@ public class GSCompositionEditPanel2 extends GSAbstractEditPanel2 implements GSI
 	
 	private boolean changingName;
 
-	public GSCompositionEditPanel2(GSSession session) {
+	public GSCompositionEditPanel(GSSession session) {
 		super(session, GSESessionType.COMPOSITION);
 		
 		this.composition = session.get(GSSession.COMPOSITION);
@@ -46,6 +46,8 @@ public class GSCompositionEditPanel2 extends GSAbstractEditPanel2 implements GSI
 		compositionNameChanged(null);
 		
 		addKeyEventListener(this);
+		
+		setEditable(true);
 	}
 	
 	@Override
@@ -73,6 +75,13 @@ public class GSCompositionEditPanel2 extends GSAbstractEditPanel2 implements GSI
 	protected void offerSessionFields() {
 		super.offerSessionFields();
 		session.set(GSSession.GAMETICK_WIDTH, modelView.getGametickWidth());
+	}
+	
+	@Override
+	public void setEditable(boolean editable) {
+		super.setEditable(editable);
+	
+		// TODO: Implement editable on compositions
 	}
 	
 	@Override

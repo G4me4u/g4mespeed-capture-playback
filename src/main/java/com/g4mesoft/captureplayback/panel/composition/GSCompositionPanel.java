@@ -124,8 +124,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	public void render(GSIRenderer2D renderer) {
 		super.render(renderer);
 
-		GSRectangle bounds = renderer.getClipBounds()
-				.intersection(0, 0, width, height);
+		GSRectangle bounds = renderer.getClipBounds().intersection(0, 0, width, height);
 		
 		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderBackground(renderer, bounds);
@@ -510,21 +509,17 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	}
 	
 	@Override
-	public boolean isScrollableWidthFixed() {
+	public boolean isScrollableWidthFilled() {
 		return true;
 	}
 	
 	@Override
-	public boolean isScrollableHeightFixed() {
+	public boolean isScrollableHeightFilled() {
 		return true;
 	}
 
 	@Override
 	public void modelViewChanged() {
-		// TODO: fix layout stuff when we change size (including layout of scroll panel, etc.)
-		// Preferred size might have changed.
 		invalidate();
-		// Request layout from parent (GSViewport)
-		invalidateParent();
 	}
 }
