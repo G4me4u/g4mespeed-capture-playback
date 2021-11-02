@@ -110,7 +110,9 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 		}
 		
 		private void onEvent(long captureTime, GSSignalEvent event) {
-			if (captureTime < offset) {
+			captureTime -= offset;
+
+			if (captureTime < 0L) {
 				// We have still not gotten to the correct capture time.
 				return;
 			}
