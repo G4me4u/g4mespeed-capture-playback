@@ -43,9 +43,6 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 	private long timeIndicatorInterval;
 	private double gametickWidth;
 	
-	private int xOffset;
-	private int yOffset;
-	
 	private final List<GSIModelViewListener> listenters;
 	
 	public GSCompositionModelView(GSComposition model) {
@@ -60,8 +57,6 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		timeIndicatorInterval = 1L;
 		gametickWidth = DEFAULT_GAMETICK_WIDTH;
 
-		xOffset = yOffset = 0;
-		
 		listenters = new ArrayList<>();
 		
 		calculateTimeIndicatorInterval();
@@ -199,11 +194,11 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 	
 	/* ******************** MODEL TO VIEW methods ******************** */
 
-	public GSRectangle viewToModel(GSTrackEntry entry) {
-		return viewToModel(entry, null);
+	public GSRectangle modelToView(GSTrackEntry entry) {
+		return modelToView(entry, null);
 	}
 	
-	public GSRectangle viewToModel(GSTrackEntry entry, GSRectangle dest) {
+	public GSRectangle modelToView(GSTrackEntry entry, GSRectangle dest) {
 		long duration = getSequenceDuration(entry.getParent().getSequence());
 
 		if (duration == -1L)
@@ -225,16 +220,8 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		return getGametickExactX((double)gametick);
 	}
 
-	public int getGametickOffset(long gametick) {
-		return getGametickExactOffset((double)gametick);
-	}
-	
 	public int getGametickExactX(double gt) {
-		return xOffset + getGametickExactOffset(gt);
-	}
-
-	private int getGametickExactOffset(double gametick) {
-		return (int)Math.round(gametick * gametickWidth);
+		return (int)Math.round(gt * gametickWidth);
 	}
 
 	public int getTrackY(GSTrack track) {
@@ -246,11 +233,11 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		if (trackIndex == null)
 			return -1;
 		
-		return yOffset + trackIndex * (TRACK_HEIGHT + TRACK_SPACING);
+		return trackIndex * (TRACK_HEIGHT + TRACK_SPACING);
 	}
 
 	public int getMinimumWidth() {
-		return getGametickOffset(minimumGametickCount);
+		return getGametickX(minimumGametickCount);
 	}
 
 	public int getMinimumHeight() {
@@ -280,7 +267,7 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 	}
 
 	public double getGametickExactFromX(int x) {
-		return (x - xOffset) / gametickWidth;
+		return (double)x / gametickWidth;
 	}
 	
 	public long getGametickFromExact(double gt) {
@@ -288,14 +275,10 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 	}
 
 	public GSTrack getTrackFromY(int y) {
-		return getTrackFromAbsoluteY(y - yOffset);
-	}
-	
-	public GSTrack getTrackFromAbsoluteY(int ay) {
-		if (ay < 0)
+		if (y < 0)
 			return null;
 		
-		int trackIndex = ay / (TRACK_HEIGHT + TRACK_SPACING);
+		int trackIndex = y / (TRACK_HEIGHT + TRACK_SPACING);
 		UUID trackUUID = trackIndexToUUID.get(trackIndex);
 		
 		return (trackUUID == null) ? null : model.getTrack(trackUUID);
@@ -311,28 +294,6 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		return TRACK_SPACING;
 	}
 	
-	public int getXOffset() {
-		return xOffset;
-	}
-
-	public void setXOffset(int xOffset) {
-		if (xOffset != this.xOffset) {
-			this.xOffset = xOffset;
-			dispatchModelViewChangedEvent();
-		}
-	}
-
-	public int getYOffset() {
-		return yOffset;
-	}
-
-	public void setYOffset(int yOffset) {
-		if (yOffset != this.yOffset) {
-			this.yOffset = yOffset;
-			dispatchModelViewChangedEvent();
-		}
-	}
-	
 	public double getGametickWidth() {
 		return gametickWidth;
 	}
@@ -345,16 +306,10 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		}
 	}
 
-	public void zoomToCenter(double zoom, int x, int y) {
-		double gt = (x - xOffset) / gametickWidth;
-		
+	public void multiplyZoom(double multiplier) {
 		// Ensure that width is within decent bounds
-		gametickWidth = GSMathUtil.clamp(gametickWidth * zoom, 
+		gametickWidth = GSMathUtil.clamp(gametickWidth * multiplier, 
 				MIN_GAMETICK_WIDTH, MAX_GAMETICK_WIDTH);
-		// Update xOffset such that the x-coordinate is
-		// in the same gametick as prior to the zoom.
-		xOffset = Math.min(0, (int)Math.round(x - gt * gametickWidth));
-		
 		calculateTimeIndicatorInterval();
 		dispatchModelViewChangedEvent();
 	}
@@ -380,8 +335,8 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 		}
 	}
 	
-	public long getTimeIndicatorStart() {
-		return Math.floorDiv(getGametickFromX(0), timeIndicatorInterval) * timeIndicatorInterval;
+	public long getTimeIndicatorFromX(int x) {
+		return Math.floorDiv(getGametickFromX(x), timeIndicatorInterval) * timeIndicatorInterval;
 	}
 	
 	/* ******************** LISTENER & EVENT methods ******************** */

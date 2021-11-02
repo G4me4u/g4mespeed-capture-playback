@@ -1,18 +1,23 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
+import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
+import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.dropdown.GSDropdown;
 import com.g4mesoft.panel.dropdown.GSDropdownAction;
 import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
+import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 
-public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseListener {
+public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIScrollable, GSIModelViewListener,
+                                                                    GSIMouseListener {
 
 	public static final int COLUMN_HEADER_COLOR    = 0xFF202020;
 	public static final int HEADER_TEXT_COLOR      = 0xFFE0E0E0;
@@ -35,45 +40,63 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	private static final Text EXPAND_ALL_TEXT   = new TranslatableText("panel.sequencecolumnheader.expandall");
 	private static final Text COLLAPSE_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.collapseall");
 	
+	private static final int COLUMN_HEADER_PREFERRED_HEIGHT = 30;
+	
 	private final GSExpandedColumnModel expandedColumnModel;
 	private final GSSequenceModelView modelView;
 	
 	private int hoveredColumnIndex;
 	
-	public GSSequenceColumnHeaderPanel(GSSequence sequence, GSExpandedColumnModel expandedColumnModel, GSSequenceModelView modelView) {
-		this.expandedColumnModel = expandedColumnModel;
+	public GSSequenceColumnHeaderPanel(GSSequence sequence, GSSequenceModelView modelView) {
+		this.expandedColumnModel = modelView.getExpandedColumnModel();
 		this.modelView = modelView;
 		
 		addMouseEventListener(this);
 	}
 	
 	@Override
+	protected void onShown() {
+		super.onShown();
+
+		modelView.addModelViewListener(this);
+	}
+	
+	@Override
+	protected void onHidden() {
+		super.onHidden();
+
+		modelView.removeModelViewListener(this);
+	}
+	
+	@Override
 	public void render(GSIRenderer2D renderer) {
 		super.render(renderer);
 	
-		renderer.fillRect(0, 0, width, height, COLUMN_HEADER_COLOR);
+		GSRectangle bounds = renderer.getClipBounds().intersection(0, 0, width, height);
 		
-		renderColumnHeaders(renderer);
+		renderBackground(renderer, bounds);
+		renderColumnHeaders(renderer, bounds);
 
-		renderer.drawHLine(0, width, height - 1, GSSequenceContentPanel.CHANNEL_SPACING_COLOR);
+		// Bottom separator
+		renderer.drawHLine(bounds.x, bounds.x + bounds.width, height - 1, GSSequencePanel.CHANNEL_SPACING_COLOR);
+		// Shadow for fading out columns to the right.
+		renderer.fillHGradient(bounds.x + bounds.width - SHADOW_WIDTH, 0,
+				SHADOW_WIDTH, height, SHADOW_END_COLOR, SHADOW_START_COLOR);
+	}
 
-		renderer.fillHGradient(width - SHADOW_WIDTH, 0, SHADOW_WIDTH, height, SHADOW_END_COLOR, SHADOW_START_COLOR);
+	private void renderBackground(GSIRenderer2D renderer, GSRectangle bounds) {
+		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, COLUMN_HEADER_COLOR);
 	}
 	
-	private void renderColumnHeaders(GSIRenderer2D renderer) {
-		renderer.pushClip(0, 0, width, height);
-		
-		int columnStart = Math.max(0, modelView.getColumnIndexFromView(0));
-		int columnEnd = modelView.getColumnIndexFromView(width - 1);
-
-		int cx = modelView.getColumnX(columnStart);
-		for (int columnIndex = columnStart; columnIndex <= columnEnd; columnIndex++) {
+	private void renderColumnHeaders(GSIRenderer2D renderer, GSRectangle bounds) {
+		int columnIndex = Math.max(0, modelView.getColumnIndexFromX(bounds.x));
+		int cx = modelView.getColumnX(columnIndex);
+		while (cx < bounds.x + bounds.width) {
 			int cw = modelView.getColumnWidth(columnIndex);
 			renderColumnHeader(renderer, columnIndex, cx, cw);
 			cx += cw;
+			columnIndex++;
 		}
-
-		renderer.popClip();
 	}
 	
 	private void renderColumnHeader(GSIRenderer2D renderer, int columnIndex, int cx, int cw) {
@@ -85,7 +108,7 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 
 		String title = Long.toString(modelView.getColumnGametick(columnIndex));
 		int ty = (height / 2 - renderer.getTextHeight() + 1) / 2;
-		renderer.drawText(title, cx + COLUMN_TITLE_LEFT_MARGIN, ty, color, false);
+		renderer.drawTextNoStyle(title, cx + COLUMN_TITLE_LEFT_MARGIN, ty, color, false);
 		
 		if (columnIndex == hoveredColumnIndex) {
 			renderer.drawVLine(cx - 1, 0, height, COLUMN_LINE_COLOR);
@@ -119,8 +142,13 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	}
 	
 	@Override
+	protected GSDimension calculatePreferredSize() {
+		return new GSDimension(modelView.getMinimumWidth(), COLUMN_HEADER_PREFERRED_HEIGHT);
+	}
+	
+	@Override
 	public void populateRightClickMenu(GSDropdown dropdown, int x, int y) {
-		int hoveredColumn = modelView.getColumnIndexFromView(x);
+		int hoveredColumn = modelView.getColumnIndexFromX(x);
 		if (hoveredColumn != -1) {
 			dropdown.addItem(new GSDropdownAction(EXPAND_TEXT, () -> {
 				expandedColumnModel.setExpandedColumn(hoveredColumn);
@@ -142,9 +170,19 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIMouseList
 	}
 	
 	@Override
+	public boolean isScrollableWidthFilled() {
+		return true;
+	}
+	
+	@Override
+	public void modelViewChanged() {
+		invalidate();
+	}
+	
+	@Override
 	public void mousePressed(GSMouseEvent event) {
 		if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
-			int hoveredColumn = modelView.getColumnIndexFromView(event.getX());
+			int hoveredColumn = modelView.getColumnIndexFromX(event.getX());
 			if (hoveredColumn != -1) {
 				if (event.isModifierHeld(GSEvent.MODIFIER_SHIFT)) {
 					expandedColumnModel.includeExpandedColumn(hoveredColumn);

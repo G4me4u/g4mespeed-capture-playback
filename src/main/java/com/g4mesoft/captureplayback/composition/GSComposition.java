@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.stream.GSBlockRegion;
+import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.captureplayback.util.GSMutableLinkedHashMap;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
@@ -52,7 +53,7 @@ public class GSComposition {
 		this.name = name;
 		
 		groups = new GSMutableLinkedHashMap<>();
-		// TODO: remove linked from hash map.
+		// TODO: remove linked from hash map (once panel supports group rendering).
 		tracks = new LinkedHashMap<>();
 		
 		listeners = null;
@@ -307,6 +308,10 @@ public class GSComposition {
 
 	public GSIPlaybackStream getPlaybackStream() {
 		return new GSCompositionPlaybackStream(this);
+	}
+	
+	public GSICaptureStream getCaptureStream() {
+		return new GSCompositionCaptureStream(this);
 	}
 	
 	/* Method visible for play-back & capture streams */

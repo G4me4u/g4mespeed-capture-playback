@@ -54,6 +54,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	private final Map<GSESessionType, GSSession> sessions;
 	private final Map<GSESessionType, GSPanel> sessionPanels;
+	private final GSDefaultChannelProvider channelProvider;
 	
 	private GSIClientModuleManager manager;
 	
@@ -62,6 +63,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	public GSCapturePlaybackClientModule() {
 		sessions = new HashMap<>();
 		sessionPanels = new HashMap<>();
+		channelProvider = new GSDefaultChannelProvider();
 		
 		manager = null;
 		
@@ -140,10 +142,9 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 			BlockPos position = getCrosshairTarget();
 			// Only add channels if we have a crosshair target
 			if (position != null) {
-				String name = GSDefaultChannelProvider.getDefaultChannelName();
-				int color = GSDefaultChannelProvider.getUniqueColor(sequence);
-				GSChannel channel = sequence.addChannel(new GSChannelInfo(name, color, position));
+				GSChannelInfo info = channelProvider.createChannelInfo(sequence, position);
 				
+				GSChannel channel = sequence.addChannel(info);
 				// Automatically select the new channel
 				if (channel != null && session != null)
 					session.set(GSSession.SELECTED_CHANNEL, channel.getChannelUUID());
@@ -237,7 +238,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 			openSessionPanel(session.getType(), new GSCompositionEditPanel(session));
 			break;
 		case SEQUENCE:
-			openSessionPanel(session.getType(), new GSSequenceEditPanel(session));
+			openSessionPanel(session.getType(), new GSSequenceEditPanel(session, channelProvider));
 			break;
 		}
 	}

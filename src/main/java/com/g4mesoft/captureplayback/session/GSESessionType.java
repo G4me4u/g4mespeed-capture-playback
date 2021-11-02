@@ -2,8 +2,8 @@ package com.g4mesoft.captureplayback.session;
 
 public enum GSESessionType {
 
-	COMPOSITION(0),
-	SEQUENCE(1);
+	COMPOSITION("composition", 0),
+	SEQUENCE("sequence", 1);
 	
 	private static final GSESessionType[] TYPES;
 	
@@ -13,10 +13,16 @@ public enum GSESessionType {
 			TYPES[type.index] = type;
 	}
 	
+	private final String name;
 	private final int index;
 	
-	private GSESessionType(int index) {
+	private GSESessionType(String name, int index) {
+		this.name = name;
 		this.index = index;
+	}
+	
+	public String getName() {
+		return name;
 	}
 	
 	public int getIndex() {

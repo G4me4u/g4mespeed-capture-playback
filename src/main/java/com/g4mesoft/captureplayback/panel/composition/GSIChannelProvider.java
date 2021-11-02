@@ -5,6 +5,6 @@ import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 
 public interface GSIChannelProvider {
 
-	public GSChannelInfo createNextChannelInfo(GSSequence sequence);
+	public GSChannelInfo createChannelInfo(GSSequence sequence);
 	
 }

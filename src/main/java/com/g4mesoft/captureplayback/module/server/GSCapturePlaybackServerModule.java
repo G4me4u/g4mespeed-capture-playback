@@ -75,7 +75,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	@Override
 	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
 		GSPlaybackCommand.registerCommand(dispatcher);
-		//GSCaptureCommand.registerCommand(dispatcher);
+		GSCaptureCommand.registerCommand(dispatcher);
 		GSSequenceCommand.registerCommand(dispatcher);
 		GSCompositionCommand.registerCommand(dispatcher);
 	}

@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
+import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.session.GSIUndoRedoListener;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.captureplayback.session.GSUndoRedoHistory;
@@ -17,12 +18,12 @@ import net.minecraft.text.TranslatableText;
 
 public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoListener {
 
-	private static final GSIcon UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 27, 9, 9));
-	private static final GSIcon HOVERED_UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 36, 9, 9));
-	private static final GSIcon DISABLED_UNDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(0, 45, 9, 9));
-	private static final GSIcon REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 27, 9, 9));
-	private static final GSIcon HOVERED_REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 36, 9, 9));
-	private static final GSIcon DISABLED_REDO_ICON = new GSTexturedIcon(GSSequencePanel.ICONS_SHEET.getRegion(9, 45, 9, 9));
+	private static final GSIcon UNDO_ICON          = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(0, 27, 9, 9));
+	private static final GSIcon HOVERED_UNDO_ICON  = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(0, 36, 9, 9));
+	private static final GSIcon DISABLED_UNDO_ICON = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(0, 45, 9, 9));
+	private static final GSIcon REDO_ICON          = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(9, 27, 9, 9));
+	private static final GSIcon HOVERED_REDO_ICON  = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(9, 36, 9, 9));
+	private static final GSIcon DISABLED_REDO_ICON = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(9, 45, 9, 9));
 	
 	private static final Text UNDO_TEXT = new TranslatableText("panel.edit.undo");
 	private static final Text REDO_TEXT = new TranslatableText("panel.edit.redo");
@@ -65,8 +66,8 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoLis
 	
 	@Override
 	protected void layout() {
-		GSDimension undoPrefS = undoButton.getPreferredSize();
-		GSDimension redoPrefS = redoButton.getPreferredSize();
+		GSDimension undoPrefS = undoButton.getProperty(PREFERRED_SIZE);
+		GSDimension redoPrefS = redoButton.getProperty(PREFERRED_SIZE);
 
 		int bx = BUTTON_MARGIN;
 		int by = Math.min(height - undoPrefS.getHeight(), height - redoPrefS.getHeight()) - BUTTON_MARGIN;
@@ -96,7 +97,7 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoLis
 		renderer.fillRect(0, 0, width, height, GSChannelHeaderPanel.CHANNEL_HEADER_COLOR);
 
 		renderer.drawVLine(width - 1, 0, height, GSSequenceColumnHeaderPanel.COLUMN_LINE_COLOR);
-		renderer.drawHLine(0, width, height - 1, GSSequenceContentPanel.CHANNEL_SPACING_COLOR);
+		renderer.drawHLine(0, width, height - 1, GSSequencePanel.CHANNEL_SPACING_COLOR);
 
 		super.render(renderer);
 	}
