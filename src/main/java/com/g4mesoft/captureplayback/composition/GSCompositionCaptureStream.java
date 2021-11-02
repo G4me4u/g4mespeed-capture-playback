@@ -18,7 +18,6 @@ class GSCompositionCaptureStream extends GSCaptureStream {
 			
 			if (smallestOffset != Long.MAX_VALUE) {
 				GSSequence sequence = track.getSequence();
-				// Calculate the offset from the initial event.
 				for (GSChannel channel : sequence.getChannels())
 					addChannelCapture(channel, smallestOffset);
 			}
