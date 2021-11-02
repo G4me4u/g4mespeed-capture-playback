@@ -27,7 +27,7 @@ import com.g4mesoft.panel.scroll.GSScrollPanelCorner;
 import com.google.common.base.Objects;
 
 public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISequenceListener, GSIModelViewListener,
-                                                                        GSIKeyListener, GSIMouseListener {
+                                                                        GSIMouseListener, GSIKeyListener {
 
 	private final GSSequence sequence;
 	
@@ -78,8 +78,8 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		changingName = false;
 		sequenceNameChanged(null);
 		
-		addKeyEventListener(this);
 		addMouseEventListener(this);
+		addKeyEventListener(this);
 		
 		setEditable(true);
 	}
@@ -89,6 +89,8 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		modelView.installListeners();
 		modelView.updateModelView();
 
+		sequence.addSequenceListener(this);
+		
 		super.onShown();
 	}
 	
@@ -96,6 +98,8 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 	protected void onHidden() {
 		modelView.uninstallListeners();
 		setHoveredCell(-1, null);
+		
+		sequence.removeSequenceListener(this);
 		
 		super.onHidden();
 	}
@@ -124,6 +128,7 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		
 		channelHeader.setEditable(editable);
 		content.setEditable(editable);
+		nameField.setEditable(editable);
 	}
 
 	@Override
@@ -134,6 +139,17 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 	
 	@Override
 	public void modelViewChanged() {
+		updateHoveredCell();
+	}
+	
+	@Override
+	public void mouseMoved(GSMouseEvent event) {
+		GSLocation viewLocation = GSPanelUtil.getViewLocation(this);
+		GSLocation contentViewLocation = GSPanelUtil.getViewLocation(content);
+		// Offset mouse coordinates to absolute and then back relative to content.
+		hoveredMouseX = event.getX() + viewLocation.getX() - contentViewLocation.getX();
+		hoveredMouseY = event.getY() + viewLocation.getY() - contentViewLocation.getY();
+		
 		updateHoveredCell();
 	}
 	
@@ -153,12 +169,14 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 	public void keyPressed(GSKeyEvent event) {
 		switch (event.getKeyCode()) {
 		case GSKeyEvent.KEY_T:
-			if (event.isModifierHeld(GSEvent.MODIFIER_CONTROL)) {
-				if (hoveredChannelUUID != null && sequence.removeChannel(hoveredChannelUUID))
+			if (isEditable()) {
+				if (event.isModifierHeld(GSEvent.MODIFIER_CONTROL)) {
+					if (hoveredChannelUUID != null && sequence.removeChannel(hoveredChannelUUID))
+						event.consume();
+				} else {
+					sequence.addChannel(channelProvider.createChannelInfo(sequence));
 					event.consume();
-			} else {
-				sequence.addChannel(channelProvider.createChannelInfo(sequence));
-				event.consume();
+				}
 			}
 			break;
 		case GSKeyEvent.KEY_E:
@@ -172,35 +190,28 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 			}
 			break;
 		case GSKeyEvent.KEY_Z:
-			if (!event.isModifierHeld(GSKeyEvent.MODIFIER_ALT) &&
-			     event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
-				
-				// Allow for redo with CTRL + SHIFT + Z
-				if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
-					session.get(GSSession.UNDO_REDO_HISTORY).redo();
-				} else {
-					session.get(GSSession.UNDO_REDO_HISTORY).undo();
+			if (isEditable()) {
+				if (!event.isModifierHeld(GSKeyEvent.MODIFIER_ALT) &&
+				     event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
+					
+					// Allow for redo with CTRL + SHIFT + Z
+					if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
+						session.get(GSSession.UNDO_REDO_HISTORY).redo();
+					} else {
+						session.get(GSSession.UNDO_REDO_HISTORY).undo();
+					}
 				}
 			}
 			break;
 		case GSKeyEvent.KEY_Y:
-			if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
-				event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
-				
-				session.get(GSSession.UNDO_REDO_HISTORY).redo();
+			if (isEditable()) {
+				if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
+					event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
+					
+					session.get(GSSession.UNDO_REDO_HISTORY).redo();
+				}
 			}
 			break;
 		}
-	}
-	
-	@Override
-	public void mouseMoved(GSMouseEvent event) {
-		GSLocation viewLocation = GSPanelUtil.getViewLocation(this);
-		GSLocation contentViewLocation = GSPanelUtil.getViewLocation(content);
-		// Offset mouse coordinates to absolute and then back relative to content.
-		hoveredMouseX = event.getX() + viewLocation.getX() - contentViewLocation.getX();
-		hoveredMouseY = event.getY() + viewLocation.getY() - contentViewLocation.getY();
-		
-		updateHoveredCell();
 	}
 }

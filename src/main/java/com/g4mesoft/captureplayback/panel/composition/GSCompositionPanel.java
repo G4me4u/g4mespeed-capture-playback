@@ -85,11 +85,16 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	private long leftClickTime;
 	private int leftClickCount;
 	
+	private boolean editable;
+	
 	public GSCompositionPanel(GSComposition composition, GSCompositionModelView modelView) {
 		this.composition = composition;
 		this.modelView = modelView;
 		
 		selectionModel = new GSTrackEntrySelectionModel(composition);
+		
+		// Editable by default;
+		editable = true;
 		
 		addMouseEventListener(this);
 		addKeyEventListener(this);
@@ -123,7 +128,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	@Override
 	public void render(GSIRenderer2D renderer) {
 		super.render(renderer);
-
+		
 		GSRectangle bounds = renderer.getClipBounds().intersection(0, 0, width, height);
 		
 		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
@@ -258,6 +263,14 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		return new GSDimension(modelView.getMinimumWidth(), modelView.getMinimumHeight());
 	}
 	
+	public boolean isEditable() {
+		return editable;
+	}
+	
+	public void setEditable(boolean editable) {
+		this.editable = editable;
+	}
+	
 	@Override
 	public void mousePressed(GSMouseEvent event) {
 		if (!event.isConsumed() && !selectingEntries && !draggingEntry) {
@@ -288,6 +301,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 				} else if (leftClickCount == 2) {
 					GSTrack track = clickedEntry.getParent();
 					if (track != null) {
+						// TODO: implement as uneditable
 						editTrackSequence(track);
 						event.consume();
 					}
@@ -297,8 +311,10 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 						selectionModel.select(clickedEntry);
 					}
 					
-					draggingMouseX = event.getX();
-					draggingEntry = true;
+					if (editable) {
+						draggingMouseX = event.getX();
+						draggingEntry = true;
+					}
 
 					event.consume();
 				}
@@ -315,7 +331,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	public void mouseReleased(GSMouseEvent event) {
 		draggingEntry = selectingEntries = false;
 		
-		if (!event.isConsumed()) {
+		if (!event.isConsumed() && editable) {
 			long deltaMs = Util.getMeasuringTimeMs() - leftClickTime;
 			if (leftClickCount == 2 && deltaMs <= ADD_DELETE_ENTRY_CLICK_TIME) {
 				GSTrack track = modelView.getTrackFromY(event.getY());
@@ -348,10 +364,10 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 			}
 		}
 	}
-	
+
 	@Override
 	public void mouseDragged(GSMouseEvent event) {
-		if (!event.isConsumed() && draggingEntry) {
+		if (!event.isConsumed() && editable && draggingEntry) {
 			long gt0 = modelView.getGametickFromX(draggingMouseX);
 			long gt1 = modelView.getGametickFromX(event.getX());
 			
@@ -445,27 +461,27 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	@Override
 	public void mouseScrolled(GSMouseEvent event) {
-		if (!event.isConsumed() && Screen.hasControlDown()) {
+		if (!event.isConsumed() && Screen.hasControlDown() && isValid()) {
 			double zoomSpeed = Screen.hasAltDown() ? SLOW_ZOOM_SPEED : NORMAL_ZOOM_SPEED;
 			double scroll = Screen.hasShiftDown() ? event.getScrollX() : event.getScrollY();
-			zoomToCenter(Math.pow(zoomSpeed, scroll), event.getX(), event.getY());
+			zoomToCenter(Math.pow(zoomSpeed, scroll), event.getX());
 			event.consume();
 		}
 	}
 	
-	private void zoomToCenter(double multiplier, int x, int y) {
+	private void zoomToCenter(double multiplier, int x) {
+		int scrollX = GSPanelUtil.getScrollX(this);
 		double gt = modelView.getGametickExactFromX(x);
 		modelView.multiplyZoom(multiplier);
 		// Update xOffset such that the x-coordinate is
 		// in the same gametick as prior to the zoom.
-		int xOffset = GSPanelUtil.getScrollX(this);
-		xOffset += modelView.getGametickExactX(gt) - x;
-		GSPanelUtil.setScrollX(this, xOffset);
+		int deltaX = modelView.getGametickExactX(gt) - x;
+		GSPanelUtil.setScrollX(this, scrollX + deltaX);
 	}
 	
 	@Override
 	public void keyPressed(GSKeyEvent event) {
-		if (!event.isConsumed()) {
+		if (!event.isConsumed() && editable) {
 			boolean modifier;
 			
 			switch (event.getKeyCode()) {

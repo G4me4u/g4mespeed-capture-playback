@@ -70,6 +70,10 @@ public class GSCompositionTrackHeaderPanel extends GSPanel implements GSIScrolla
 		return new GSDimension(TRACK_HEADER_PREFERRED_WIDTH, modelView.getMinimumHeight());
 	}
 	
+	public void setEditable(boolean editable) {
+		// TODO: implement track header actions.
+	}
+	
 	@Override
 	public boolean isScrollableHeightFilled() {
 		return true;

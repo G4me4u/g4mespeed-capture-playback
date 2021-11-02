@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import com.g4mesoft.captureplayback.sequence.GSChannel;
+import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
+import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.stream.GSBlockRegion;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.captureplayback.stream.GSPlaybackEntry;
@@ -24,6 +27,26 @@ public abstract class GSPlaybackStream implements GSIPlaybackStream {
 	public GSPlaybackStream(GSBlockRegion blockRegion) {
 		this.blockRegion = blockRegion;
 		entries = new PriorityQueue<>();
+	}
+	
+	protected void addChannelPlayback(GSChannel channel, long offset) {
+		for (BlockPos position : channel.getInfo().getPositions()) {
+			for (GSChannelEntry entry : channel.getEntries()) {
+				GSEChannelEntryType type = entry.getType();
+				
+				GSSignalTime startTime, endTime;
+				if (offset != 0L) {
+					startTime = entry.getStartTime().offsetCopy(offset, 0);
+					endTime = entry.getEndTime().offsetCopy(offset, 0);
+				} else {
+					startTime = entry.getStartTime();
+					endTime = entry.getEndTime();
+				}
+			
+				addEntry(position, startTime, GSESignalEdge.RISING_EDGE, !type.hasStartEvent());
+				addEntry(position, endTime, GSESignalEdge.FALLING_EDGE, !type.hasEndEvent());
+			}
+		}
 	}
 	
 	protected void addEntry(BlockPos pos, GSSignalTime time, GSESignalEdge edge, boolean shadow) {
