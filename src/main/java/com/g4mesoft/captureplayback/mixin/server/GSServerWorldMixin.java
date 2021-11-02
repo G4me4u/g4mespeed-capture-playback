@@ -21,7 +21,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.g4mesoft.captureplayback.CapturePlaybackMod;
+import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
+import com.g4mesoft.captureplayback.access.GSIWorldAccess;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
@@ -48,6 +50,7 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
@@ -55,12 +58,11 @@ import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 
 @Mixin(ServerWorld.class)
-public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSISignalEventContext {
+public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSIWorldAccess, GSISignalEventContext {
 
 	@Shadow @Final private MinecraftServer server;
 	
-	private final Map<Block, GSISignalEventHandler> signalEventHandlerRegistry = 
-			CapturePlaybackMod.getInstance().getExtension().getSignalEventHandlerRegistry();
+	private final GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 	
 	private final List<GSIPlaybackStream> playbackStreams = new ArrayList<>();
 	private final List<GSICaptureStream> captureStreams = new ArrayList<>();
@@ -139,7 +141,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		if (!event.isShadow()) {
 			BlockState state = getBlockState(event.getPos());
 	
-			GSISignalEventHandler handler = signalEventHandlerRegistry.get(state.getBlock());
+			GSISignalEventHandler handler = extension.getSignalEventHandler(state.getBlock());
 			if (handler != null)
 				handler.handle(state, event, this);
 		}
@@ -237,6 +239,16 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Override
+	public boolean isPoweredByPlayback(BlockPos pos) {
+		Block block = getBlockState(pos).getBlock();
+		if (extension.hasSignalEventHandler(block)) {
+			// Check if the playback is currently powering this block
+			return isPlaybackPowering(pos);
+		}
+		return false;
+	}
+	
+	@Override
 	public void handleCaptureEvent(GSESignalEdge edge, BlockPos pos) {
 		if (!captureStreams.isEmpty())
 			capturedEvents.add(new GSSignalEvent(phase, microtick, capturedEvents.size(), edge, pos, false));
@@ -331,6 +343,11 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		}
 
 		return false;
+	}
+	
+	@Override
+	public void dispatchNeighborUpdate(BlockPos pos, BlockState state, Direction fromDir) {
+		updateNeighbor(pos, state.getBlock(), pos.offset(fromDir));
 	}
 	
 	@Override

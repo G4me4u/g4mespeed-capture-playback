@@ -3,6 +3,7 @@ package com.g4mesoft.captureplayback.stream.handler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 public interface GSISignalEventContext {
 
@@ -22,6 +23,8 @@ public interface GSISignalEventContext {
 	public static final int MECHANICAL_UPDATE     = 0b01000000; // 64;
 	
 	public boolean dispatchBlockEvent(BlockPos pos, Block block, int type, int data);
+
+	public void dispatchNeighborUpdate(BlockPos pos, BlockState state, Direction fromDir);
 
 	public boolean setState0(BlockPos pos, BlockState state, int flags);
 	
