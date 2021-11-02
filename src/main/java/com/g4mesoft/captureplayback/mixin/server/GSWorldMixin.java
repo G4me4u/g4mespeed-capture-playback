@@ -18,7 +18,7 @@ public class GSWorldMixin implements GSIWorldAccess {
 	
 	@Inject(method = "getEmittedRedstonePower", cancellable = true, at = @At("HEAD"))
 	private void onGetEmittedRedstonePower(BlockPos pos, Direction direction, CallbackInfoReturnable<Integer> cir) {
-		if (isPoweredByPlayback(pos.offset(direction))) {
+		if (isPoweredByPlayback(pos.offset(direction.getOpposite()))) {
 			cir.setReturnValue(FULL_POWER_VALUE);
 			cir.cancel();
 		}
