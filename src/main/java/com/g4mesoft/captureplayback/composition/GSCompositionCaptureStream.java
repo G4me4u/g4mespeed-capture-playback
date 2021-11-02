@@ -10,12 +10,17 @@ class GSCompositionCaptureStream extends GSCaptureStream {
 		super(composition.getBlockRegion());
 
 		for (GSTrack track : composition.getTracks()) {
-			GSSequence sequence = track.getSequence();
-			
+			long smallestOffset = Long.MAX_VALUE;
 			for (GSTrackEntry entry : track.getEntries()) {
+				if (entry.getOffset() < smallestOffset)
+					smallestOffset = entry.getOffset();
+			}
+			
+			if (smallestOffset != Long.MAX_VALUE) {
+				GSSequence sequence = track.getSequence();
 				// Calculate the offset from the initial event.
 				for (GSChannel channel : sequence.getChannels())
-					addChannelCapture(channel, entry.getOffset());
+					addChannelCapture(channel, smallestOffset);
 			}
 		}
 	}
