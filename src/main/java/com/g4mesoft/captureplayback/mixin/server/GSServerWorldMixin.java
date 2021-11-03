@@ -346,8 +346,8 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Override
-	public void dispatchNeighborUpdate(BlockPos pos, BlockState state, Direction fromDir) {
-		updateNeighbor(pos, state.getBlock(), pos.offset(fromDir));
+	public void dispatchNeighborUpdate(BlockPos pos, Block fromBlock, Direction fromDir) {
+		updateNeighbor(pos, fromBlock, pos.offset(fromDir));
 	}
 	
 	@Override

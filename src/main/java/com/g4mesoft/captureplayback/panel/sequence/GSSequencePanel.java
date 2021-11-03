@@ -240,7 +240,7 @@ public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequen
 	
 	protected void renderMultiCell(GSIRenderer2D renderer, int cy, GSMultiCellInfo multiCellInfo, GSRectangle bounds) {
 		int columnIndex = multiCellInfo.getColumnIndex();
-		int cw = modelView.getColumnWidth(columnIndex) / 2;
+		int cw = modelView.getColumnWidth(columnIndex);
 		int cx = modelView.getColumnX(columnIndex);
 
 		if (cx + cw >= bounds.x && cx - bounds.x < bounds.width) {

@@ -13,14 +13,18 @@ import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.GSCoreExtension;
 import com.g4mesoft.core.server.GSIServerModule;
 import com.g4mesoft.core.server.GSIServerModuleManager;
+import com.g4mesoft.util.GSBufferUtil;
 import com.g4mesoft.util.GSFileUtil;
 import com.mojang.brigadier.CommandDispatcher;
 
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSCapturePlaybackServerModule implements GSIServerModule {
 
+	public static final String COMPOSITION_DIRECTORY = "compositions";
+	public static final String HISTORY_FILE_NAME = "history.txt";
 	public static final String DEFAULT_COMPOSITION_FILE_NAME = "default_composition";
 	public static final String COMPOSITION_EXTENSION = ".gcomp";
 
@@ -37,12 +41,12 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	public void init(GSIServerModuleManager manager) {
 		this.manager = manager;
 
-		compositionFileName = DEFAULT_COMPOSITION_FILE_NAME;
-		
 		try {
+			compositionFileName = readCompositionHistory();
 			composition = readComposition(compositionFileName);
 		} catch (IOException e) {
 			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to read composition!");
+			compositionFileName = DEFAULT_COMPOSITION_FILE_NAME;
 			composition = new GSComposition(UUID.randomUUID(), compositionFileName);
 		}
 
@@ -53,6 +57,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	@Override
 	public void onClose() {
 		try {
+			writeCompositionHistory(compositionFileName);
 			writeComposition(composition, compositionFileName);
 		} catch (IOException e) {
 			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to write composition!");
@@ -64,6 +69,20 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 		manager = null;
 	}
 
+	private String readCompositionHistory() throws IOException {
+		return GSFileUtil.readFile(getHistoryFile(), buf -> {
+			return buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		});
+	}
+
+	private void writeCompositionHistory(String history) throws IOException {
+		GSFileUtil.writeFile(getHistoryFile(), history, PacketByteBuf::writeString);
+	}
+	
+	private File getHistoryFile() {
+		return new File(getCompositionDirectory(), HISTORY_FILE_NAME);
+	}
+	
 	public GSComposition readComposition(String fileName) throws IOException {
 		return GSFileUtil.readFile(getCompositionFile(fileName), GSComposition::read);
 	}
@@ -102,7 +121,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	}
 
 	public File getCompositionDirectory() {
-		return manager.getCacheFile();
+		return new File(manager.getCacheFile(), COMPOSITION_DIRECTORY);
 	}
 
 	public GSComposition getComposition() {
