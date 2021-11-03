@@ -6,6 +6,7 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
+import com.g4mesoft.panel.scroll.GSIScrollBarModel;
 import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.panel.scroll.GSScrollPanel;
 import com.g4mesoft.renderer.GSIRenderer;
@@ -36,6 +37,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	private final GSSequence sequence;
 	private final GSSequenceModelView modelView;
 	
+	private int previewOffsetY;
 	private final GSRectangle tmpEntryRect;
 	
 	public GSSequencePreviewScrollBar(GSSequence sequence, GSSequenceModelView modelView) {
@@ -68,6 +70,23 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private void renderPreview(GSIRenderer2D renderer, int x, int y, int width, int height) {
+		// Calculate preview offset only once (since it is rather involved)
+		previewOffsetY = 0;
+		// Ensure that we can see the top channel when vertical scroll
+		// is zero and bottom channel when vertical scroll is maxScroll.
+		int hiddenChannelCount = sequence.getChannels().size() - PREVIEW_CHANNEL_COUNT;
+		if (hiddenChannelCount > 0) {
+			GSScrollBar vScrollBar = getVerticalScrollBar();
+			if (vScrollBar != null) {
+				GSIScrollBarModel vModel = vScrollBar.getModel();
+				float scrollInterval = vModel.getMaxScroll() - vModel.getMinScroll();
+				if (scrollInterval > 0.0f && hiddenChannelCount > 0) {
+					float normalizedScroll = vModel.getScroll() / scrollInterval;
+					previewOffsetY = Math.round(hiddenChannelCount * normalizedScroll);
+				}
+			}
+		}
+		
 		renderer.fillRect(x, y, width, height, VERTICAL_BORDER_COLOR);
 
 		y += VERTICAL_BORDER_HEIGHT;
@@ -159,25 +178,17 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 
 	private int mapEntryY(int y) {
 		y /= (modelView.getChannelHeight() + modelView.getChannelSpacing());
-
-		// Ensure that we can see the top channel when vertical scroll
-		// is zero and bottom channel when vertical scroll is maxScroll.
-		float scrollInterval = model.getMaxScroll() - model.getMinScroll();
-		int hiddenChannelCount = sequence.getChannels().size() - PREVIEW_CHANNEL_COUNT;
-		if (scrollInterval > 0.0f && hiddenChannelCount > 0)
-			y -= hiddenChannelCount * getScrollPanelYOffset() / scrollInterval;
-		
+		y -= previewOffsetY;
 		return VERTICAL_BORDER_HEIGHT + y;
 	}
 	
-	private int getScrollPanelYOffset() {
+	private GSScrollBar getVerticalScrollBar() {
 		GSPanel parent = getParent();
 		if (parent instanceof GSScrollPanel) {
-			// Retrieve offset from scroll panel. This will be the
-			// same offset used for the sequence panel viewport.
-			return ((GSScrollPanel)parent).getViewportOffsetY();
+			// Retrieve scroll bar from scroll panel (parent).
+			return ((GSScrollPanel)parent).getVerticalScrollBar();
 		}
-		return 0;
+		return null;
 	}
 	
 	@Override
