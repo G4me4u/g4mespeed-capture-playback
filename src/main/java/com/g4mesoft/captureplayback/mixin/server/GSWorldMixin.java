@@ -16,12 +16,23 @@ public class GSWorldMixin implements GSIWorldAccess {
 
 	private static final int FULL_POWER_VALUE = 15;
 	
+	private int powerRequests;
+	
 	@Inject(method = "getEmittedRedstonePower", cancellable = true, at = @At("HEAD"))
 	private void onGetEmittedRedstonePower(BlockPos pos, Direction direction, CallbackInfoReturnable<Integer> cir) {
-		if (isPoweredByPlayback(pos.offset(direction.getOpposite()))) {
-			cir.setReturnValue(FULL_POWER_VALUE);
-			cir.cancel();
+		if (powerRequests > 0) {
+			powerRequests--;
+
+			if (isPoweredByPlayback(pos.offset(direction.getOpposite()))) {
+				cir.setReturnValue(FULL_POWER_VALUE);
+				cir.cancel();
+			}
 		}
+	}
+	
+	public void requestPlaybackPower(int callCount) {
+		if (callCount > 0)
+			powerRequests += callCount;
 	}
 	
 	@Override

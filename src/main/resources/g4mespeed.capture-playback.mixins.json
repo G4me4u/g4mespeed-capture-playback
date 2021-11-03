@@ -4,7 +4,16 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "server.GSServerWorldMixin",
-    "server.GSWorldMixin"
+    "server.GSWorldMixin",
+    
+    "server.GSPistonBlockMixin",
+    "server.GSNoteBlockMixin",
+    "server.GSTntBlockMixin",
+    "server.GSRedstoneWireBlockMixin",
+    "server.GSPoweredRailBlockMixin",
+    "server.GSDoorBlockMixin",
+    "server.GSTrapdoorBlockMixin",
+    "server.GSFenceGateBlockMixin"
   ],
   "client": [
   ],
