@@ -315,6 +315,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 			deleteButton.setBorderWidth(0);
 			deleteButton.addActionListener(() -> {
 				sequence.removeChannel(this.channel.getChannelUUID());
+				GSChannelHeaderPanel.this.requestFocus();
 			});
 			
 			editButton = new GSButton(EDIT_ICON);

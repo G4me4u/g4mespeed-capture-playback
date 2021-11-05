@@ -19,14 +19,14 @@ import net.minecraft.world.World;
 @Mixin(DoorBlock.class)
 public class GSDoorBlockMixin {
 
-	@Inject(method = "getPlacementState", at = @At(value = "INVOKE", ordinal = 0, shift = Shift.BEFORE,
+	@Inject(method = "getPlacementState", require = 2, allow = 2, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onGetPlacementStateBeforePowerCheck0(ItemPlacementContext ctx, CallbackInfoReturnable<BlockState> cir) {
 		// Only get power from play-back during first power check.
 		((GSIWorldAccess)ctx.getWorld()).requestPlaybackPower(1);
 	}
 
-	@Inject(method = "neighborUpdate", at = @At(value = "INVOKE", ordinal = 0, shift = Shift.BEFORE,
+	@Inject(method = "neighborUpdate", require = 2, allow = 2, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onNeighborUpdateBeforePowerCheck0(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
 		// Only get power from play-back during first power check.
