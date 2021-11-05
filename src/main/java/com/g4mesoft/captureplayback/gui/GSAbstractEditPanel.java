@@ -203,31 +203,35 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	
 	protected void setContent(GSPanel content) {
 		GSPanel oldContent = scrollPanel.getContent();
+		if (oldContent != null)
+			contentHandler.uninstall(oldContent);
+
 		scrollPanel.setContent(content);
-		changePanelHandler(content, oldContent, contentHandler);
+		
+		if (content != null)
+			contentHandler.install(content);
 	}
 
 	protected void setColumnHeader(GSPanel columnHeader) {
 		GSPanel oldColumnHeader = scrollPanel.getColumnHeader();
+		if (oldColumnHeader != null)
+			columnHeaderHandler.uninstall(oldColumnHeader);
+
 		scrollPanel.setColumnHeader(columnHeader);
-		changePanelHandler(columnHeader, oldColumnHeader, columnHeaderHandler);
+		
+		if (columnHeader != null)
+			columnHeaderHandler.install(columnHeader);
 	}
 
 	protected void setRowHeader(GSPanel rowHeader) {
 		GSPanel oldRowHeader = scrollPanel.getRowHeader();
+		if (oldRowHeader != null)
+			rowHeaderHandler.uninstall(oldRowHeader);
+		
 		scrollPanel.setRowHeader(rowHeader);
-		changePanelHandler(rowHeader, oldRowHeader, rowHeaderHandler);
-	}
-	
-	private void changePanelHandler(GSPanel newPanel, GSPanel oldPanel, GSContentEventHandler handler) {
-		if (oldPanel != null) {
-			oldPanel.removeMouseEventListener(handler);
-			oldPanel.removeKeyEventListener(handler);
-		}
-		if (newPanel != null) {
-			newPanel.addMouseEventListener(handler, CONTENT_EVENT_HANDLER_PRIORITY);
-			newPanel.addKeyEventListener(handler, CONTENT_EVENT_HANDLER_PRIORITY);
-		}
+
+		if (rowHeader != null)
+			rowHeaderHandler.install(rowHeader);
 	}
 	
 	protected void setHorizontalScrollBar(GSScrollBar scrollBar) {
@@ -329,7 +333,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		this.editable = editable;
 	}
 
-	private class GSContentEventHandler implements GSIMouseListener, GSIKeyListener {
+	private class GSContentEventHandler implements GSIMouseListener, GSIKeyListener, GSIFocusEventListener {
 		
 		private final boolean draggableX;
 		private final boolean draggableY;
@@ -343,6 +347,18 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		
 			draggingModifier = false;
 			draggingContent = false;
+		}
+		
+		public void install(GSPanel content) {
+			content.addMouseEventListener(this, CONTENT_EVENT_HANDLER_PRIORITY);
+			content.addKeyEventListener(this, CONTENT_EVENT_HANDLER_PRIORITY);
+			content.addFocusEventListener(this);
+		}
+
+		public void uninstall(GSPanel content) {
+			content.removeMouseEventListener(this);
+			content.removeKeyEventListener(this);
+			content.removeFocusEventListener(this);
 		}
 		
 		@Override
@@ -390,6 +406,12 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 				draggingModifier = false;
 				event.consume();
 			}
+		}
+		
+		@Override
+		public void focusLost(GSFocusEvent event) {
+			draggingModifier = false;
+			draggingContent = false;
 		}
 	}
 }
