@@ -122,7 +122,7 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 			if (event.getEdge() == GSESignalEdge.RISING_EDGE) {
 				if (risingTime != null && !risingShadow) {
 					// In case we already have a rising edge
-					addHalfEntry(risingTime, GSEChannelEntryType.EVENT_START);
+					addEntry(risingTime, risingTime, GSEChannelEntryType.EVENT_START);
 				}
 				
 				risingTime = time;
@@ -130,16 +130,20 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 			} else { // event.getEdge() == GSESignalEdge.FALLING_EDGE
 				if (risingTime == null) {
 					// In case the signal did not have a rising edge
-					addHalfEntry(time, GSEChannelEntryType.EVENT_END);
+					addEntry(time, time, GSEChannelEntryType.EVENT_END);
 				} else {
 					// Ensure that we actually have an event
 					if (!risingShadow || !event.isShadow()) {
-						GSChannelEntry entry = channel.tryAddEntry(risingTime, time);
 						// Handle shadow events
-						if (entry != null && (risingShadow || event.isShadow())) {
-							entry.setType(risingShadow ? GSEChannelEntryType.EVENT_END :
-							                             GSEChannelEntryType.EVENT_START);
+						GSEChannelEntryType type;
+						if (risingShadow || event.isShadow()) {
+							type = risingShadow ? GSEChannelEntryType.EVENT_END :
+							                      GSEChannelEntryType.EVENT_START;
+						} else {
+							type = GSEChannelEntryType.EVENT_BOTH;
 						}
+						
+						addEntry(risingTime, time, type);
 					}
 	
 					// Invalidate the current rising time
@@ -149,17 +153,18 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 			}
 		}
 
-		private void addHalfEntry(GSSignalTime time, GSEChannelEntryType type) {
-			addHalfEntry(time, time, type);
-		}
-
-		private void addHalfEntry(GSSignalTime startTime, GSSignalTime endTime, GSEChannelEntryType type) {
+		private void addEntry(GSSignalTime startTime, GSSignalTime endTime, GSEChannelEntryType type) {
 			GSChannelEntry entry = channel.tryAddEntry(startTime, endTime);
-			if (entry != null)
+			if (entry != null && type != GSEChannelEntryType.EVENT_BOTH)
 				entry.setType(type);
 		}
 		
 		private void onClose(long latestTime) {
+			latestTime -= offset;
+
+			if (latestTime < 0L)
+				return;
+			
 			if (risingTime != null && !risingShadow) {
 				GSSignalTime endTime;
 				if (risingTime.getGametick() == latestTime) {
@@ -167,7 +172,9 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 				} else {
 					endTime = new GSSignalTime(latestTime, 0);
 				}
-				addHalfEntry(risingTime, endTime, GSEChannelEntryType.EVENT_START);
+				
+				addEntry(risingTime, endTime, GSEChannelEntryType.EVENT_START);
+				
 				risingTime = null;
 				risingShadow = false;
 			}
