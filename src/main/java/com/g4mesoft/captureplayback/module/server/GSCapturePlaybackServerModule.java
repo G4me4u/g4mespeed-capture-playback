@@ -24,7 +24,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class GSCapturePlaybackServerModule implements GSIServerModule {
 
 	public static final String COMPOSITION_DIRECTORY = "compositions";
-	public static final String HISTORY_FILE_NAME = "history.txt";
+	public static final String HISTORY_FILE_NAME = "history.bin";
 	public static final String DEFAULT_COMPOSITION_FILE_NAME = "default_composition";
 	public static final String COMPOSITION_EXTENSION = ".gcomp";
 
