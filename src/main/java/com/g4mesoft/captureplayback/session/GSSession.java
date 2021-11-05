@@ -58,7 +58,7 @@ public class GSSession {
 		
 		SEQUENCE = builder.<GSSequence>cast().name("sequence").constr(GSSequenceSessionField::new).nullable().assignOnce().codec(SEQUENCE_CODEC).noCache().noSync().session(GSESessionType.SEQUENCE).build();
 		SELECTED_CHANNEL = builder.<UUID>cast().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
-		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.SEQUENCE).build();
+		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 	}
 	
 	private final GSESessionType type;

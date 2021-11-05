@@ -10,6 +10,7 @@ class GSCompositionCaptureStream extends GSCaptureStream {
 		super(composition.getBlockRegion());
 
 		for (GSTrack track : composition.getTracks()) {
+			// Only have a single capture stream per track (if it at least one entry).
 			long smallestOffset = Long.MAX_VALUE;
 			for (GSTrackEntry entry : track.getEntries()) {
 				if (entry.getOffset() < smallestOffset)

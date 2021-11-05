@@ -122,7 +122,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		
 		selectingEntries = false;
 		
-		leftClickTime = System.currentTimeMillis() - DOUBLE_CLICK_TIME;
+		leftClickTime = Util.getMeasuringTimeMs();
+		leftClickCount = 0;
 	}
 	
 	@Override

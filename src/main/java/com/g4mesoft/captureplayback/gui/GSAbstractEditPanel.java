@@ -165,6 +165,38 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 				}
 			}
 		});
+		
+		// Handle undo/redo events
+		addKeyEventListener(new GSIKeyListener() {
+			@Override
+			public void keyPressed(GSKeyEvent event) {
+				switch (event.getKeyCode()) {
+				case GSKeyEvent.KEY_Z:
+					if (isEditable()) {
+						if (!event.isModifierHeld(GSKeyEvent.MODIFIER_ALT) &&
+						     event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
+							
+							// Allow for redo with CTRL + SHIFT + Z
+							if (event.isModifierHeld(GSKeyEvent.MODIFIER_SHIFT)) {
+								session.get(GSSession.UNDO_REDO_HISTORY).redo();
+							} else {
+								session.get(GSSession.UNDO_REDO_HISTORY).undo();
+							}
+						}
+					}
+					break;
+				case GSKeyEvent.KEY_Y:
+					if (isEditable()) {
+						if (!event.isAnyModifierHeld(GSKeyEvent.MODIFIER_ALT | GSKeyEvent.MODIFIER_SHIFT) &&
+							event.isModifierHeld(GSKeyEvent.MODIFIER_CONTROL)) {
+							
+							session.get(GSSession.UNDO_REDO_HISTORY).redo();
+						}
+					}
+					break;
+				}
+			}
+		});
 	}
 	
 	protected abstract void onNameChanged(String name);
