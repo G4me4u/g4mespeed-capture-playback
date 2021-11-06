@@ -70,6 +70,10 @@ public final class GSSequenceCommand {
 			GSTrack track = composition.addTrack("Sequence", 0xFFFFFFFF, group.getGroupUUID());
 			track.getSequence().set(sequence);
 			track.addEntry(0L);
+			
+			// Always save the composition before loading a new one.
+			module.writeComposition();
+			
 			module.setComposition(composition, fileName);
 			module.startSequenceSessionForAll(track.getTrackUUID());
 			
