@@ -56,6 +56,9 @@ public final class GSCompositionCommand {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
+		// Always save the composition before loading a new one.
+		module.writeComposition();
+		
 		if (module.createComposition(fileName)) {
 			source.sendFeedback(new LiteralText("Composition '" + fileName + "' created successfully."), true);
 		} else {
@@ -68,7 +71,10 @@ public final class GSCompositionCommand {
 	private static int loadComposition(ServerCommandSource source, String fileName) {
 		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
-
+		
+		// Always save the composition before loading a new one.
+		module.writeComposition();
+				
 		if (module.setComposition(fileName)) {
 			source.sendFeedback(new LiteralText("Composition '" + fileName + "' loaded successfully."), true);
 		} else {
