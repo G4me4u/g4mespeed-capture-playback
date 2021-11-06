@@ -67,9 +67,9 @@ public abstract class GSPlaybackStream implements GSIPlaybackStream {
 				
 				// Add all entries as immediate shadow events to
 				// ensure that powered positions are removed.
-				for (GSPlaybackEntry entry : entries)
+				GSPlaybackEntry entry;
+				while ((entry = entries.poll()) != null)
 					frameEvents.add(toCleanupEvent(entry.getEvent()));
-				entries.clear();
 				
 				frame = new GSBasicSignalFrame(frameEvents);
 			} else if (isEntryInFrame(entries.peek())) {

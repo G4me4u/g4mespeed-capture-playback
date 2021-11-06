@@ -156,6 +156,9 @@ public class GSCapturePlaybackServerModule implements GSIServerModule {
 	}
 	
 	public void setComposition(GSComposition composition, String fileName) {
+		// Always save the composition before loading a new one.
+		writeComposition();
+		
 		sessionManager.stopAllSessions();
 		sessionManager.removeComposition(this.composition.getCompositionUUID());
 		

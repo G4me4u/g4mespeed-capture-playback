@@ -32,7 +32,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	public static final String NAME = "Capture & Playback";
 	/* "CAPL" in ASCII as HEX */
 	public static final GSExtensionUID UID = new GSExtensionUID(0x4341504C);
-	public static final GSVersion VERSION = new GSVersion(0, 3, 0);
+	public static final GSVersion VERSION = new GSVersion(0, 3, 1);
 	
 	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
 	

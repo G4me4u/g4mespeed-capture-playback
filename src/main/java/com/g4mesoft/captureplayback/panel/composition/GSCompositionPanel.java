@@ -171,12 +171,14 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	}
 	
 	private void renderTrack(GSIRenderer2D renderer, GSTrack track, GSRectangle bounds) {
-		int sy = modelView.getTrackY(track) + modelView.getTrackHeight();
-		if (sy + modelView.getTrackHeight() >= bounds.y && sy - bounds.y < bounds.height) {
+		int th = modelView.getTrackHeight();
+		int sy = modelView.getTrackY(track);
+		
+		if (sy + th >= bounds.y && sy - bounds.y < bounds.height) {
 			for (GSTrackEntry entry : track.getEntries())
 				renderEntry(renderer, entry, track.getColor(), bounds);
 			
-			renderer.fillRect(bounds.x, sy, bounds.width, modelView.getTrackSpacing(), TRACK_SPACING_COLOR);
+			renderer.fillRect(bounds.x, sy + th, bounds.width, modelView.getTrackSpacing(), TRACK_SPACING_COLOR);
 		}
 	}
 	
