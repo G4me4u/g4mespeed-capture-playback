@@ -29,7 +29,7 @@ public class GSMergedSignalFrame implements GSISignalFrame {
 		return getNextFrame().next();
 	}
 	
-	private GSISignalFrame getNextFrame() {
+	private GSISignalFrame getNextFrame() throws NoSuchElementException {
 		GSISignalFrame nextFrame = null;
 		GSSignalEvent nextEvent = null;
 		
