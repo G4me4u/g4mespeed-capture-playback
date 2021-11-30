@@ -220,14 +220,14 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	@Inject(method = "processSyncedBlockEvents", locals = LocalCapture.CAPTURE_FAILEXCEPTION, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/server/MinecraftServer;getPlayerManager()Lnet/minecraft/server/PlayerManager;"))
 	public void onProcessSyncedBlockEventsSuccess(CallbackInfo ci, BlockEvent blockEvent) {
-		if (isCapturePosition(blockEvent.getPos())) {
-			Block block = blockEvent.getBlock();
+		if (isCapturePosition(blockEvent.pos())) {
+			Block block = blockEvent.block();
 			
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
-				GSESignalEdge edge = (blockEvent.getType() == 0) ? GSESignalEdge.RISING_EDGE :
-				                                                   GSESignalEdge.FALLING_EDGE;
-				handleCaptureEvent(edge, blockEvent.getPos());
+				GSESignalEdge edge = (blockEvent.type() == 0) ? GSESignalEdge.RISING_EDGE :
+				                                                GSESignalEdge.FALLING_EDGE;
+				handleCaptureEvent(edge, blockEvent.pos());
 			}
 		}
 	}
