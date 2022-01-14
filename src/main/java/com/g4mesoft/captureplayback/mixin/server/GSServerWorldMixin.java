@@ -211,8 +211,8 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		return (blockEventCount == 0);
 	}
 	
-	@Inject(method = "processSyncedBlockEvents", at = @At(value = "INVOKE", shift = Shift.BEFORE,
-			target = "Lnet/minecraft/server/world/ServerWorld;processBlockEvent(Lnet/minecraft/server/world/BlockEvent;)Z"))
+	@Inject(method = "processSyncedBlockEvents", allow = 1, at = @At(value = "INVOKE", shift = Shift.AFTER,
+			target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;removeFirst()Ljava/lang/Object;"))
 	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
 		blockEventCount--;
 	}
