@@ -54,6 +54,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
@@ -85,9 +86,10 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private int gcp_blockEventCount = 0;
 	private int gcp_microtick = -1;
 	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryKey,
-			DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
-		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
+	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
+			RegistryEntry<DimensionType> registryEntry, Supplier<Profiler> profiler, boolean isClient,
+			boolean debugWorld, long seed) {
+		super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
 	}
 	
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
