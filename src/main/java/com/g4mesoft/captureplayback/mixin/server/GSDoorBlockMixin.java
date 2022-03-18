@@ -23,13 +23,13 @@ public class GSDoorBlockMixin {
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onGetPlacementStateBeforePowerCheck0(ItemPlacementContext ctx, CallbackInfoReturnable<BlockState> cir) {
 		// Only get power from play-back during first power check.
-		((GSIWorldAccess)ctx.getWorld()).requestPlaybackPower(1);
+		((GSIWorldAccess)ctx.getWorld()).gcp_requestPlaybackPower(1);
 	}
 
 	@Inject(method = "neighborUpdate", require = 2, allow = 2, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onNeighborUpdateBeforePowerCheck0(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
 		// Only get power from play-back during first power check.
-		((GSIWorldAccess)world).requestPlaybackPower(1);
+		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

@@ -18,6 +18,6 @@ public class GSRedstoneWireBlockMixin {
 	@Inject(method = "getReceivedRedstonePower", allow = 1, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;getReceivedRedstonePower(Lnet/minecraft/util/math/BlockPos;)I"))
 	private void onGetReceivedRedstonePowerBeforePowerCheck(World world, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
-		((GSIWorldAccess)world).requestPlaybackPower(1);
+		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

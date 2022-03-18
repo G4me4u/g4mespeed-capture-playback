@@ -26,6 +26,6 @@ public interface GSISignalEventContext {
 
 	public void dispatchNeighborUpdate(BlockPos pos, Block fromBlock, Direction fromDir);
 
-	public boolean setState0(BlockPos pos, BlockState state, int flags);
+	public boolean setState(BlockPos pos, BlockState state, int flags);
 	
 }
