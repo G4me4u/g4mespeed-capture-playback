@@ -27,6 +27,6 @@
 
   "depends": {
   	"minecraft": "1.18.x",
-  	"g4mespeed": ">=1.2.4"
+  	"g4mespeed": ">=1.3.0"
   }
 }
