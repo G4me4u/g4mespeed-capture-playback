@@ -1,14 +1,5 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-		classpath "com.guardsquare:proguard-gradle:7.2.0-beta2"
-    }
-}
-
 plugins {
-	id 'fabric-loom' version '0.10-SNAPSHOT'
+	id 'fabric-loom' version '0.11-SNAPSHOT'
 }
 
 repositories {
@@ -56,36 +47,6 @@ tasks.withType(JavaCompile).configureEach {
 	
 	// Minecraft 1.17 (21w19a) upwards uses Java 16.
 	it.options.release = 16
-}
-
-def outputJarName = jar.archiveName.with { it.take(it.lastIndexOf(".")) }
-def obfuscatedFileName = "${outputJarName}-release.jar"
-
-task obfuscateJar(type: proguard.gradle.ProGuardTask) {
-	configuration "proguard.txt"
-	
-	// Some good info here: http://www.dre.vanderbilt.edu/~schmidt/android/android-4.0/external/proguard/docs/manual/refcard.html
-
-	injars "${project.g4mespeed_path}/build/libs/g4mespeed-${project.g4mespeed_core_version}-mc${project.minecraft_version}.jar"
-	outjars "./build/libs/unused.jar"
-
-	applymapping "${project.g4mespeed_path}/g4mespeed-mappings-mc${project.minecraft_version}.map"
-
-	obfuscationdictionary "member_obfuscation_dictionary.txt"
-
-	injars "./build/libs/${jar.archiveName}" 
-	outjars "./build/libs/${obfuscatedFileName}"
-	
-	// Automatically handle the Java version of this build.
-	if (System.getProperty('java.version').startsWith('1.')) {
-		// Before Java 9, the runtime classes were packaged in a single jar file.
-		libraryjars "${System.getProperty('java.home')}/lib/rt.jar"
-	} else {
-		// As of Java 9, the runtime classes are packaged in modular jmod files.
-		libraryjars "${System.getProperty('java.home')}/jmods/java.base.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
-		libraryjars "${System.getProperty('java.home')}/jmods/java.sql.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
-		//libraryjars "${System.getProperty('java.home')}/jmods/....."
-	}
 }
 
 jar {
