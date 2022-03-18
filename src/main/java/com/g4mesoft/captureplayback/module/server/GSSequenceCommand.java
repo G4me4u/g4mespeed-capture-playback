@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
@@ -53,13 +52,13 @@ public final class GSSequenceCommand {
 	}
 	
 	private static File getSequenceFile(String fileName) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 		return new File(module.getCompositionDirectory(), fileName + SEQUENCE_EXTENSION);
 	}
 	
 	private static int loadSequence(ServerCommandSource source, String fileName) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		GSSequence sequence = readSequence(fileName);
@@ -88,7 +87,7 @@ public final class GSSequenceCommand {
 	private static int listSequences(ServerCommandSource source) {
 		// TODO: definitely remove this
 
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 		
 		try {

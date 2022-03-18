@@ -2,7 +2,6 @@ package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -40,7 +39,7 @@ public final class GSCompositionCommand {
 	}
 	
 	private static int saveComposition(ServerCommandSource source) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		if (module.writeComposition()) {
@@ -53,7 +52,7 @@ public final class GSCompositionCommand {
 	}
 
 	private static int newComposition(ServerCommandSource source, String fileName) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		// Always save the composition before loading a new one.
@@ -69,12 +68,12 @@ public final class GSCompositionCommand {
 	}
 	
 	private static int loadComposition(ServerCommandSource source, String fileName) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 		
 		// Always save the composition before loading a new one.
 		module.writeComposition();
-				
+		
 		if (module.setComposition(fileName)) {
 			source.sendFeedback(new LiteralText("Composition '" + fileName + "' loaded successfully."), true);
 		} else {
@@ -87,7 +86,7 @@ public final class GSCompositionCommand {
 	private static int listCompositions(ServerCommandSource source) {
 		// TODO: definitely remove this
 
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 		
 		try {
