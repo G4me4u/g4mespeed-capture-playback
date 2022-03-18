@@ -20,12 +20,12 @@ public class GSTntBlockMixin {
 	@Inject(method = "onBlockAdded", allow = 1, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onOnBlockAddedBeforePowerCheck(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify, CallbackInfo ci) {
-		((GSIWorldAccess)world).requestPlaybackPower(1);
+		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 
 	@Inject(method = "neighborUpdate", allow = 1, at = @At(value = "INVOKE", shift = Shift.BEFORE,
 			target = "Lnet/minecraft/world/World;isReceivingRedstonePower(Lnet/minecraft/util/math/BlockPos;)Z"))
 	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
-		((GSIWorldAccess)world).requestPlaybackPower(1);
+		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

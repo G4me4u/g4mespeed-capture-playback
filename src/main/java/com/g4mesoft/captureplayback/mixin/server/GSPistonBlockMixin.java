@@ -20,6 +20,6 @@ public class GSPistonBlockMixin {
 			target = "Lnet/minecraft/world/World;isEmittingRedstonePower(Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/Direction;)Z"))
 	private void onShouldExtendBeforePowerCheck(World world, BlockPos pos, Direction pistonFace, CallbackInfoReturnable<Boolean> cir) {
 		// Only request play-back power on the initial check around the piston itself.
-		((GSIWorldAccess)world).requestPlaybackPower(1);
+		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 }
