@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.panel.composition;
 
 import java.util.Iterator;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
+import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
@@ -326,7 +326,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	}
 	
 	private void editTrackSequence(GSTrack track) {
-		GSCapturePlaybackClientModule module = CapturePlaybackMod.getInstance().getExtension().getClientModule();
+		GSCapturePlaybackClientModule module = GSCapturePlaybackExtension.getInstance().getClientModule();
 		module.requestSession(GSESessionType.SEQUENCE, GSESessionRequestType.REQUEST_START, track.getTrackUUID());
 	}
 

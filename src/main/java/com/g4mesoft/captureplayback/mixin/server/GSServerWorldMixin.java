@@ -21,7 +21,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.access.GSIWorldAccess;
@@ -66,7 +65,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	@Shadow @Final private MinecraftServer server;
 	
 	@Unique
-	private final GSCapturePlaybackExtension gcp_extension = CapturePlaybackMod.getInstance().getExtension();
+	private final GSCapturePlaybackExtension gcp_extension = GSCapturePlaybackExtension.getInstance();
 	
 	@Unique
 	private final List<GSIPlaybackStream> gcp_playbackStreams = new ArrayList<>();

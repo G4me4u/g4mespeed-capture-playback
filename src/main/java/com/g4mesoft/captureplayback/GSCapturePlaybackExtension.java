@@ -38,6 +38,8 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
 	
+	private static GSCapturePlaybackExtension instance;
+	
 	private Map<Block, GSISignalEventHandler> signalEventHandlerRegistry;
 	
 	@Environment(EnvType.CLIENT)
@@ -46,6 +48,8 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	@Override
 	public void init() {
+		instance = this;
+		
 		signalEventHandlerRegistry = new IdentityHashMap<>();
 		
 		GSISignalEventHandler pistonHandler = new GSPistonSignalEventHandler();
@@ -141,4 +145,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		return signalEventHandlerRegistry.containsKey(block);
 	}
 	
+	public static GSCapturePlaybackExtension getInstance() {
+		return instance;
+	}
 }
