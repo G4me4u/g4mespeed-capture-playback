@@ -14,6 +14,6 @@ public class CapturePlaybackMod implements ModInitializer {
 	@Override
 	@GSCoreOverride
 	public void onInitialize() {
-		GSCP_LOGGER.info("Capture & Playback " + GSCapturePlaybackExtension.VERSION + " initialized!");
+		GSCP_LOGGER.info("Capture & Playback {} initialized!", GSCapturePlaybackExtension.VERSION);
 	}
 }
