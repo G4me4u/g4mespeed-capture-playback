@@ -1,6 +1,5 @@
 package com.g4mesoft.captureplayback.module.server;
 
-import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.composition.GSComposition;
@@ -27,7 +26,7 @@ public final class GSPlaybackCommand {
 	}
 	
 	private static int startPlayback(ServerCommandSource source) {
-		GSCapturePlaybackExtension extension = CapturePlaybackMod.getInstance().getExtension();
+		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		GSComposition composition = module.getComposition();
