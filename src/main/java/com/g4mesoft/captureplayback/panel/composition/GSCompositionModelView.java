@@ -110,7 +110,11 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 			}
 		}
 		
-		long duration = Math.max(MINIMUM_SEQUENCE_DURATION, latestTime.getGametick());
+		// Notice: +1 since (0) is inclusive.
+		long duration = latestTime.getGametick() + 1;
+		if (duration < MINIMUM_SEQUENCE_DURATION)
+			duration = MINIMUM_SEQUENCE_DURATION;
+
 		sequenceDurations.put(sequence.getSequenceUUID(), duration);
 	}
 	
@@ -222,6 +226,10 @@ public class GSCompositionModelView implements GSICompositionListener, GSISequen
 
 	public int getGametickExactX(double gt) {
 		return (int)Math.round(gt * gametickWidth);
+	}
+	
+	public int getGametickWidth(long gametick) {
+		return getGametickX(gametick + 1L) - getGametickX(gametick);
 	}
 
 	public int getTrackY(GSTrack track) {
