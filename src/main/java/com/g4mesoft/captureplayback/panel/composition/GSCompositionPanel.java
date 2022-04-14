@@ -66,6 +66,9 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	private static final long DOUBLE_CLICK_TIME = 500L;
 	private static final long ADD_DELETE_ENTRY_CLICK_TIME = 250L;
 	
+	/* Offset on each side of a zero tick relative to game-tick width */
+	private static final double RELATIVE_ZT_MARGIN = 0.35;
+	
 	private final GSComposition composition;
 	private final GSCompositionModelView modelView;
 	
@@ -214,6 +217,9 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, previewBgColor);
 
+		// The width of a zero tick (use double game-tick width to have a uniform width).
+		int ztw = (int)Math.round(modelView.getGametickWidth() * (1.0 - 2.0 * RELATIVE_ZT_MARGIN));
+		
 		GSTrack track = entry.getParent();
 		if (track != null) {
 			int entryColor = GSColorUtil.withAlpha(darkColor, ENTRY_TITLE_BG_ALPHA);
@@ -226,16 +232,26 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 					long gt0 = channelEntry.getStartTime().getGametick() + entry.getOffset();
 					long gt1 = channelEntry.getEndTime().getGametick() + entry.getOffset();
 	
-					int x0 = modelView.getGametickX(gt0);
-					int x1 = modelView.getGametickX(gt1);
+					int x0, x1;
+					if (gt0 == gt1) {
+						// Handle zero ticks differently (since they would otherwise not be rendered).
+						x0 = modelView.getGametickX(gt0) + (modelView.getGametickWidth(gt0) - ztw) / 2;
+						x1 = Math.min(x0 + ztw, modelView.getGametickX(gt0 + 1L));
+					} else {
+						// Sequence entries are shown in the middle of each tick.
+						x0 = modelView.getGametickX(gt0) + modelView.getGametickWidth(gt0) / 2;
+						x1 = modelView.getGametickX(gt1) + modelView.getGametickWidth(gt1) / 2;
+					}
 					
-					if (x0 == x1) {
-						// Fix cases where zero ticks are not drawn
-						if (x1 >= bounds.x + bounds.width) {
-							x0--;
-						} else {
-							x1++;
+					if (x1 - x0 <= 0) {
+						// We should always render the entries.
+						if (x1 - bounds.x > bounds.width) {
+							x0 = bounds.x + bounds.width - 1;
+						} else if (x0 < bounds.x) {
+							x0 = bounds.x;
 						}
+						
+						 x1 = x0 + 1;
 					}
 					
 					renderer.drawHLine(x0, x1, bounds.y + yo, entryColor);
