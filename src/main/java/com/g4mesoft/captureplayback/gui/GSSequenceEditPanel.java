@@ -103,6 +103,22 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 		
 		super.onHidden();
 	}
+	
+	@Override
+	protected void retrieveSessionFields() {
+		super.retrieveSessionFields();
+		GSExpandedColumnModel model = modelView.getExpandedColumnModel();
+		model.setExpandedColumnRange(session.get(GSSession.MIN_EXPANDED_COLUMN),
+		                             session.get(GSSession.MAX_EXPANDED_COLUMN));
+	}
+
+	@Override
+	protected void offerSessionFields() {
+		super.offerSessionFields();
+		GSExpandedColumnModel model = modelView.getExpandedColumnModel();
+		session.set(GSSession.MIN_EXPANDED_COLUMN, model.getMinColumnIndex());
+		session.set(GSSession.MAX_EXPANDED_COLUMN, model.getMaxColumnIndex());
+	}
 
 	@Override
 	protected void onNameChanged(String name) {
