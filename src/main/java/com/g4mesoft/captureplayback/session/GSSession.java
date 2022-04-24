@@ -66,7 +66,6 @@ public class GSSession {
 		SELECTED_CHANNEL = builder.<UUID>cast().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
 		MIN_EXPANDED_COLUMN = builder.<Integer>cast().name("minExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
 		MAX_EXPANDED_COLUMN = builder.<Integer>cast().name("maxExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
-		
 	}
 	
 	private final GSESessionType type;
