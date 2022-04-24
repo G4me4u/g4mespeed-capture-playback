@@ -21,6 +21,7 @@ import net.minecraft.network.PacketByteBuf;
 
 public class GSSession {
 
+	private static final GSISessionFieldCodec<Integer>           INTEGER_CODEC           = new GSIntegerSessionFieldCodec();
 	private static final GSISessionFieldCodec<Float>             FLOAT_CODEC             = new GSFloatSessionFieldCodec();
 	private static final GSISessionFieldCodec<Double>            DOUBLE_CODEC            = new GSDoubleSessionFieldCodec();
 	private static final GSISessionFieldCodec<GSEContentOpacity> OPACITY_CODEC           = new GSOpacitySessionFieldCodec();
@@ -32,13 +33,16 @@ public class GSSession {
 	public static final GSSessionFieldType<Float>             X_OFFSET;
 	public static final GSSessionFieldType<Float>             Y_OFFSET;
 	public static final GSSessionFieldType<GSEContentOpacity> OPACITY;
-	
+
+	public static final GSSessionFieldType<GSUndoRedoHistory> UNDO_REDO_HISTORY;
+
 	public static final GSSessionFieldType<GSComposition>     COMPOSITION;
 	public static final GSSessionFieldType<Double>            GAMETICK_WIDTH;
 	
 	public static final GSSessionFieldType<GSSequence>        SEQUENCE;
 	public static final GSSessionFieldType<UUID>              SELECTED_CHANNEL;
-	public static final GSSessionFieldType<GSUndoRedoHistory> UNDO_REDO_HISTORY;
+	public static final GSSessionFieldType<Integer>           MIN_EXPANDED_COLUMN;
+	public static final GSSessionFieldType<Integer>           MAX_EXPANDED_COLUMN;
 
 	private static final Map<String, GSSessionFieldType<?>> nameToType;
 	private static final Map<GSESessionType, Set<GSSessionFieldType<?>>> sessionFieldTypes;
@@ -52,13 +56,17 @@ public class GSSession {
 		X_OFFSET = builder.<Float>cast().name("xOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 		Y_OFFSET = builder.<Float>cast().name("yOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 		OPACITY  = builder.<GSEContentOpacity>cast().name("opacity").def(GSEContentOpacity.FULLY_OPAQUE).codec(OPACITY_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
+
+		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 	
 		COMPOSITION = builder.<GSComposition>cast().name("composition").constr(GSCompositionSessionField::new).nullable().assignOnce().codec(COMPOSITION_CODEC).noCache().noSync().session(GSESessionType.COMPOSITION).build();
 		GAMETICK_WIDTH = builder.<Double>cast().name("gametickWidth").def(8.0).codec(DOUBLE_CODEC).session(GSESessionType.COMPOSITION).build();
 		
 		SEQUENCE = builder.<GSSequence>cast().name("sequence").constr(GSSequenceSessionField::new).nullable().assignOnce().codec(SEQUENCE_CODEC).noCache().noSync().session(GSESessionType.SEQUENCE).build();
 		SELECTED_CHANNEL = builder.<UUID>cast().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
-		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
+		MIN_EXPANDED_COLUMN = builder.<Integer>cast().name("minExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
+		MAX_EXPANDED_COLUMN = builder.<Integer>cast().name("maxExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
+		
 	}
 	
 	private final GSESessionType type;
