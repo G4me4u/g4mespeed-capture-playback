@@ -86,9 +86,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private int gcp_microtick = -1;
 	
 	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
-			RegistryEntry<DimensionType> registryEntry, Supplier<Profiler> profiler, boolean isClient,
-			boolean debugWorld, long seed) {
-		super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
+			RegistryEntry<DimensionType> dimension, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld,
+			long seed, int maxChainedNeighborUpdates) {
+		super(properties, registryRef, dimension, profiler, isClient, debugWorld, seed, maxChainedNeighborUpdates);
 	}
 	
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);

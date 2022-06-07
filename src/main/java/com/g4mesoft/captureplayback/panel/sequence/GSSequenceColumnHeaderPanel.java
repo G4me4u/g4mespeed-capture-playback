@@ -14,7 +14,6 @@ import com.g4mesoft.panel.scroll.GSIScrollable;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 
 public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIScrollable, GSIModelViewListener,
                                                                     GSIMouseListener {
@@ -35,10 +34,10 @@ public class GSSequenceColumnHeaderPanel extends GSPanel implements GSIScrollabl
 	private static final int SHADOW_START_COLOR = COLUMN_HEADER_COLOR;
 	private static final int SHADOW_END_COLOR = SHADOW_START_COLOR & 0x00FFFFFF;
 	
-	private static final Text EXPAND_TEXT       = new TranslatableText("panel.sequencecolumnheader.expand");
-	private static final Text COLLAPSE_TEXT     = new TranslatableText("panel.sequencecolumnheader.collapse");
-	private static final Text EXPAND_ALL_TEXT   = new TranslatableText("panel.sequencecolumnheader.expandall");
-	private static final Text COLLAPSE_ALL_TEXT = new TranslatableText("panel.sequencecolumnheader.collapseall");
+	private static final Text EXPAND_TEXT       = Text.translatable("panel.sequencecolumnheader.expand");
+	private static final Text COLLAPSE_TEXT     = Text.translatable("panel.sequencecolumnheader.collapse");
+	private static final Text EXPAND_ALL_TEXT   = Text.translatable("panel.sequencecolumnheader.expandall");
+	private static final Text COLLAPSE_ALL_TEXT = Text.translatable("panel.sequencecolumnheader.collapseall");
 	
 	private static final int COLUMN_HEADER_PREFERRED_HEIGHT = 30;
 	

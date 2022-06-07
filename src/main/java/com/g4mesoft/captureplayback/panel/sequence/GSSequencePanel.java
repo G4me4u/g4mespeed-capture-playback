@@ -25,7 +25,6 @@ import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 
 public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequenceListener, 
                                                         GSIModelViewListener, GSIMouseListener {
@@ -52,9 +51,9 @@ public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequen
 	private static final int DOTTED_LINE_COLOR   = GSSequenceColumnHeaderPanel.DOTTED_LINE_COLOR;
 	
 	private static final GSIcon TYPE_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
-	private static final Text CREATE_ENTRY_TEXT = new TranslatableText("panel.sequencecontent.createentry");
-	private static final Text ENTRY_TYPE_TEXT   = new TranslatableText("panel.sequencecontent.entrytype");
-	private static final Text DELETE_ENTRY_TEXT = new TranslatableText("panel.sequencecontent.deleteentry");
+	private static final Text CREATE_ENTRY_TEXT = Text.translatable("panel.sequencecontent.createentry");
+	private static final Text ENTRY_TYPE_TEXT   = Text.translatable("panel.sequencecontent.entrytype");
+	private static final Text DELETE_ENTRY_TEXT = Text.translatable("panel.sequencecontent.deleteentry");
 	
 	private final GSSequence sequence;
 	private final GSExpandedColumnModel expandedColumnModel;
@@ -316,7 +315,7 @@ public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequen
 		if (entry != null) {
 			for (GSEChannelEntryType type : GSEChannelEntryType.TYPES) {
 				GSIcon icon = (entry.getType() == type) ? TYPE_SELECTED_ICON : null;
-				Text text = new TranslatableText(type.getName());
+				Text text = Text.translatable(type.getName());
 				entryTypeMenu.addItem(new GSDropdownAction(icon, text, () -> {
 					entry.setType(type);
 				}));

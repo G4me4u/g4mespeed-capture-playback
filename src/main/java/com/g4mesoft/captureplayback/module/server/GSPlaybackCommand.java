@@ -10,7 +10,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 public final class GSPlaybackCommand {
 
@@ -34,7 +34,7 @@ public final class GSPlaybackCommand {
 		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).gcp_addPlaybackStream(composition.getPlaybackStream());
 		
-		source.sendFeedback(new LiteralText("Playback has started."), true);
+		source.sendFeedback(Text.literal("Playback has started."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -43,7 +43,7 @@ public final class GSPlaybackCommand {
 		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
-		source.sendFeedback(new LiteralText("All playbacks have stopped."), true);
+		source.sendFeedback(Text.literal("All playbacks have stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}

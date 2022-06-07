@@ -19,7 +19,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.Texts;
 import net.minecraft.util.Formatting;
@@ -76,9 +75,9 @@ public final class GSSequenceCommand {
 			module.setComposition(composition, fileName);
 			module.startSequenceSessionForAll(track.getTrackUUID());
 			
-			source.sendFeedback(new LiteralText("Sequence '" + fileName + "' loaded successfully."), true);
+			source.sendFeedback(Text.literal("Sequence '" + fileName + "' loaded successfully."), true);
 		} else {
-			source.sendError(new LiteralText("Failed to load sequence."));
+			source.sendError(Text.literal("Failed to load sequence."));
 		}
 
 		return Command.SINGLE_SUCCESS;
@@ -99,9 +98,9 @@ public final class GSSequenceCommand {
 						int len = fileName.length() - SEQUENCE_EXTENSION.length();
 						String sequenceName = fileName.substring(0, len);
 						
-						Text sequenceNameText = Texts.bracketed(new LiteralText(sequenceName).styled((style) -> {
+						Text sequenceNameText = Texts.bracketed(Text.literal(sequenceName).styled((style) -> {
 							return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/sequence load " + sequenceName))
-									.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Load Sequence")))
+									.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Load Sequence")))
 									.withColor(Formatting.GREEN);
 						}));
 						
@@ -110,7 +109,7 @@ public final class GSSequenceCommand {
 				}
 			}
 		} catch (SecurityException e) {
-			source.sendError(new LiteralText("Failed to list sequences"));
+			source.sendError(Text.literal("Failed to list sequences"));
 		}
 		
 		return Command.SINGLE_SUCCESS;

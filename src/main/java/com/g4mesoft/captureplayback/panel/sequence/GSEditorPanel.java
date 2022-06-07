@@ -14,16 +14,15 @@ import com.g4mesoft.panel.button.GSButton;
 import com.g4mesoft.panel.field.GSTextLabel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
 public abstract class GSEditorPanel extends GSParentPanel {
 
 	private static final int BACKGROUND_COLOR = 0xFF252526;
 	
-	private static final Text CANCEL_TEXT = new LiteralText("Cancel");
-	private static final Text APPLY_TEXT = new LiteralText("Apply");
-	private static final Text DONE_TEXT = new LiteralText("Done");
+	private static final Text CANCEL_TEXT = Text.literal("Cancel");
+	private static final Text APPLY_TEXT = Text.literal("Apply");
+	private static final Text DONE_TEXT = Text.literal("Done");
 	
 	private static final int OUTER_MARGIN  = 10;
 	private static final int TITLE_MARGIN  = 10;

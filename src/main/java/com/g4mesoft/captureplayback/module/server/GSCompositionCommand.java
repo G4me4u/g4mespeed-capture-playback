@@ -12,7 +12,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.Texts;
 import net.minecraft.util.Formatting;
@@ -43,9 +42,9 @@ public final class GSCompositionCommand {
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 
 		if (module.writeComposition()) {
-			source.sendFeedback(new LiteralText("Composition saved successfully."), true);
+			source.sendFeedback(Text.literal("Composition saved successfully."), true);
 		} else {
-			source.sendError(new LiteralText("Failed to save composition."));
+			source.sendError(Text.literal("Failed to save composition."));
 		}
 		
 		return Command.SINGLE_SUCCESS;
@@ -59,9 +58,9 @@ public final class GSCompositionCommand {
 		module.writeComposition();
 		
 		if (module.createComposition(fileName)) {
-			source.sendFeedback(new LiteralText("Composition '" + fileName + "' created successfully."), true);
+			source.sendFeedback(Text.literal("Composition '" + fileName + "' created successfully."), true);
 		} else {
-			source.sendError(new LiteralText("Failed to load composition."));
+			source.sendError(Text.literal("Failed to load composition."));
 		}
 
 		return Command.SINGLE_SUCCESS;
@@ -75,9 +74,9 @@ public final class GSCompositionCommand {
 		module.writeComposition();
 		
 		if (module.setComposition(fileName)) {
-			source.sendFeedback(new LiteralText("Composition '" + fileName + "' loaded successfully."), true);
+			source.sendFeedback(Text.literal("Composition '" + fileName + "' loaded successfully."), true);
 		} else {
-			source.sendError(new LiteralText("Failed to load composition."));
+			source.sendError(Text.literal("Failed to load composition."));
 		}
 
 		return Command.SINGLE_SUCCESS;
@@ -98,9 +97,9 @@ public final class GSCompositionCommand {
 						int len = fileName.length() - GSCapturePlaybackServerModule.COMPOSITION_EXTENSION.length();
 						String compositionName = fileName.substring(0, len);
 						
-						Text compositionNameText = Texts.bracketed(new LiteralText(compositionName).styled((style) -> {
+						Text compositionNameText = Texts.bracketed(Text.literal(compositionName).styled((style) -> {
 							return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/composition load " + compositionName))
-									.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Load Composition")))
+									.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Load Composition")))
 									.withColor(Formatting.GREEN);
 						}));
 						
@@ -109,7 +108,7 @@ public final class GSCompositionCommand {
 				}
 			}
 		} catch (SecurityException e) {
-			source.sendError(new LiteralText("Failed to list compositions"));
+			source.sendError(Text.literal("Failed to list compositions"));
 		}
 		
 		return Command.SINGLE_SUCCESS;

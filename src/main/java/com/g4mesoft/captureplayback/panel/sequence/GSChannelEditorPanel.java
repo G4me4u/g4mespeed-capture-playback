@@ -13,17 +13,16 @@ import com.g4mesoft.panel.field.GSTextLabel;
 import com.g4mesoft.panel.scroll.GSScrollPanel;
 
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.math.BlockPos;
 
 public class GSChannelEditorPanel extends GSEditorPanel {
 
 	private static final int FIELD_MARGIN = 2;
 	
-	private static final Text TITLE_TEXT     = new TranslatableText("panel.edit.channel.title");
-	private static final Text NAME_TEXT      = new TranslatableText("panel.edit.channel.name");
-	private static final Text COLOR_TEXT     = new TranslatableText("panel.edit.channel.color");
-	private static final Text POSITIONS_TEXT = new TranslatableText("panel.edit.channel.positions");
+	private static final Text TITLE_TEXT     = Text.translatable("panel.edit.channel.title");
+	private static final Text NAME_TEXT      = Text.translatable("panel.edit.channel.name");
+	private static final Text COLOR_TEXT     = Text.translatable("panel.edit.channel.color");
+	private static final Text POSITIONS_TEXT = Text.translatable("panel.edit.channel.positions");
 	
 	private final GSChannel channel;
 	private GSChannelInfo info;

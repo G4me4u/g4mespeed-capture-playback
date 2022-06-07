@@ -14,14 +14,13 @@ import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 
 public abstract class GSScrollableContentPanel extends GSParentPanel implements GSIScrollable {
 
 	private static final int BOTTOM_RIGHT_CORNER_COLOR = 0xFF000000;
 	
 	private static final GSIcon OPACITY_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
-	private static final Text OPACITY_TEXT = new TranslatableText("panel.opacity");
+	private static final Text OPACITY_TEXT = Text.translatable("panel.opacity");
 	
 	protected GSScrollBar verticalScrollBar;
 	protected GSScrollBar horizontalScrollBar;
@@ -162,7 +161,7 @@ public abstract class GSScrollableContentPanel extends GSParentPanel implements 
 		GSDropdown opacityMenu = new GSDropdown();
 		for (GSEContentOpacity opacity : GSEContentOpacity.OPACITIES) {
 			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
-			Text text = new TranslatableText(opacity.getName());
+			Text text = Text.translatable(opacity.getName());
 			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
 				setContentOpacity(opacity);
 			}));

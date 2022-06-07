@@ -10,7 +10,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 
 public final class GSCaptureCommand {
 
@@ -34,7 +34,7 @@ public final class GSCaptureCommand {
 		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).gcp_addCaptureStream(composition.getCaptureStream());
 		
-		source.sendFeedback(new LiteralText("Capture has started."), true);
+		source.sendFeedback(Text.literal("Capture has started."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -43,7 +43,7 @@ public final class GSCaptureCommand {
 		ServerWorld world = source.getServer().getOverworld();
 		((GSIServerWorldAccess)world).gcp_getCaptureStreams().forEach(GSICaptureStream::close);
 		
-		source.sendFeedback(new LiteralText("All captures have stopped."), true);
+		source.sendFeedback(Text.literal("All captures have stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
