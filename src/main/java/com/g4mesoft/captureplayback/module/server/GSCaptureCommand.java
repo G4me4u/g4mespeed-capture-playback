@@ -31,7 +31,7 @@ public final class GSCaptureCommand {
 
 		GSComposition composition = module.getComposition();
 		
-		ServerWorld world = source.getServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_addCaptureStream(composition.getCaptureStream());
 		
 		source.sendFeedback(Text.literal("Capture has started."), true);
@@ -40,7 +40,7 @@ public final class GSCaptureCommand {
 	}
 
 	private static int stopAllCaptures(ServerCommandSource source) {
-		ServerWorld world = source.getServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getCaptureStreams().forEach(GSICaptureStream::close);
 		
 		source.sendFeedback(Text.literal("All captures have stopped."), true);
