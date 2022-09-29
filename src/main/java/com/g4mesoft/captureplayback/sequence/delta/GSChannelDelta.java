@@ -67,9 +67,14 @@ public abstract class GSChannelDelta implements GSIDelta<GSSequence> {
 		if (sequence.hasChannelUUID(channelUUID))
 			throw new GSDeltaException("Channel already exists");
 		
-		GSChannel channel = sequence.addChannel(channelUUID, info);
-		sequence.moveChannelAfter(channelUUID, prevUUID);
-		return channel;
+		try {
+			GSChannel channel = sequence.addChannel(channelUUID, info);
+			sequence.moveChannelAfter(channelUUID, prevUUID);
+			return channel;
+		} catch (Throwable t) {
+			sequence.removeChannel(channelUUID);
+			throw new GSDeltaException("Failed to add channel", t);
+		}
 	}
 	
 	@Override

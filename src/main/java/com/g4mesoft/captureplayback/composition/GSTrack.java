@@ -44,7 +44,7 @@ public class GSTrack {
 		this(trackUUID, name, color, groupUUID, new GSSequence(trackUUID));
 	}
 	
-	GSTrack(UUID trackUUID, String name, int color, UUID groupUUID, GSSequence sequence) {
+	private GSTrack(UUID trackUUID, String name, int color, UUID groupUUID, GSSequence sequence) {
 		if (trackUUID == null)
 			throw new IllegalArgumentException("trackUUID is null");
 		if (name == null)

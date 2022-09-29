@@ -38,6 +38,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 
 	private static final int TITLE_PREFERRED_WIDTH = 250;
 	private static final int TITLE_MARGIN = 5;
+	private static final int ASSET_UUID_RIGHT_MARGIN = 2;
 	
 	private static final int TITLE_SEPARATOR_COLOR = 0xFF444444;
 	private static final int TITLE_BACKGROUND_COLOR = 0xFF171717;
@@ -56,6 +57,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	
 	protected final GSButton backButton;
 	protected final GSTextField nameField;
+	protected final GSTextField assetUUIDField;
 	protected final GSScrollPanel scrollPanel;
 	
 	private final GSContentEventHandler contentHandler;
@@ -87,6 +89,14 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		nameField.setBorderWidth(0);
 		nameField.setVerticalMargin(TITLE_MARGIN);
 		nameField.setHorizontalMargin(0);
+
+		assetUUIDField = new GSTextField(session.get(GSSession.ASSET_UUID).toString());
+		assetUUIDField.setEditable(false);
+		assetUUIDField.setBackgroundColor(0x00000000);
+		assetUUIDField.setTextAlignment(GSETextAlignment.RIGHT);
+		assetUUIDField.setBorderWidth(0);
+		assetUUIDField.setVerticalMargin(TITLE_MARGIN);
+		assetUUIDField.setHorizontalMargin(0);
 		
 		scrollPanel = new GSScrollPanel();
 		scrollPanel.setHorizontalScrollBarPolicy(GSEScrollBarPolicy.SCROLLBAR_ALWAYS);
@@ -116,15 +126,22 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		nameField.getLayout()
 			.set(GSGridLayoutManager.GRID_X, 0)
 			.set(GSGridLayoutManager.GRID_Y, 0)
-			.set(GSGridLayoutManager.GRID_WIDTH, 2)
+			.set(GSGridLayoutManager.GRID_WIDTH, 3)
 			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
 			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.CENTER)
 			.set(GSGridLayoutManager.PREFERRED_WIDTH, TITLE_PREFERRED_WIDTH);
 		add(nameField);
+		assetUUIDField.getLayout()
+			.set(GSGridLayoutManager.GRID_X, 2)
+			.set(GSGridLayoutManager.GRID_Y, 0)
+			.set(GSGridLayoutManager.WEIGHT_X, 0.0f)
+			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.EAST)
+			.set(GSGridLayoutManager.RIGHT_MARGIN, ASSET_UUID_RIGHT_MARGIN);
+		add(assetUUIDField);
 		scrollPanel.getLayout()
 			.set(GSGridLayoutManager.GRID_X, 0)
 			.set(GSGridLayoutManager.GRID_Y, 1)
-			.set(GSGridLayoutManager.GRID_WIDTH, 2)
+			.set(GSGridLayoutManager.GRID_WIDTH, 3)
 			.set(GSGridLayoutManager.WEIGHT_Y, 1.0f)
 			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
 		add(scrollPanel);

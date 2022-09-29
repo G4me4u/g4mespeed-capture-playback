@@ -15,42 +15,36 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionRequestPacket implements GSIPacket {
 
-	private GSESessionType sessionType;
 	private GSESessionRequestType requestType;
-	private UUID structureUUID;
+	private UUID assetUUID;
 	
 	public GSSessionRequestPacket() {
 	}
 
-	public GSSessionRequestPacket(GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
-		this.sessionType = sessionType;
+	public GSSessionRequestPacket(GSESessionRequestType requestType, UUID structureUUID) {
 		this.requestType = requestType;
-		this.structureUUID = structureUUID;
+		this.assetUUID = structureUUID;
 	}
 	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
-		sessionType = GSESessionType.fromIndex(buf.readInt());
-		if (sessionType == null)
-			throw new IOException("Unknown session type");
 		requestType = GSESessionRequestType.fromIndex(buf.readInt());
-		if (sessionType == null)
+		if (requestType == null)
 			throw new IOException("Unknown request type");
-		structureUUID = buf.readUuid();
+		assetUUID = buf.readUuid();
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeInt(sessionType.getIndex());
 		buf.writeInt(requestType.getIndex());
-		buf.writeUuid(structureUUID);
+		buf.writeUuid(assetUUID);
 	}
 
 	@Override
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		if (module != null)
-			module.onSessionRequest(player, sessionType, requestType, structureUUID);
+			module.onSessionRequest(player, requestType, assetUUID);
 	}
 	
 	@Override

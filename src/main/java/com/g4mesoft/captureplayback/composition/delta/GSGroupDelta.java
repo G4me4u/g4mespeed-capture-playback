@@ -44,7 +44,12 @@ public abstract class GSGroupDelta implements GSIDelta<GSComposition> {
 		if (composition.hasGroupUUID(groupUUID))
 			throw new GSDeltaException("Group already exists");
 		
-		composition.addGroup(groupUUID, groupName);
+		try {
+			composition.addGroup(groupUUID, groupName);
+		} catch (Throwable t) {
+			composition.removeGroup(groupUUID);
+			throw new GSDeltaException("Failed to add group", t);
+		}
 	}
 	
 	@Override

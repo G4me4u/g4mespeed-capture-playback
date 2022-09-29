@@ -2,6 +2,7 @@ package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaRegistries;
 import com.g4mesoft.captureplayback.common.GSIDelta;
@@ -18,22 +19,20 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionDeltasPacket implements GSIPacket {
 
-	private GSESessionType sessionType;
+	private UUID assetUUID;
 	private GSIDelta<GSSession>[] deltas;
 	
 	public GSSessionDeltasPacket() {
 	}
 
-	public GSSessionDeltasPacket(GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
-		this.sessionType = sessionType;
+	public GSSessionDeltasPacket(UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+		this.assetUUID = assetUUID;
 		this.deltas = deltas;
 	}
 	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
-		sessionType = GSESessionType.fromIndex(buf.readInt());
-		if (sessionType == null)
-			throw new IOException("Unknown session type");
+		assetUUID = buf.readUuid();
 		
 		int deltaCount = buf.readInt();
 		@SuppressWarnings("unchecked")
@@ -60,8 +59,7 @@ public class GSSessionDeltasPacket implements GSIPacket {
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeInt(sessionType.getIndex());
-	
+		buf.writeUuid(assetUUID);
 		buf.writeInt(deltas.length);
 		for (GSIDelta<GSSession> delta : deltas)
 			GSDeltaRegistries.SESSION_DELTA_REGISTRY.write(buf, delta);
@@ -71,7 +69,7 @@ public class GSSessionDeltasPacket implements GSIPacket {
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		if (module != null)
-			module.onSessionDeltasReceived(player, sessionType, deltas);
+			module.onSessionDeltasReceived(player, assetUUID, deltas);
 	}
 
 	@Override
@@ -79,6 +77,6 @@ public class GSSessionDeltasPacket implements GSIPacket {
 	public void handleOnClient(GSClientController controller) {
 		GSCapturePlaybackClientModule module = controller.getModule(GSCapturePlaybackClientModule.class);
 		if (module != null)
-			module.onSessionDeltasReceived(sessionType, deltas);
+			module.onSessionDeltasReceived(assetUUID, deltas);
 	}
 }

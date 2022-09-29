@@ -1,12 +1,12 @@
 package com.g4mesoft.captureplayback.mixin.server;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -67,9 +67,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private final GSCapturePlaybackExtension gcp_extension = GSCapturePlaybackExtension.getInstance();
 	
 	@Unique
-	private final List<GSIPlaybackStream> gcp_playbackStreams = new ArrayList<>();
+	private final Map<UUID, GSIPlaybackStream> gcp_playbackStreams = new HashMap<>();
 	@Unique
-	private final List<GSICaptureStream> gcp_captureStreams = new ArrayList<>();
+	private final Map<UUID, GSICaptureStream> gcp_captureStreams = new HashMap<>();
 	
 	@Unique
 	private LinkedList<GSSignalEvent> gcp_capturedEvents = new LinkedList<>();
@@ -100,7 +100,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		} else {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
-			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.iterator();
+			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.values().iterator();
 			while (playbackStreamItr.hasNext()) {
 				GSIPlaybackStream playbackStream = playbackStreamItr.next();
 				if (playbackStream.isClosed()) {
@@ -114,7 +114,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		}
 		
 		// Clean up closed capture streams
-		Iterator<GSICaptureStream> captureStreamItr = gcp_captureStreams.iterator();
+		Iterator<GSICaptureStream> captureStreamItr = gcp_captureStreams.values().iterator();
 		while (captureStreamItr.hasNext()) {
 			GSICaptureStream captureStream = captureStreamItr.next();
 			if (captureStream.isClosed())
@@ -183,7 +183,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 				capturedFrame = mergedFrame;
 			}
 			
-			for (GSICaptureStream captureStream : gcp_captureStreams)
+			for (GSICaptureStream captureStream : gcp_captureStreams.values())
 				captureStream.write(capturedFrame);
 		}
 	}
@@ -266,39 +266,59 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Override
-	public void gcp_addPlaybackStream(GSIPlaybackStream playbackStream) {
+	public boolean gcp_hasPlaybackStream(UUID assetUUID) {
+		return gcp_playbackStreams.containsKey(assetUUID);
+	}
+	
+	@Override
+	public void gcp_addPlaybackStream(UUID assetUUID, GSIPlaybackStream playbackStream) {
 		if (!playbackStream.isClosed())
-			gcp_playbackStreams.add(playbackStream);
+			gcp_playbackStreams.put(assetUUID, playbackStream);
 	}
 	
 	@Override
-	public List<GSIPlaybackStream> gcp_getPlaybackStreams() {
-		return Collections.unmodifiableList(gcp_playbackStreams);
+	public GSIPlaybackStream gcp_getPlaybackStream(UUID assetUUID) {
+		return gcp_playbackStreams.get(assetUUID);
 	}
 	
 	@Override
-	public void gcp_addCaptureStream(GSICaptureStream captureStream) {
+	public Collection<GSIPlaybackStream> gcp_getPlaybackStreams() {
+		return Collections.unmodifiableCollection(gcp_playbackStreams.values());
+	}
+
+	@Override
+	public boolean gcp_hasCaptureStream(UUID assetUUID) {
+		return gcp_captureStreams.containsKey(assetUUID);
+	}
+	
+	@Override
+	public void gcp_addCaptureStream(UUID assetUUID, GSICaptureStream captureStream) {
 		if (!captureStream.isClosed())
-			gcp_captureStreams.add(captureStream);
+			gcp_captureStreams.put(assetUUID, captureStream);
+	}
+
+	@Override
+	public GSICaptureStream gcp_getCaptureStream(UUID assetUUID) {
+		return gcp_captureStreams.get(assetUUID);
 	}
 	
 	@Override
-	public List<GSICaptureStream> gcp_getCaptureStreams() {
-		return Collections.unmodifiableList(gcp_captureStreams);
+	public Collection<GSICaptureStream> gcp_getCaptureStreams() {
+		return Collections.unmodifiableCollection(gcp_captureStreams.values());
 	}
 	
 	@Override
 	public boolean gcp_isPlaybackPosition(BlockPos pos) {
-		return isPositionInStreams(gcp_playbackStreams, pos);
+		return isPositionInStreams(gcp_playbackStreams.values(), pos);
 	}
 	
 	@Override
 	public boolean gcp_isCapturePosition(BlockPos pos) {
-		return isPositionInStreams(gcp_captureStreams, pos);
+		return isPositionInStreams(gcp_captureStreams.values(), pos);
 	}
 	
 	@Unique
-	private boolean isPositionInStreams(List<? extends GSIStream> streams, BlockPos pos) {
+	private boolean isPositionInStreams(Collection<? extends GSIStream> streams, BlockPos pos) {
 		for (GSIStream stream : streams) {
 			if (stream.getBlockRegion().contains(pos.getX(), pos.getY(), pos.getZ()))
 				return true;

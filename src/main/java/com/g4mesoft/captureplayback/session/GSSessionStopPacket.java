@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.core.client.GSClientController;
@@ -14,25 +15,23 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionStopPacket implements GSIPacket {
 
-	private GSESessionType sessionType;
+	private UUID assetUUID;
 	
 	public GSSessionStopPacket() {
 	}
 
-	public GSSessionStopPacket(GSESessionType sessionType) {
-		this.sessionType = sessionType;
+	public GSSessionStopPacket(UUID assetUUID) {
+		this.assetUUID = assetUUID;
 	}
 	
 	@Override
 	public void read(PacketByteBuf buf) throws IOException {
-		sessionType = GSESessionType.fromIndex(buf.readInt());
-		if (sessionType == null)
-			throw new IOException("Unknown session type");
+		assetUUID = buf.readUuid();
 	}
 
 	@Override
 	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeInt(sessionType.getIndex());
+		buf.writeUuid(assetUUID);
 	}
 
 	@Override
@@ -44,6 +43,6 @@ public class GSSessionStopPacket implements GSIPacket {
 	public void handleOnClient(GSClientController controller) {
 		GSCapturePlaybackClientModule module = controller.getModule(GSCapturePlaybackClientModule.class);
 		if (module != null)
-			module.onSessionStop(sessionType);
+			module.onSessionStop(assetUUID);
 	}
 }

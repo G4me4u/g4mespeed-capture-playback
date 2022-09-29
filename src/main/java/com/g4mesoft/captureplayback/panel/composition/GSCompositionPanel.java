@@ -11,7 +11,6 @@ import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
-import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSPanelUtil;
@@ -343,7 +342,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	private void editTrackSequence(GSTrack track) {
 		GSCapturePlaybackClientModule module = GSCapturePlaybackExtension.getInstance().getClientModule();
-		module.requestSession(GSESessionType.SEQUENCE, GSESessionRequestType.REQUEST_START, track.getTrackUUID());
+		module.requestSession(GSESessionRequestType.REQUEST_START, track.getTrackUUID());
 	}
 
 	@Override

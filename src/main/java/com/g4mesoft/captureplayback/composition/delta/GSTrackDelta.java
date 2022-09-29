@@ -87,7 +87,12 @@ public abstract class GSTrackDelta implements GSIDelta<GSComposition> {
 		if (!composition.hasGroupUUID(groupUUID))
 			throw new GSDeltaException("Track group does not exist");
 		
-		return composition.addTrack(trackUUID, name, color, groupUUID);
+		try {
+			return composition.addTrack(trackUUID, name, color, groupUUID);
+		} catch (Throwable t) {
+			composition.removeTrack(trackUUID);
+			throw new GSDeltaException("Failed to add track", t);
+		}
 	}
 	
 	@Override

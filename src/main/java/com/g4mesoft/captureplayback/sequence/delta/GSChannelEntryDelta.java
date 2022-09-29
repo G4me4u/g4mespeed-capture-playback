@@ -65,10 +65,15 @@ public abstract class GSChannelEntryDelta extends GSChannelDelta {
 		if (channel.hasEntryUUID(entryUUID))
 			throw new GSDeltaException("Entry already exists");
 
-		GSChannelEntry entry = channel.tryAddEntry(entryUUID, startTime, endTime);
+		GSChannelEntry entry = null;
+		try {
+			entry = channel.tryAddEntry(entryUUID, startTime, endTime);
+		} catch (Throwable t) {
+			channel.removeEntry(entryUUID);
+		}
+		
 		if (entry == null)
 			throw new GSDeltaException("Unable to add entry");
-		
 		return entry;
 	}
 	

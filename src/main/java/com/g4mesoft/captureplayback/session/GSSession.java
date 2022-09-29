@@ -30,6 +30,8 @@ public class GSSession {
 	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(PacketByteBuf::readUuid, PacketByteBuf::writeUuid);
 	private static final GSISessionFieldCodec<GSUndoRedoHistory> UNDO_REDO_HISTORY_CODEC = new GSBasicSessionFieldCodec<>(GSUndoRedoHistory::read, GSUndoRedoHistory::write);
 	
+	public static final GSSessionFieldType<UUID>              ASSET_UUID;
+	
 	public static final GSSessionFieldType<Float>             X_OFFSET;
 	public static final GSSessionFieldType<Float>             Y_OFFSET;
 	public static final GSSessionFieldType<GSEContentOpacity> OPACITY;
@@ -52,6 +54,8 @@ public class GSSession {
 		sessionFieldTypes = new EnumMap<>(GSESessionType.class);
 		
 		GSSessionFieldTypeBuilder<?> builder = new GSSessionFieldTypeBuilder<>(nameToType, sessionFieldTypes);
+		
+		ASSET_UUID = builder.<UUID>cast().name("assetUUID").nullable().assignOnce().codec(UUID_CODEC).noSync().session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 		
 		X_OFFSET = builder.<Float>cast().name("xOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
 		Y_OFFSET = builder.<Float>cast().name("yOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();

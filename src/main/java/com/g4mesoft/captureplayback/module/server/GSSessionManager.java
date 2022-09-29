@@ -2,124 +2,126 @@ package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
-import com.g4mesoft.captureplayback.composition.GSComposition;
+import com.g4mesoft.captureplayback.common.asset.GSAbstractAsset;
+import com.g4mesoft.captureplayback.common.asset.GSAssetStorage;
+import com.g4mesoft.captureplayback.common.asset.GSIAssetStorageListener;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
-import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 
-public class GSSessionManager {
+public class GSSessionManager implements GSIAssetStorageListener {
 
-	private static final String SESSION_CACHE_DIRECTORY_NAME = "sessions";
-	
 	private final GSIServerModuleManager manager;
+	private final GSAssetStorage assetStorage;
+	private final File cacheDir;
 	
-	private final File sessionCacheDir;
-
-	private final Map<UUID, GSSessionTracker> sessionTrackers;
-	private final Map<UUID, GSSessionTracker> playerToTracker;
+	private final Map<UUID, GSSessionTracker> trackers;
+	private boolean iteratingTrackers;
 	
-	public GSSessionManager(GSIServerModuleManager manager) {
+	public GSSessionManager(GSIServerModuleManager manager, GSAssetStorage assetStorage, File cacheDir) {
 		this.manager = manager;
-		
-		sessionCacheDir = new File(manager.getCacheFile(), SESSION_CACHE_DIRECTORY_NAME);
-		
-		sessionTrackers = new HashMap<>();
-		playerToTracker = new HashMap<>();
+		this.assetStorage = assetStorage;
+		this.cacheDir = cacheDir;
+	
+		trackers = new HashMap<>();
+		iteratingTrackers = false;
+	}
+
+	public void init() {
+		assetStorage.addListener(this);
+	}
+
+	public void dispose() {
+		stopAll();
+		assetStorage.removeListener(this);
 	}
 	
-	public void addComposition(GSComposition composition) {
-		UUID compositionUUID = composition.getCompositionUUID();
-		
-		if (!sessionTrackers.containsKey(compositionUUID)) {
-			File cacheDir = new File(sessionCacheDir, compositionUUID.toString());
-			GSSessionTracker tracker = new GSSessionTracker(manager, composition, cacheDir);
-			tracker.install();
-			
-			sessionTrackers.put(compositionUUID, tracker);
-		}
-	}
-	
-	public void removeComposition(UUID compositionUUID) {
-		GSSessionTracker tracker = sessionTrackers.remove(compositionUUID);
-		
-		if (tracker != null) {
-			tracker.stopAllSessions();
-			tracker.uninstall();
-		}
-	}
-	
-	public void onSessionRequest(ServerPlayerEntity player, GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
-		switch (sessionType) {
-		case COMPOSITION:
-			if (requestType == GSESessionRequestType.REQUEST_START) {
-				startCompositionSession(player, structureUUID);
-			} else {
-				stopCompositionSession(player);
+	public boolean onRequest(ServerPlayerEntity player, GSESessionRequestType requestType, UUID assetUUID) {
+		if (assetStorage.hasPermission(player, assetUUID)) {
+			GSSessionTracker tracker = getTracker(assetUUID);
+			if (tracker != null && tracker.onRequest(player, requestType)) {
+				// Remove trackers that do not contain sessions.
+				if (requestType == GSESessionRequestType.REQUEST_STOP && tracker.isEmpty()) {
+					trackers.remove(assetUUID);
+					assetStorage.unloadAsset(assetUUID);
+				}
+				return true;
 			}
-			break;
-		case SEQUENCE:
-			if (requestType == GSESessionRequestType.REQUEST_START) {
-				startSequenceSession(player, structureUUID);
-			} else {
-				stopSequenceSession(player);
+		}
+		return false;
+	}
+	
+	private GSSessionTracker getTracker(UUID assetUUID) {
+		GSSessionTracker tracker = trackers.get(assetUUID);
+		if (tracker == null) {
+			// Note: Synchronous loading of asset. Might be slow.
+			GSAbstractAsset asset = assetStorage.requestAsset(assetUUID);
+			if (asset != null) {
+				tracker = new GSSessionTracker(manager, asset, getCacheDir(assetUUID));
+				trackers.put(assetUUID, tracker);
 			}
-			break;
+		}
+		return tracker;
+	}
+	
+	public void stopAll(ServerPlayerEntity player) {
+		iteratingTrackers = true;
+		try {
+			Iterator<Map.Entry<UUID, GSSessionTracker>> itr = trackers.entrySet().iterator();
+			while (itr.hasNext()) {
+				Map.Entry<UUID, GSSessionTracker> entry = itr.next();
+				UUID assetUUID = entry.getKey();
+				GSSessionTracker tracker = entry.getValue();
+				tracker.onRequest(player, GSESessionRequestType.REQUEST_STOP);
+				if (tracker.isEmpty()) {
+					itr.remove();
+					assetStorage.unloadAsset(assetUUID);
+				}
+			}
+		} finally {
+			iteratingTrackers = false;
 		}
 	}
 
-	private void startCompositionSession(ServerPlayerEntity player, UUID compositionUUID) {
-		if (playerToTracker.containsKey(player.getUuid()))
-			stopCompositionSession(player);
-		
-		GSSessionTracker tracker = sessionTrackers.get(compositionUUID);
-		if (tracker != null && tracker.startCompositionSession(player))
-			playerToTracker.put(player.getUuid(), tracker);
-	}
-	
-	private void stopCompositionSession(ServerPlayerEntity player) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null) {
-			tracker.stopCompositionSession(player);
-			playerToTracker.remove(player.getUuid());
-		}
-	}
-
-	private void startSequenceSession(ServerPlayerEntity player, UUID trackUUID) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null)
-			tracker.startSequenceSession(player, trackUUID);
-	}
-	
-	private void stopSequenceSession(ServerPlayerEntity player) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null)
-			tracker.stopSequenceSession(player);
-	}
-
-	public void stopAllSessions(ServerPlayerEntity player) {
-		GSSessionTracker tracker = playerToTracker.remove(player.getUuid());
-		if (tracker != null) {
-			tracker.stopSequenceSession(player);
-			tracker.stopCompositionSession(player);
+	public void stopAll() {
+		iteratingTrackers = true;
+		try {
+			for (GSSessionTracker tracker : trackers.values())
+				tracker.stopAll();
+			trackers.clear();
+			assetStorage.unloadAll();
+		} finally {
+			iteratingTrackers = false;
 		}
 	}
 	
-	public void stopAllSessions() {
-		for (GSSessionTracker tracker : sessionTrackers.values())
-			tracker.stopAllSessions();
-		playerToTracker.clear();
+	public void onDeltasReceived(ServerPlayerEntity player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+		GSSessionTracker tracker = trackers.get(assetUUID);
+		if (tracker != null)
+			tracker.onDeltasReceived(player, deltas);
 	}
 	
-	public void onDeltasReceived(ServerPlayerEntity player, GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
-		GSSessionTracker tracker = playerToTracker.get(player.getUuid());
-		if (tracker != null)
-			tracker.onDeltasReceived(player, sessionType, deltas);
+	private File getCacheDir(UUID assetUUID) {
+		return new File(cacheDir, assetUUID.toString());
+	}
+	
+	@Override
+	public void onAssetAdded(UUID assetUUID) {
+	}
+
+	@Override
+	public void onAssetRemoved(UUID assetUUID) {
+		if (!iteratingTrackers) {
+			GSSessionTracker tracker = trackers.remove(assetUUID);
+			if (tracker != null)
+				tracker.stopAll();
+		}
 	}
 }

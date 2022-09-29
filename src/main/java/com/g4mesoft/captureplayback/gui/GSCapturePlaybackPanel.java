@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
-import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.legend.GSButtonPanel;
 import com.g4mesoft.renderer.GSTexture;
@@ -23,7 +22,7 @@ public class GSCapturePlaybackPanel extends GSParentPanel {
 
 	public GSCapturePlaybackPanel(GSCapturePlaybackClientModule module) {
 		editCompositionButton = new GSButtonPanel("Edit Composition", () -> {
-			module.requestSession(GSESessionType.COMPOSITION, GSESessionRequestType.REQUEST_START, UUID.randomUUID());
+			module.requestSession(GSESessionRequestType.REQUEST_START, UUID.randomUUID());
 		});
 		
 		add(editCompositionButton);

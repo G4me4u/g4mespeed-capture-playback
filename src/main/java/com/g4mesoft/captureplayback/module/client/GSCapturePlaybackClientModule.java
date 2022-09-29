@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.module.client;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -52,7 +53,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	public static final String KEY_CATEGORY = "capture-playback";
 	public static final GSSettingCategory CAPTURE_PLAYBACK_CATEGORY = new GSSettingCategory("capture-playback");
 	
-	private final Map<GSESessionType, GSSession> sessions;
+	private final Map<UUID, GSSession> sessions;
+	private final Map<GSESessionType, GSSession> sessionByType;
 	private final Map<GSESessionType, GSPanel> sessionPanels;
 	private final GSDefaultChannelProvider channelProvider;
 	
@@ -62,7 +64,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	public GSCapturePlaybackClientModule() {
 		sessions = new HashMap<>();
-		sessionPanels = new HashMap<>();
+		sessionByType = new EnumMap<>(GSESessionType.class);
+		sessionPanels = new EnumMap<>(GSESessionType.class);
 		channelProvider = new GSDefaultChannelProvider();
 		
 		manager = null;
@@ -213,6 +216,10 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		return ((BlockHitResult)client.crosshairTarget).getBlockPos();
 	}
 	
+	public GSSession getSession(GSESessionType sessionType) {
+		return sessionByType.get(sessionType);
+	}
+	
 	@Override
 	public void registerClientSettings(GSSettingManager settings) {
 		settings.registerSetting(CAPTURE_PLAYBACK_CATEGORY, cChannelRenderingType);
@@ -220,16 +227,22 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	@Override
 	public void onDisconnectServer() {
-		GSESessionType[] sessionTypes = sessions.keySet().toArray(new GSESessionType[0]);
-		for (GSESessionType sessionType : sessionTypes)
-			onSessionStop(sessionType);
+		UUID[] assetUUIDs = sessions.keySet().toArray(new UUID[0]);
+		for (UUID assetUUID : assetUUIDs)
+			onSessionStop(assetUUID);
 	}
 	
 	public void onSessionStart(GSSession session) {
-		if (sessions.containsKey(session.getType()))
-			onSessionStop(session.getType());
+		GSSession activeSession = getSession(session.getType());
+		if (activeSession != null) {
+			// Notify the server that we are stopping the active session
+			UUID assetUUID = activeSession.get(GSSession.ASSET_UUID);
+			requestSession(GSESessionRequestType.REQUEST_STOP, assetUUID);
+			onSessionStop(assetUUID);
+		}
 		
-		sessions.put(session.getType(), session);
+		sessions.put(session.get(GSSession.ASSET_UUID), session);
+		sessionByType.put(session.getType(), session);
 		session.setSide(GSSessionSide.CLIENT_SIDE);
 		session.addListener(this);
 	
@@ -243,10 +256,13 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		}
 	}
 
-	public void onSessionStop(GSESessionType sessionType) {
-		GSSession session = sessions.remove(sessionType);
-		if (session != null)
-			closeSessionPanel(sessionType);
+	public void onSessionStop(UUID assetUUID) {
+		GSSession session = sessions.remove(assetUUID);
+		if (session != null) {
+			sessionByType.remove(session.getType());
+			session.removeListener(this);
+			closeSessionPanel(session.getType());
+		}
 	}
 	
 	private void openSessionPanel(GSESessionType sessionType, GSPanel panel) {
@@ -262,22 +278,18 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		if (panel != null)
 			GSClientController.getInstance().getPrimaryGUI().removeHistory(panel);
 	}
-	
-	public void requestSession(GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
-		manager.sendPacket(new GSSessionRequestPacket(sessionType, requestType, structureUUID));
+
+	public void requestSession(GSESessionRequestType requestType, UUID assetUUID) {
+		manager.sendPacket(new GSSessionRequestPacket(requestType, assetUUID));
 	}
 	
-	public GSSession getSession(GSESessionType type) {
-		return sessions.get(type);
-	}
-		
 	@Override
 	public void onSessionDeltas(GSSession session, GSIDelta<GSSession>[] deltas) {
-		manager.sendPacket(new GSSessionDeltasPacket(session.getType(), deltas));
+		manager.sendPacket(new GSSessionDeltasPacket(session.get(GSSession.ASSET_UUID), deltas));
 	}
 	
-	public void onSessionDeltasReceived(GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
-		GSSession session = getSession(sessionType);
+	public void onSessionDeltasReceived(UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+		GSSession session = sessions.get(assetUUID);
 		if (session != null)
 			session.applySessionDeltas(deltas);
 	}

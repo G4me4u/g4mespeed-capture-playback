@@ -58,3 +58,9 @@ setting.capture-playback.channelRenderingType.desc=The type of rendering that sh
 setting.capture-playback.channelRenderingType.0=Disabled
 setting.capture-playback.channelRenderingType.1=Depth
 setting.capture-playback.channelRenderingType.2=No Depth
+
+# Translation version 1
+:1
+
+############ Commands ############
+command.assetCommands.insufficientPermission=Insufficient permission

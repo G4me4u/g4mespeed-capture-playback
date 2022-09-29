@@ -50,7 +50,13 @@ public abstract class GSTrackEntryDelta extends GSTrackDelta {
 		GSTrack track = getTrack(composition);
 		if (track.hasEntryUUID(entryUUID))
 			throw new GSDeltaException("Entry already exists");
-		return track.addEntry(entryUUID, offset);
+	
+		try {
+			return track.addEntry(entryUUID, offset);
+		} catch (Throwable t) {
+			track.removeEntry(entryUUID);
+			throw new GSDeltaException("Failed to add entry", t);
+		}
 	}
 	
 	@Override
