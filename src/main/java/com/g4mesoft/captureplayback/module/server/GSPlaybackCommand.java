@@ -29,7 +29,7 @@ public final class GSPlaybackCommand {
 		}))).then(CommandManager.literal("stop").then(CommandManager.argument("assetUUID", UuidArgumentType.uuid()).suggests(new GSAssetSuggestionProvider()).executes(context -> {
 			return stopPlayback(context.getSource(), UuidArgumentType.getUuid(context, "assetUUID"));
 		}))).then(CommandManager.literal("stopAll").executes(context -> {
-			return stopAllPlayback(context.getSource());
+			return stopAllPlaybacks(context.getSource());
 		}));
 		
 		dispatcher.register(command);
@@ -38,7 +38,7 @@ public final class GSPlaybackCommand {
 	private static int startPlayback(ServerCommandSource source, UUID assetUUID) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, assetUUID);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		if (((GSIServerWorldAccess)world).gcp_hasPlaybackStream(assetUUID)) {
 			source.sendError(new LiteralText("Already playing back '" + assetUUID + "'."));
 			return 0;
@@ -61,7 +61,7 @@ public final class GSPlaybackCommand {
 	private static int stopPlayback(ServerCommandSource source, UUID assetUUID) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, assetUUID);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		GSIPlaybackStream stream = ((GSIServerWorldAccess)world).gcp_getPlaybackStream(assetUUID);
 		if (stream != null)
 			stream.close();
@@ -71,11 +71,10 @@ public final class GSPlaybackCommand {
 		return Command.SINGLE_SUCCESS;
 	}
 	
-	
-	private static int stopAllPlayback(ServerCommandSource source) throws CommandSyntaxException {
+	private static int stopAllPlaybacks(ServerCommandSource source) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, null);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
 		source.sendFeedback(new LiteralText("All playbacks stopped."), true);

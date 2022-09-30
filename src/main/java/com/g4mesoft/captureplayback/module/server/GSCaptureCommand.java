@@ -40,7 +40,7 @@ public final class GSCaptureCommand {
 	private static int startCapture(ServerCommandSource source, UUID assetUUID) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, assetUUID);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		if (((GSIServerWorldAccess)world).gcp_hasCaptureStream(assetUUID)) {
 			source.sendError(new LiteralText("Already capturing '" + assetUUID + "'."));
 			return 0;
@@ -68,7 +68,7 @@ public final class GSCaptureCommand {
 	private static int stopCapture(ServerCommandSource source, UUID assetUUID) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, assetUUID);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		GSICaptureStream stream = ((GSIServerWorldAccess)world).gcp_getCaptureStream(assetUUID);
 		if (stream != null)
 			stream.close();
@@ -78,11 +78,10 @@ public final class GSCaptureCommand {
 		return Command.SINGLE_SUCCESS;
 	}
 	
-	
 	private static int stopAllCaptures(ServerCommandSource source) throws CommandSyntaxException {
 		GSAssetCommands.checkPermission(source, null);
 		
-		ServerWorld world = source.getMinecraftServer().getOverworld();
+		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getCaptureStreams().forEach(GSICaptureStream::close);
 		
 		source.sendFeedback(new LiteralText("All captures stopped."), true);
