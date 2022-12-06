@@ -92,7 +92,7 @@ public class GSAssetCommands {
 		
 		String commandPrefix = "/" + assetType.getName() + " edit ";
 		Text hintText = new LiteralText("Edit " + assetType.getName());
-		for (GSAssetInfo info : module.getAssetStorage().getStoredInfoSet()) {
+		for (GSAssetInfo info : module.getAssetStorage().getStoredHistory()) {
 			if (info.getType() == assetType) {
 				source.sendFeedback(Texts.bracketed(new LiteralText(info.getAssetName()).styled((style) -> {
 					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getAssetUUID()))

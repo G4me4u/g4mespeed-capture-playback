@@ -9,6 +9,8 @@ import java.util.function.Function;
 import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.asset.GSAssetHistory;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
@@ -58,6 +60,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	private final Map<GSESessionType, GSPanel> sessionPanels;
 	private final GSDefaultChannelProvider channelProvider;
 	
+	private final GSAssetHistory assetHistory;
+	
 	private GSIClientModuleManager manager;
 	
 	public final GSIntegerSetting cChannelRenderingType;
@@ -67,6 +71,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		sessionByType = new EnumMap<>(GSESessionType.class);
 		sessionPanels = new EnumMap<>(GSESessionType.class);
 		channelProvider = new GSDefaultChannelProvider();
+		
+		assetHistory = new GSAssetHistory();
 		
 		manager = null;
 		
@@ -92,12 +98,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	@Override
 	public void registerHotkeys(GSKeyManager keyManager) {
-		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
-			int newValue = cChannelRenderingType.getValue() + 1;
-			if (newValue > cChannelRenderingType.getMaxValue())
-				newValue = cChannelRenderingType.getMinValue();
-			cChannelRenderingType.setValue(newValue);
-		}, GSEKeyEventType.PRESS);
+		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
+				cChannelRenderingType::incrementValue, GSEKeyEventType.PRESS);
 		
 		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::createNewChannel, GSEKeyEventType.PRESS);
 		
@@ -292,5 +294,17 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		GSSession session = sessions.get(assetUUID);
 		if (session != null)
 			session.applySessionDeltas(deltas);
+	}
+
+	public void onAssetHistoryReceived(GSAssetHistory history) {
+		assetHistory.set(history);
+	}
+
+	public void onAssetInfoChanged(GSAssetInfo info) {
+		assetHistory.add(info);
+	}
+
+	public void onAssetInfoRemoved(UUID assetUUID) {
+		assetHistory.remove(assetUUID);
 	}
 }

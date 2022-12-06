@@ -7,17 +7,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
 import net.minecraft.network.PacketByteBuf;
 
-public class GSAssetHistory implements Iterable<GSAssetInfo> {
+public class GSAssetHistory implements GSIAssetHistory {
 
 	private static final byte SUPPORTED_FILE_VERSION = 0x00;
 	
-	private final Set<GSAssetInfo> infoSet;
+	private final SortedSet<GSAssetInfo> infoSet;
 	private final Map<UUID, GSAssetInfo> uuidToInfo;
 
 	private final List<GSIAssetHistoryListener> listeners;
@@ -29,22 +29,58 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 		listeners = new ArrayList<>();
 	}
 	
-	public void set(GSAssetHistory history) {
+	public GSAssetHistory(GSIAssetHistory history) {
+		this();
+		
+		// Asset info is mutable...
+		for (GSAssetInfo info : history)
+			add(new GSAssetInfo(info));
+	}
+	
+	@Override
+	public void addListener(GSIAssetHistoryListener listener) {
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeListener(GSIAssetHistoryListener listener) {
+		listeners.remove(listener);
+	}
+
+	/* Note: when assetUUID is null the whole history changed. */
+	private void dispatchHistoryChanged(UUID assetUUID) {
+		for (GSIAssetHistoryListener listener : listeners)
+			listener.onHistoryChanged(assetUUID);
+	}
+
+	@Override
+	public void set(GSIAssetHistory other) {
 		clear();
-		// More efficient than addAll(history)
-		infoSet.addAll(history.infoSet);
-		uuidToInfo.putAll(history.uuidToInfo);
+		if (other instanceof GSAssetHistory) {
+			// More efficient than addAll(history)
+			GSAssetHistory history = (GSAssetHistory)other;
+			infoSet.addAll(history.infoSet);
+			uuidToInfo.putAll(history.uuidToInfo);
+		} else {
+			for (GSAssetInfo info : other) {
+				infoSet.add(info);
+				uuidToInfo.put(info.getAssetUUID(), info);
+			}
+		}
 		dispatchHistoryChanged(null);
 	}
 	
+	@Override
 	public boolean contains(UUID assetUUID) {
 		return uuidToInfo.containsKey(assetUUID);
 	}
 
+	@Override
 	public GSAssetInfo get(UUID assetUUID) {
 		return uuidToInfo.get(assetUUID);
 	}
 
+	@Override
 	public void add(GSAssetInfo info) {
 		GSAssetInfo oldInfo = get(info.getAssetUUID());
 		if (oldInfo != null)
@@ -54,6 +90,7 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 		dispatchHistoryChanged(info.getAssetUUID());
 	}
 	
+	@Override
 	public GSAssetInfo remove(UUID assetUUID) {
 		GSAssetInfo info = uuidToInfo.remove(assetUUID);
 		if (info != null) {
@@ -63,6 +100,7 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 		return info;
 	}
 	
+	@Override
 	public void clear() {
 		infoSet.clear();
 		uuidToInfo.clear();
@@ -71,7 +109,7 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 
 	public void setAssetName(UUID assetUUID, String name) {
 		GSAssetInfo info = get(assetUUID);
-		if (info != null) {
+		if (info != null && !name.equals(info.getAssetName())) {
 			info.setAssetName(name);
 			dispatchHistoryChanged(assetUUID);
 		}
@@ -79,7 +117,7 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 
 	public void setLastModifiedTimestamp(UUID assetUUID, long timestamp) {
 		GSAssetInfo info = get(assetUUID);
-		if (info != null) {
+		if (info != null && timestamp != info.getLastModifiedTimestamp()) {
 			// Last modified time is used for the sorting order. We have to
 			// remove the info first such that it remains properly sorted.
 			infoSet.remove(info);
@@ -91,28 +129,20 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 
 	public void setOwnerUUID(UUID assetUUID, UUID ownerUUID) {
 		GSAssetInfo info = get(assetUUID);
-		if (info != null) {
+		if (info != null && !ownerUUID.equals(info.getOwnerUUID())) {
 			info.setOwnerUUID(ownerUUID);
 			dispatchHistoryChanged(assetUUID);
 		}
 	}
 	
+	@Override
 	public int size() {
 		return infoSet.size();
 	}
-
-	public void addListener(GSIAssetHistoryListener listener) {
-		listeners.add(listener);
-	}
-
-	public void removeListener(GSIAssetHistoryListener listener) {
-		listeners.remove(listener);
-	}
-
-	/* Note: when assetUUID is null the whole history changed. */
-	private void dispatchHistoryChanged(UUID assetUUID) {
-		for (GSIAssetHistoryListener listener : listeners)
-			listener.onHistoryChanged(assetUUID);
+	
+	@Override
+	public boolean isEmpty() {
+		return infoSet.isEmpty();
 	}
 
 	public static GSAssetHistory read(PacketByteBuf buf) throws IOException {
@@ -130,7 +160,7 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 		return history;
 	}
 
-	public static void write(PacketByteBuf buf, GSAssetHistory history) throws IOException {
+	public static void write(PacketByteBuf buf, GSIAssetHistory history) throws IOException {
 		buf.writeByte(SUPPORTED_FILE_VERSION);
 		
 		buf.writeInt(history.size());
@@ -143,7 +173,8 @@ public class GSAssetHistory implements Iterable<GSAssetInfo> {
 		return getInfoSet().iterator();
 	}
 
-	public Set<GSAssetInfo> getInfoSet() {
-		return Collections.unmodifiableSet(infoSet);
+	@Override
+	public SortedSet<GSAssetInfo> getInfoSet() {
+		return Collections.unmodifiableSortedSet(infoSet);
 	}
 }

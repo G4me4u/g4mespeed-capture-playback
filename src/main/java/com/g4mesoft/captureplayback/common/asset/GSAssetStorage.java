@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -170,14 +169,13 @@ public class GSAssetStorage {
 			GSAbstractAsset derivedAsset = asset.getDerivedAsset(derivedUUID);
 			GSAssetInfo derivedInfo = new GSAssetInfo(derivedAsset.getType(), derivedUUID, info);
 			// Ensure that we do not get into an invalid state
-			checkDistinctAssetUUID(derivedUUID);
 			checkCorrespondingInfo(derivedInfo, derivedAsset);
 			// Recursively add asset and its derived assets
 			derivedHistory.add(derivedInfo);
 			addAsset(derivedInfo, derivedAsset);
 		}
 	}
-
+	
 	public void loadStoredHistory() {
 		GSAssetHistory history = null;
 		try {
@@ -262,6 +260,7 @@ public class GSAssetStorage {
 		if (info != null && !info.isDerived()) {
 			GSAbstractAsset asset = activeAssets.get(assetUUID);
 			if (asset != null) {
+				long saveTimeMs = System.currentTimeMillis();
 				// Save the asset itself
 				try {
 					writeAsset(getAssetFile(info), asset, GSAssetRegistry.getEncoder(info.getType()));
@@ -269,7 +268,7 @@ public class GSAssetStorage {
 					return false;
 				}
 				// Update last modified time
-				storedHistory.setLastModifiedTimestamp(assetUUID, System.currentTimeMillis());
+				storedHistory.setLastModifiedTimestamp(assetUUID, saveTimeMs);
 				return true;
 			}
 		}
@@ -303,8 +302,8 @@ public class GSAssetStorage {
 		return new File(assetDir, String.format(ASSET_FILE_NAME_TEMPLATE, info.getAssetUUID()));
 	}
 
-	public Set<GSAssetInfo> getStoredInfoSet() {
-		return storedHistory.getInfoSet();
+	public GSIAssetHistory getStoredHistory() {
+		return new GSUnmodifiableAssetHistory(storedHistory);
 	}
 
 	private class GSAssetListener implements GSIAssetListener {

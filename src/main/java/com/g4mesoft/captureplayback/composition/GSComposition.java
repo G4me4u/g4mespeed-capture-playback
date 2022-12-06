@@ -92,7 +92,7 @@ public class GSComposition {
 	
 	public GSTrackGroup addGroup(UUID groupUUID, String groupName) {
 		if (hasGroupUUID(groupUUID))
-			throw new IllegalStateException("Duplicate sequence UUID");
+			throw new IllegalStateException("Duplicate group UUID");
 	
 		GSTrackGroup group = new GSTrackGroup(groupUUID, groupName);
 		addGroupInternal(group);

@@ -30,7 +30,7 @@ public class GSAssetSuggestionProvider implements SuggestionProvider<ServerComma
 	public CompletableFuture<Suggestions> getSuggestions(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
 		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
-		for (GSAssetInfo info : module.getAssetStorage().getStoredInfoSet()) {
+		for (GSAssetInfo info : module.getAssetStorage().getStoredHistory()) {
 			if (assetType == null || info.getType() == assetType)
 				builder.suggest(info.getAssetUUID().toString(), new LiteralMessage(info.getAssetName()));
 		}

@@ -6,6 +6,9 @@ import java.util.Map;
 import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
+import com.g4mesoft.captureplayback.common.asset.GSAssetHistoryPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfoChangedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfoRemovedPacket;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
@@ -102,6 +105,10 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		registry.register(11, GSSessionStartPacket.class, GSSessionStartPacket::new);
 		registry.register(12, GSSessionStopPacket.class, GSSessionStopPacket::new);
 		registry.register(13, GSSessionDeltasPacket.class, GSSessionDeltasPacket::new);
+
+		registry.register(14, GSAssetHistoryPacket.class, GSAssetHistoryPacket::new);
+		registry.register(15, GSAssetInfoChangedPacket.class, GSAssetInfoChangedPacket::new);
+		registry.register(16, GSAssetInfoRemovedPacket.class, GSAssetInfoRemovedPacket::new);
 	}
 	
 	@Override

@@ -57,6 +57,18 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		permUUIDs = null;
 	}
 
+	public GSAssetInfo(GSAssetInfo other) {
+		type = other.type;
+		assetUUID = other.assetUUID;
+		refInfo = other.refInfo;
+		
+		assetName = other.assetName;
+		createdTimestamp = other.createdTimestamp;
+		lastModifiedTimestamp = other.lastModifiedTimestamp;
+		ownerUUID = other.ownerUUID;
+		permUUIDs = new LinkedHashSet<>(other.permUUIDs);
+	}
+
 	public GSEAssetType getType() {
 		return type;
 	}
@@ -117,7 +129,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	
 	public boolean hasPermission(ServerPlayerEntity player) {
 		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
-			// OP players have access too all assets.
+			// OP players have access to all assets.
 			return true;
 		}
 		return getOwnerUUID().equals(player.getUuid()) || permUUIDs.contains(player.getUuid());
