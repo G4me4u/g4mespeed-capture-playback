@@ -7,8 +7,8 @@ import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSPanel;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.util.GSColorUtil;
 
 public class GSCompositionTrackHeaderPanel extends GSPanel implements GSIScrollable, GSIModelViewListener {
 	
@@ -61,7 +61,7 @@ public class GSCompositionTrackHeaderPanel extends GSPanel implements GSIScrolla
 		int y = modelView.getTrackY(track.getTrackUUID());
 		if (y + modelView.getTrackHeight() >= bounds.y && y - bounds.y < bounds.height) {
 			renderer.fillRect(x, y, width, modelView.getTrackHeight(), TRACK_LABEL_COLOR);
-			renderer.drawTextNoStyle(track.getName(), x + 2, y + 2, GSIRenderer.brightenColor(track.getColor()), false);
+			renderer.drawTextNoStyle(track.getName(), x + 2, y + 2, GSColorUtil.brighter(track.getColor()), false);
 		}
 	}
 	

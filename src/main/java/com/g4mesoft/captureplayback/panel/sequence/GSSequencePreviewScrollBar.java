@@ -9,9 +9,9 @@ import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.scroll.GSIScrollBarModel;
 import com.g4mesoft.panel.scroll.GSScrollBar;
 import com.g4mesoft.panel.scroll.GSScrollPanel;
-import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.renderer.GSTexture;
+import com.g4mesoft.util.GSColorUtil;
 
 import net.minecraft.util.Identifier;
 
@@ -110,7 +110,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private void renderChannelPreview(GSIRenderer2D renderer, GSChannel channel, int x, int y, int width, int height) {
-		int color = GSIRenderer.darkenColor(channel.getInfo().getColor());
+		int color = GSColorUtil.darker(channel.getInfo().getColor());
 		
 		for (GSChannelEntry entry : channel.getEntries()) {
 			GSRectangle bounds = getMappedEntryBounds(entry);

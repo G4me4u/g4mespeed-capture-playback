@@ -23,7 +23,6 @@ import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
 import com.g4mesoft.util.GSColorUtil;
 import com.g4mesoft.util.GSMathUtil;
@@ -192,8 +191,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		GSRectangle entryBounds = modelView.modelToView(entry);
 		
 		if (track != null && entryBounds != null && entryBounds.intersects(bounds)) {
-			int titleColor = GSIRenderer.brightenColor(color);
-			int titleBgColor = GSColorUtil.withAlpha(GSIRenderer.darkenColor(color), ENTRY_TITLE_BG_ALPHA);
+			int titleColor = GSColorUtil.brighter(color);
+			int titleBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(color), ENTRY_TITLE_BG_ALPHA);
 
 			String title = renderer.trimString(track.getSequence().getName(), entryBounds.width - 4);
 			int tx = entryBounds.x + ENTRY_TITLE_LEFT_MARGIN;
@@ -210,8 +209,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	}
 	
 	private void renderSequencePreview(GSIRenderer2D renderer, GSTrackEntry entry, GSRectangle bounds, int color) {
-		int darkColor = GSIRenderer.darkenColor(color);
-		int previewBgColor = GSColorUtil.withAlpha(GSIRenderer.darkenColor(darkColor), ENTRY_PREVIEW_BG_ALPHA);
+		int darkColor = GSColorUtil.darker(color);
+		int previewBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(darkColor), ENTRY_PREVIEW_BG_ALPHA);
 		
 		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, previewBgColor);

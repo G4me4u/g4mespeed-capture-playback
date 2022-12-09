@@ -14,6 +14,7 @@ import com.g4mesoft.panel.GSColoredIcon;
 import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSIcon;
 import com.g4mesoft.panel.GSPanel;
+import com.g4mesoft.panel.GSPanelUtil;
 import com.g4mesoft.panel.GSRectangle;
 import com.g4mesoft.panel.dropdown.GSDropdown;
 import com.g4mesoft.panel.dropdown.GSDropdownAction;
@@ -21,8 +22,8 @@ import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.util.GSColorUtil;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -210,9 +211,9 @@ public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequen
 			
 			if (rect.intersects(bounds)) {
 				if (draggingEntry == entry || hoveredEntry == entry)
-					color = GSIRenderer.darkenColor(color);
+					color = GSColorUtil.darker(color);
 				
-				renderer.fillRect(rect.x, rect.y, rect.width, rect.height, GSIRenderer.darkenColor(color));
+				renderer.fillRect(rect.x, rect.y, rect.width, rect.height, GSColorUtil.darker(color));
 				
 				if (entry.getType().hasEndEvent())
 					rect.width -= ENTRY_BORDER_THICKNESS;
@@ -350,22 +351,24 @@ public class GSSequencePanel extends GSPanel implements GSIScrollable, GSISequen
 	
 	@Override
 	public float getIncrementalScrollX(int sign) {
-		int leadingColumnIndex = modelView.getColumnIndexFromX(0);
+		int scrollX = GSPanelUtil.getScrollX(this);
+		int leadingColumnIndex = modelView.getColumnIndexFromX(scrollX);
 		int alignedColumn = leadingColumnIndex + sign;
 		if (leadingColumnIndex != -1 && alignedColumn >= 0)
-			return sign * modelView.getColumnX(alignedColumn);
+			return sign * (modelView.getColumnX(alignedColumn) - scrollX);
 		
 		return GSIScrollable.super.getIncrementalScrollX(sign);
 	}
 
 	@Override
 	public float getIncrementalScrollY(int sign) {
-		UUID leadingChannelUUID = modelView.getChannelUUIDFromView(0);
+		int scrollY = GSPanelUtil.getScrollY(this);
+		UUID leadingChannelUUID = modelView.getChannelUUIDFromView(scrollY);
 		if (leadingChannelUUID != null) {
 			// Default incremental scroll is 2 channels
 			int delta = 2 * (modelView.getChannelHeight() + modelView.getChannelSpacing());
 			// Normalize scrolling to top channel
-			return delta + sign * modelView.getChannelY(leadingChannelUUID);
+			return delta + sign * (modelView.getChannelY(leadingChannelUUID) - scrollY);
 		}
 		
 		return GSIScrollable.super.getIncrementalScrollY(sign);

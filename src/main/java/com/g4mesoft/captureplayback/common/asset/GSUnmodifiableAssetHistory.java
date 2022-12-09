@@ -6,9 +6,9 @@ import java.util.UUID;
 
 public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
 
-	private final GSAssetHistory history;
+	private final GSIAssetHistory history;
 	
-	public GSUnmodifiableAssetHistory(GSAssetHistory history) {
+	public GSUnmodifiableAssetHistory(GSIAssetHistory history) {
 		if (history == null)
 			throw new IllegalArgumentException("history is null");
 		this.history = history;

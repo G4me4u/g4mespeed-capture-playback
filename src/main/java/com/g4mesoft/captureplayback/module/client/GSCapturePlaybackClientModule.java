@@ -11,6 +11,8 @@ import org.lwjgl.glfw.GLFW;
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHistory;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
+import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
+import com.g4mesoft.captureplayback.common.asset.GSUnmodifiableAssetHistory;
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
@@ -32,10 +34,10 @@ import com.g4mesoft.gui.GSTabbedGUI;
 import com.g4mesoft.hotkey.GSEKeyEventType;
 import com.g4mesoft.hotkey.GSKeyManager;
 import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.renderer.GSIRenderer;
 import com.g4mesoft.setting.GSSettingCategory;
 import com.g4mesoft.setting.GSSettingManager;
 import com.g4mesoft.setting.types.GSIntegerSetting;
+import com.g4mesoft.util.GSColorUtil;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -60,7 +62,8 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	private final Map<GSESessionType, GSPanel> sessionPanels;
 	private final GSDefaultChannelProvider channelProvider;
 	
-	private final GSAssetHistory assetHistory;
+	private final GSIAssetHistory assetHistory;
+	private GSIAssetHistory unmodifiableAssetHistory;
 	
 	private GSIClientModuleManager manager;
 	
@@ -127,11 +130,11 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
 		keyManager.registerKey("brightenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
-			return channel.getInfo().withColor(GSIRenderer.brightenColor(channel.getInfo().getColor()));
+			return channel.getInfo().withColor(GSColorUtil.brighter(channel.getInfo().getColor()));
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
 		keyManager.registerKey("darkenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
-			return channel.getInfo().withColor(GSIRenderer.darkenColor(channel.getInfo().getColor()));
+			return channel.getInfo().withColor(GSColorUtil.darker(channel.getInfo().getColor()));
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
 		keyManager.registerKey("randomizeChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
@@ -226,6 +229,12 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	public void registerClientSettings(GSSettingManager settings) {
 		settings.registerSetting(CAPTURE_PLAYBACK_CATEGORY, cChannelRenderingType);
 	}
+
+	public GSIAssetHistory getAssetHistory() {
+		if (unmodifiableAssetHistory == null)
+			unmodifiableAssetHistory = new GSUnmodifiableAssetHistory(assetHistory);
+		return unmodifiableAssetHistory;
+	}
 	
 	@Override
 	public void onDisconnectServer() {
@@ -233,7 +242,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 		for (UUID assetUUID : assetUUIDs)
 			onSessionStop(assetUUID);
 	}
-	
+
 	public void onSessionStart(GSSession session) {
 		GSSession activeSession = getSession(session.getType());
 		if (activeSession != null) {
