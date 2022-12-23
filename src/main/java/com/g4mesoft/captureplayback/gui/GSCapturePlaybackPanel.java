@@ -7,6 +7,7 @@ import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistoryListener;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
+import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSEAnchor;
 import com.g4mesoft.panel.GSEFill;
 import com.g4mesoft.panel.GSGridLayoutManager;
@@ -54,6 +55,9 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIAssetHis
 		model.getColumn(c++).setHeaderValue("Last Modified");
 		model.getColumn(c++).setHeaderValue("Type");
 		model.setRowHeaderHidden(true);
+
+		// Minimum height is captured by other column headers.
+		model.getColumn(0).setMinimumSize(new GSDimension(200, 0));
 		
 		int r = 0;
 		for (GSAssetInfo info : history) {
@@ -76,6 +80,9 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIAssetHis
 		scrollPanel.getLayout()
 			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
 			.set(GSGridLayoutManager.WEIGHT_Y, 1.0f)
+			.set(GSGridLayoutManager.TOP_MARGIN, 10)
+			.set(GSGridLayoutManager.LEFT_MARGIN, 10)
+			.set(GSGridLayoutManager.RIGHT_MARGIN, 10)
 			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.NORTH)
 			.set(GSGridLayoutManager.FILL, GSEFill.HORIZONTAL);
 		add(scrollPanel);
