@@ -238,6 +238,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	@Override
 	public void onDisconnectServer() {
+		assetHistory.clear();
 		UUID[] assetUUIDs = sessions.keySet().toArray(new UUID[0]);
 		for (UUID assetUUID : assetUUIDs)
 			onSessionStop(assetUUID);
