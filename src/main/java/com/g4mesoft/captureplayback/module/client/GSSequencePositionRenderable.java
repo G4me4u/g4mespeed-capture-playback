@@ -44,7 +44,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		if (session != null) {
 			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			
-			switch(module.cChannelRenderingType.getValue()) {
+			switch(module.cChannelRenderingType.get()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
 				renderCubes(renderer, session, sequence);
 				break;

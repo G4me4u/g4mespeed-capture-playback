@@ -367,7 +367,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 			if (block instanceof PistonBlock) {
 				// This is a g4mespeed specific feature that allows the user
 				// to change the distance at which the block actions are sent.
-				dist = 16.0 * GSServerController.getInstance().getTpsModule().sBlockEventDistance.getValue();
+				dist = 16.0 * GSServerController.getInstance().getTpsModule().sBlockEventDistance.get();
 			}
 
 			PlayerManager playerManager = server.getPlayerManager();
