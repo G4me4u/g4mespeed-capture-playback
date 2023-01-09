@@ -102,7 +102,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	@Override
 	public void registerHotkeys(GSKeyManager keyManager) {
 		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
-				cChannelRenderingType::incrementValue, GSEKeyEventType.PRESS);
+				cChannelRenderingType::increment, GSEKeyEventType.PRESS);
 		
 		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::createNewChannel, GSEKeyEventType.PRESS);
 		
