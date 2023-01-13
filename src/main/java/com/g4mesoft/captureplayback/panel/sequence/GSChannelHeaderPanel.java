@@ -24,8 +24,10 @@ import com.g4mesoft.panel.event.GSEvent;
 import com.g4mesoft.panel.event.GSFocusEvent;
 import com.g4mesoft.panel.event.GSIFocusEventListener;
 import com.g4mesoft.panel.event.GSIKeyListener;
+import com.g4mesoft.panel.event.GSILayoutEventListener;
 import com.g4mesoft.panel.event.GSIMouseListener;
 import com.g4mesoft.panel.event.GSKeyEvent;
+import com.g4mesoft.panel.event.GSLayoutEvent;
 import com.g4mesoft.panel.event.GSMouseEvent;
 import com.g4mesoft.panel.field.GSTextField;
 import com.g4mesoft.panel.scroll.GSIScrollable;
@@ -326,9 +328,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 			editButton.setHoveredBackgroundColor(0);
 			editButton.setDisabledBackgroundColor(0);
 			editButton.setBorderWidth(0);
-			editButton.addActionListener(() -> {
-				new GSChannelEditorPanel(this.channel).show(null);
-			});
+			editButton.addActionListener(this::openEditor);
 			
 			moveButton = new GSButton(MOVE_ICON);
 			moveButton.setHoveredIcon(HOVERED_MOVE_ICON);
@@ -373,6 +373,18 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 
 			onChannelInfoChanged();
 			onEditableChanged();
+		}
+		
+		private void openEditor() {
+			GSEditorPanel editor = new GSChannelEditorPanel(this.channel);
+			editor.show(null);
+			editor.addLayoutEventListener(new GSILayoutEventListener() {
+				@Override
+				public void panelHidden(GSLayoutEvent event) {
+					/* force focus to channel header */
+					GSChannelHeaderPanel.this.requestFocus();
+				}
+			});
 		}
 		
 		private void onChannelInfoChanged() {

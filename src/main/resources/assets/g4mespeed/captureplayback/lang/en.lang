@@ -47,7 +47,7 @@ panel.edit.back=Back
 panel.edit.channel.title=Edit Channel
 panel.edit.channel.name=Name:
 panel.edit.channel.color=Color:
-panel.edit.channel.positions=Positions (WIP):
+panel.edit.channel.positions=Positions:
 
 ############ Hotkeys ############
 

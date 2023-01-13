@@ -1,16 +1,15 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
-import com.g4mesoft.panel.GSDimension;
 import com.g4mesoft.panel.GSEAnchor;
 import com.g4mesoft.panel.GSEFill;
+import com.g4mesoft.panel.GSEPopupPlacement;
 import com.g4mesoft.panel.GSGridLayoutManager;
-import com.g4mesoft.panel.GSLocation;
 import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSPanelContext;
-import com.g4mesoft.panel.GSPanelUtil;
 import com.g4mesoft.panel.GSParentPanel;
 import com.g4mesoft.panel.GSPopup;
 import com.g4mesoft.panel.button.GSButton;
+import com.g4mesoft.panel.event.GSKeyButtonStroke;
+import com.g4mesoft.panel.event.GSKeyEvent;
 import com.g4mesoft.panel.field.GSTextLabel;
 import com.g4mesoft.renderer.GSIRenderer2D;
 
@@ -98,10 +97,14 @@ public abstract class GSEditorPanel extends GSParentPanel {
 	private void initEventListeners() {
 		cancelButton.addActionListener(this::close);
 		applyButton.addActionListener(this::apply);
-		doneButton.addActionListener(() -> {
-			apply();
-			close();
-		});
+		doneButton.addActionListener(this::applyAndClose);
+		putButtonStroke(new GSKeyButtonStroke(GSKeyEvent.KEY_ENTER), this::applyAndClose);
+		putButtonStroke(new GSKeyButtonStroke(GSKeyEvent.KEY_ESCAPE), this::close);
+	}
+	
+	private void applyAndClose() {
+		apply();
+		close();
 	}
 	
 	protected abstract void apply();
@@ -115,15 +118,8 @@ public abstract class GSEditorPanel extends GSParentPanel {
 	
 	public void show(GSPanel source) {
 		GSPopup popup = new GSPopup(this);
-		
-		// Show popup centered relative to source, or root panel (if source is null).
-		GSPanel relative = (source != null) ? source : GSPanelContext.getRootPanel();
-		GSLocation location = GSPanelUtil.getViewLocation(relative);
-		GSDimension popupSize = popup.getProperty(PREFERRED_SIZE);
-		int cx = location.getX() + (relative.getWidth()  - popupSize.getWidth()) / 2;
-		int cy = location.getY() + (relative.getHeight() - popupSize.getHeight()) / 2;
-		
-		popup.show(source, cx, cy);
+		popup.setSourceFocusedOnHide(false);
+		popup.show(source, 0, 0, GSEPopupPlacement.CENTER);
 	}
 	
 	protected void close() {
