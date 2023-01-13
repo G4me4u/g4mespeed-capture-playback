@@ -32,6 +32,11 @@ dependencies {
 	// You may need to force-disable transitiveness on them.
 }
 
+configurations.all {
+	// Ensure we redownload G4mespeed core SNAPSHOT
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 processResources {
 	inputs.property "version", project.version
 
