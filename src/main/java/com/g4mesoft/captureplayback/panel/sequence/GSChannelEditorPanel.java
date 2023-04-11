@@ -4,17 +4,17 @@ import java.util.Set;
 
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
-import com.g4mesoft.panel.GSEAnchor;
-import com.g4mesoft.panel.GSEFill;
-import com.g4mesoft.panel.GSGridLayoutManager;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.field.GSColorPickerField;
-import com.g4mesoft.panel.field.GSTextField;
-import com.g4mesoft.panel.field.GSTextLabel;
-import com.g4mesoft.panel.scroll.GSScrollPanel;
-import com.g4mesoft.panel.table.GSEHeaderResizePolicy;
-import com.g4mesoft.panel.table.GSITableModel;
-import com.g4mesoft.panel.table.GSTablePanel;
+import com.g4mesoft.ui.panel.GSEAnchor;
+import com.g4mesoft.ui.panel.GSEFill;
+import com.g4mesoft.ui.panel.GSGridLayoutManager;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.field.GSColorPickerField;
+import com.g4mesoft.ui.panel.field.GSTextField;
+import com.g4mesoft.ui.panel.field.GSTextLabel;
+import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
+import com.g4mesoft.ui.panel.table.GSEHeaderResizePolicy;
+import com.g4mesoft.ui.panel.table.GSITableModel;
+import com.g4mesoft.ui.panel.table.GSTablePanel;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;

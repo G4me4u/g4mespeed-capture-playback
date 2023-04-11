@@ -13,6 +13,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSAssetSuggestionProvider implements SuggestionProvider<ServerCommandSource> {
 
@@ -28,11 +29,12 @@ public class GSAssetSuggestionProvider implements SuggestionProvider<ServerComma
 	
 	@Override
 	public CompletableFuture<Suggestions> getSuggestions(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+		ServerPlayerEntity player = context.getSource().getPlayer();
 		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
-		for (GSAssetInfo info : module.getAssetStorage().getStoredHistory()) {
-			if (assetType == null || info.getType() == assetType)
-				builder.suggest(info.getAssetUUID().toString(), new LiteralMessage(info.getAssetName()));
+		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
+			if (info.hasPermission(player) && (assetType == null || info.getType() == assetType))
+				builder.suggest(info.getHandle().toString(), new LiteralMessage(info.getAssetName()));
 		}
 		return builder.buildFuture();
 	}

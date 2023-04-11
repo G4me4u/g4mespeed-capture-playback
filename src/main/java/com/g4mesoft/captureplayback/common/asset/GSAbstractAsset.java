@@ -22,6 +22,8 @@ public abstract class GSAbstractAsset {
 		listeners = new ArrayList<>();
 	}
 	
+	protected abstract void duplicateFrom(GSAbstractAsset other);
+	
 	protected void onAdded() {
 		if (added)
 			throw new IllegalStateException("Already added");
@@ -35,6 +37,8 @@ public abstract class GSAbstractAsset {
 	}
 	
 	void addListener(GSIAssetListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		listeners.add(listener);
 	}
 
@@ -68,7 +72,7 @@ public abstract class GSAbstractAsset {
 	public abstract UUID getUUID();
 	
 	public abstract String getName();
-	
+
 	public abstract GSIPlaybackStream getPlaybackStream();
 
 	public abstract GSICaptureStream getCaptureStream();

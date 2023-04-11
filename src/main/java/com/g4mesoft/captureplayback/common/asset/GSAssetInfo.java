@@ -3,43 +3,50 @@ package com.g4mesoft.captureplayback.common.asset;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 import com.g4mesoft.core.server.GSServerController;
-import com.g4mesoft.util.GSBufferUtil;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 
 public class GSAssetInfo implements Comparable<GSAssetInfo> {
 
+	public static final UUID UNKNOWN_OWNER_UUID = new UUID(0L, 0L);
+	
 	private final GSEAssetType type;
 	private final UUID assetUUID;
+	private final GSAssetHandle handle;
 	private final GSAssetInfo refInfo;
 	
 	private String assetName;
 	private final long createdTimestamp;
 	private long lastModifiedTimestamp;
+	private final UUID createdByUUID;
 	private UUID ownerUUID;
 	private final Set<UUID> permUUIDs;
 
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, String assetName, long createdTimestamp, UUID ownerUUID) {
-		this(type, assetUUID, assetName, createdTimestamp, createdTimestamp, ownerUUID);
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, UUID createdByUUID, UUID ownerUUID) {
+		this(type, assetUUID, handle, assetName, createdTimestamp, createdTimestamp, createdByUUID, ownerUUID);
 	}
 
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID ownerUUID) {
-		this(type, assetUUID, assetName, createdTimestamp, lastModifiedTimestamp, ownerUUID, null);
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID createdByUUID, UUID ownerUUID) {
+		this(type, assetUUID, handle, assetName, createdTimestamp, lastModifiedTimestamp, createdByUUID, ownerUUID, null);
 	}
 	
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID ownerUUID, Set<UUID> permUUIDs) {
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID createdByUUID, UUID ownerUUID, Set<UUID> permUUIDs) {
 		this.type = type;
 		this.assetUUID = assetUUID;
+		this.handle = handle;
 		refInfo = null;
 		
 		this.assetName = assetName;
 		this.createdTimestamp = createdTimestamp;
 		this.lastModifiedTimestamp = lastModifiedTimestamp;
+		this.createdByUUID = createdByUUID;
 		this.ownerUUID = ownerUUID;
 		this.permUUIDs = (permUUIDs != null) ? new LinkedHashSet<>(permUUIDs) : new LinkedHashSet<>();
 	}
@@ -53,18 +60,23 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		assetName = null;
 		createdTimestamp = 0L;
 		lastModifiedTimestamp = 0L;
+		createdByUUID = null;
 		ownerUUID = null;
 		permUUIDs = null;
+		// derived assets do not have a handle.
+		handle = null;
 	}
 
 	public GSAssetInfo(GSAssetInfo other) {
 		type = other.type;
 		assetUUID = other.assetUUID;
+		handle = other.handle;
 		refInfo = other.refInfo;
 		
 		assetName = other.assetName;
 		createdTimestamp = other.createdTimestamp;
 		lastModifiedTimestamp = other.lastModifiedTimestamp;
+		createdByUUID = other.createdByUUID;
 		ownerUUID = other.ownerUUID;
 		permUUIDs = new LinkedHashSet<>(other.permUUIDs);
 	}
@@ -75,6 +87,10 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	
 	public UUID getAssetUUID() {
 		return assetUUID;
+	}
+
+	public GSAssetHandle getHandle() {
+		return handle;
 	}
 
 	public String getAssetName() {
@@ -99,6 +115,10 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
 		lastModifiedTimestamp = timestamp;
+	}
+	
+	public UUID getCreatedByUUID() {
+		return createdByUUID;
 	}
 	
 	public UUID getOwnerUUID() {
@@ -127,12 +147,22 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		permUUIDs.remove(playerUUID);
 	}
 	
-	public boolean hasPermission(ServerPlayerEntity player) {
+	public boolean hasPermission(PlayerEntity player) {
 		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
 			// OP players have access to all assets.
 			return true;
 		}
-		return getOwnerUUID().equals(player.getUuid()) || permUUIDs.contains(player.getUuid());
+		UUID ownerUUID = getOwnerUUID();
+		if (ownerUUID.equals(player.getUuid())) {
+			// Direct permission
+			return true;
+		}
+		if (ownerUUID.equals(UNKNOWN_OWNER_UUID)) {
+			// Old format assets have unknown owners
+			return true;
+		}
+		// Last more expensive permission check
+		return permUUIDs.contains(player.getUuid());
 	}
 	
 	public boolean isDerived() {
@@ -144,6 +174,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		int hash = 0;
 		hash = 31 * hash + type.hashCode();
 		hash = 31 * hash + assetUUID.hashCode();
+		hash = 31 * hash + Objects.hashCode(handle);
 		hash = 31 * hash + Long.hashCode(createdTimestamp);
 		hash = 31 * hash + Long.hashCode(lastModifiedTimestamp);
 		return hash;
@@ -158,6 +189,8 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			if (type != other.type)
 				return false;
 			if (!assetUUID.equals(other.assetUUID))
+				return false;
+			if (!Objects.equals(handle, other.handle))
 				return false;
 			if (createdTimestamp != other.createdTimestamp)
 				return false;
@@ -175,6 +208,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		//    - latest last-modified time first
 		//    - latest created time first
 		//    - lowest asset type index first
+		//    - lowest asset handle first
 		//    - lowest asset UUID first
 		long lastModifiedDelta = lastModifiedTimestamp - other.lastModifiedTimestamp;
 		if (lastModifiedDelta != 0L)
@@ -184,38 +218,59 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			return createdDelta > 0L ? -1 : 1;
 		if (type != other.type)
 			return type.getIndex() < other.type.getIndex() ? -1 : 1;
+		if (!Objects.equals(handle, other.handle)) {
+			// Non-null handles first
+			if (other.handle == null)
+				return -1;
+			if (handle == null)
+				return 1;
+			return handle.compareTo(other.handle);
+		}
 		// The asset UUID should be unique to each asset.
 		return assetUUID.compareTo(other.assetUUID);
 	}
 	
-	public static GSAssetInfo read(PacketByteBuf buf) throws IOException {
+	public static GSAssetInfo read(GSDecodeBuffer buf) throws IOException {
 		GSEAssetType type = GSEAssetType.fromIndex(buf.readUnsignedByte());
 		if (type == null)
 			throw new IOException("Unknown asset type");
-		UUID assetUUID = buf.readUuid();
-		String assetName = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		UUID assetUUID = buf.readUUID();
+		GSAssetHandle handle = GSAssetHandle.read(buf);
+		String assetName = buf.readString();
 		long createdTimestamp = buf.readLong();
 		long lastModifiedTimestamp = buf.readLong();
-		UUID ownerUUID = buf.readUuid();
+		UUID createdByUUID = buf.readUUID();
+		UUID ownerUUID = buf.readUUID();
 		int permUUIDCount = buf.readInt();
-		GSAssetInfo info = new GSAssetInfo(type, assetUUID, assetName, createdTimestamp, lastModifiedTimestamp, ownerUUID);
+		GSAssetInfo info = new GSAssetInfo(
+			type,
+			assetUUID,
+			handle,
+			assetName,
+			createdTimestamp,
+			lastModifiedTimestamp,
+			createdByUUID,
+			ownerUUID
+		);
 		while (permUUIDCount-- > 0)
-			info.addPermission(buf.readUuid());
+			info.addPermission(buf.readUUID());
 		return info;
 	}
 	
-	public static void write(PacketByteBuf buf, GSAssetInfo info) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSAssetInfo info) throws IOException {
 		if (info.isDerived())
 			throw new IOException("Writing derived asset info is unsupported");
-		buf.writeByte(info.getType().getIndex());
-		buf.writeUuid(info.getAssetUUID());
+		buf.writeUnsignedByte((short)info.getType().getIndex());
+		buf.writeUUID(info.getAssetUUID());
+		GSAssetHandle.write(buf, info.getHandle());
 		buf.writeString(info.getAssetName());
 		buf.writeLong(info.getCreatedTimestamp());
 		buf.writeLong(info.getLastModifiedTimestamp());
-		buf.writeUuid(info.getOwnerUUID());
+		buf.writeUUID(info.getCreatedByUUID());
+		buf.writeUUID(info.getOwnerUUID());
 		Set<UUID> permUUIDs = info.getPermissionUUIDs();
 		buf.writeInt(permUUIDs.size());
 		for (UUID permUUID : permUUIDs)
-			buf.writeUuid(permUUID);
+			buf.writeUUID(permUUID);
 	}
 }

@@ -1,14 +1,21 @@
 package com.g4mesoft.captureplayback.module.server;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
-import com.g4mesoft.captureplayback.common.asset.GSAbstractAsset;
-import com.g4mesoft.captureplayback.common.asset.GSAssetStorage;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
+import com.g4mesoft.captureplayback.common.asset.GSAssetManager;
+import com.g4mesoft.captureplayback.common.asset.GSAssetRef;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetStorageListener;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSSession;
@@ -19,38 +26,45 @@ import net.minecraft.server.network.ServerPlayerEntity;
 public class GSSessionManager implements GSIAssetStorageListener {
 
 	private final GSIServerModuleManager manager;
-	private final GSAssetStorage assetStorage;
+	private final GSAssetManager assetManager;
 	private final File cacheDir;
 	
 	private final Map<UUID, GSSessionTracker> trackers;
-	private boolean iteratingTrackers;
+	private final Map<UUID, Set<UUID>> playerToAssets;
+	private final GSSessionTrackerListener trackerListener;
+
+	private final List<GSISessionStatusListener> listeners;
 	
-	public GSSessionManager(GSIServerModuleManager manager, GSAssetStorage assetStorage, File cacheDir) {
+	public GSSessionManager(GSIServerModuleManager manager, GSAssetManager assetManager, File cacheDir) {
 		this.manager = manager;
-		this.assetStorage = assetStorage;
+		this.assetManager = assetManager;
 		this.cacheDir = cacheDir;
 	
 		trackers = new HashMap<>();
-		iteratingTrackers = false;
+		playerToAssets = new HashMap<>();
+		trackerListener = new GSSessionTrackerListener();
+
+		listeners = new ArrayList<>();
 	}
 
 	public void init() {
-		assetStorage.addListener(this);
+		assetManager.addListener(this);
 	}
 
 	public void dispose() {
 		stopAll();
-		assetStorage.removeListener(this);
+		assetManager.removeListener(this);
 	}
 	
 	public boolean onRequest(ServerPlayerEntity player, GSESessionRequestType requestType, UUID assetUUID) {
-		if (assetStorage.hasPermission(player, assetUUID)) {
+		if (assetManager.hasPermission(player, assetUUID)) {
 			GSSessionTracker tracker = getTracker(assetUUID);
 			if (tracker != null && tracker.onRequest(player, requestType)) {
 				// Remove trackers that do not contain sessions.
 				if (requestType == GSESessionRequestType.REQUEST_STOP && tracker.isEmpty()) {
 					trackers.remove(assetUUID);
-					assetStorage.unloadAsset(assetUUID);
+					tracker.getRef().release();
+					onTrackerRemoved(tracker);
 				}
 				return true;
 			}
@@ -62,44 +76,45 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		GSSessionTracker tracker = trackers.get(assetUUID);
 		if (tracker == null) {
 			// Note: Synchronous loading of asset. Might be slow.
-			GSAbstractAsset asset = assetStorage.requestAsset(assetUUID);
-			if (asset != null) {
-				tracker = new GSSessionTracker(manager, asset, getCacheDir(assetUUID));
+			GSAssetRef ref = assetManager.requestAsset(assetUUID);
+			GSAssetInfo info = assetManager.getInfo(assetUUID);
+			if (info != null && ref != null) {
+				tracker = new GSSessionTracker(manager, info, ref, getCacheDir(assetUUID));
 				trackers.put(assetUUID, tracker);
+				onTrackerAdded(tracker);
 			}
 		}
 		return tracker;
 	}
 	
 	public void stopAll(ServerPlayerEntity player) {
-		iteratingTrackers = true;
-		try {
-			Iterator<Map.Entry<UUID, GSSessionTracker>> itr = trackers.entrySet().iterator();
-			while (itr.hasNext()) {
-				Map.Entry<UUID, GSSessionTracker> entry = itr.next();
-				UUID assetUUID = entry.getKey();
-				GSSessionTracker tracker = entry.getValue();
-				tracker.onRequest(player, GSESessionRequestType.REQUEST_STOP);
-				if (tracker.isEmpty()) {
-					itr.remove();
-					assetStorage.unloadAsset(assetUUID);
-				}
-			}
-		} finally {
-			iteratingTrackers = false;
+		Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+		if (assetUUIDs != null) {
+			// Ensure we make a copy to avoid concurrent modification...
+			UUID[] assetUUIDArray = assetUUIDs.toArray(new UUID[0]);
+			for (UUID assetUUID : assetUUIDArray)
+				onRequest(player, GSESessionRequestType.REQUEST_STOP, assetUUID);
 		}
 	}
 
 	public void stopAll() {
-		iteratingTrackers = true;
-		try {
-			for (GSSessionTracker tracker : trackers.values())
-				tracker.stopAll();
-			trackers.clear();
-			assetStorage.unloadAll();
-		} finally {
-			iteratingTrackers = false;
+		for (GSSessionTracker tracker : trackers.values()) {
+			tracker.stopAll();
+			onTrackerRemoved(tracker);
 		}
+		trackers.clear();
+	}
+	
+	public Iterator<GSSession> iterateSessions(ServerPlayerEntity player) {
+		return new GSPlayerSessionIterator(player);
+	}
+	
+	private void onTrackerAdded(GSSessionTracker tracker) {
+		tracker.setListener(trackerListener);
+	}
+
+	private void onTrackerRemoved(GSSessionTracker tracker) {
+		tracker.setListener(null);
 	}
 	
 	public void onDeltasReceived(ServerPlayerEntity player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
@@ -111,6 +126,26 @@ public class GSSessionManager implements GSIAssetStorageListener {
 	private File getCacheDir(UUID assetUUID) {
 		return new File(cacheDir, assetUUID.toString());
 	}
+
+	public void addListener(GSISessionStatusListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
+		listeners.add(listener);
+	}
+
+	public void removeListener(GSISessionStatusListener listener) {
+		listeners.remove(listener);
+	}
+	
+	private void dispatchSessionStarted(ServerPlayerEntity player, UUID assetUUID) {
+		for (GSISessionStatusListener listener : listeners)
+			listener.sessionStarted(player, assetUUID);
+	}
+
+	private void dispatchSessionStopped(ServerPlayerEntity player, UUID assetUUID) {
+		for (GSISessionStatusListener listener : listeners)
+			listener.sessionStopped(player, assetUUID);
+	}
 	
 	@Override
 	public void onAssetAdded(UUID assetUUID) {
@@ -118,10 +153,62 @@ public class GSSessionManager implements GSIAssetStorageListener {
 
 	@Override
 	public void onAssetRemoved(UUID assetUUID) {
-		if (!iteratingTrackers) {
-			GSSessionTracker tracker = trackers.remove(assetUUID);
-			if (tracker != null)
-				tracker.stopAll();
+		GSSessionTracker tracker = trackers.remove(assetUUID);
+		if (tracker != null) {
+			tracker.stopAll();
+			onTrackerRemoved(tracker);
+		}
+	}
+
+	private class GSSessionTrackerListener implements GSISessionStatusListener {
+
+		@Override
+		public void sessionStarted(ServerPlayerEntity player, UUID assetUUID) {
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+			if (assetUUIDs == null) {
+				assetUUIDs = new LinkedHashSet<>();
+				playerToAssets.put(player.getUuid(), assetUUIDs);
+			}
+			if (assetUUIDs.add(assetUUID))
+				dispatchSessionStarted(player, assetUUID);
+		}
+
+		@Override
+		public void sessionStopped(ServerPlayerEntity player, UUID assetUUID) {
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+			if (assetUUIDs != null && assetUUIDs.remove(assetUUID)) {
+				if (assetUUIDs.isEmpty())
+					playerToAssets.remove(player.getUuid());
+				dispatchSessionStopped(player, assetUUID);
+			}
+		}
+	}
+	
+	private class GSPlayerSessionIterator implements Iterator<GSSession> {
+
+		private final ServerPlayerEntity player;
+		private final Iterator<UUID> itr;
+		
+		public GSPlayerSessionIterator(ServerPlayerEntity player) {
+			this.player = player;
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+			itr = (assetUUIDs != null) ? assetUUIDs.iterator() : Collections.emptyIterator();
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return itr.hasNext();
+		}
+
+		@Override
+		public GSSession next() {
+			GSSessionTracker tracker = trackers.get(itr.next());
+			if (tracker == null)
+				throw new ConcurrentModificationException();
+			GSSession session = tracker.getSession(player);
+			if (session == null)
+				throw new ConcurrentModificationException();
+			return session;
 		}
 	}
 }

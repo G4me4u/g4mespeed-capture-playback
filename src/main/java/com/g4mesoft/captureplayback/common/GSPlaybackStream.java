@@ -16,7 +16,7 @@ import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
 import net.minecraft.util.math.BlockPos;
 
-public abstract class GSPlaybackStream implements GSIPlaybackStream {
+public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPlaybackStream {
 	
 	private final GSBlockRegion blockRegion;
 	private final PriorityQueue<GSPlaybackEntry> entries;
@@ -70,8 +70,8 @@ public abstract class GSPlaybackStream implements GSIPlaybackStream {
 				GSPlaybackEntry entry;
 				while ((entry = entries.poll()) != null)
 					frameEvents.add(toCleanupEvent(entry.getEvent()));
-				
 				frame = new GSBasicSignalFrame(frameEvents);
+				dispatchCloseEvent();
 			} else if (isEntryInFrame(entries.peek())) {
 				List<GSSignalEvent> frameEvents = new ArrayList<>();
 	

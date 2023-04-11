@@ -15,9 +15,9 @@ import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.captureplayback.util.GSMutableLinkedHashMap;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
-import com.g4mesoft.util.GSBufferUtil;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 public class GSSequence {
@@ -51,6 +51,18 @@ public class GSSequence {
 		channels = new GSMutableLinkedHashMap<>();
 		// Lazily initialized when adding a listener
 		listeners = null;
+	}
+	
+	/**
+	 * A version of {@link #set(GSSequence)} which does not change the
+	 * name, and ensures that any group and track has unique UUIDs.
+	 */
+	public void duplicateFrom(GSSequence other) {
+		if (!channels.isEmpty())
+			throw new IllegalStateException("Expected an empty sequence");
+		
+		for (GSChannel channel : other.getChannels())
+			addChannel(channel.getInfo()).duplicateFrom(channel);
 	}
 	
 	public void set(GSSequence other) {
@@ -154,9 +166,7 @@ public class GSSequence {
 	}
 
 	public void setName(String name) {
-		if (name == null)
-			throw new IllegalArgumentException("name is null");
-		
+		// Note: deliberate null-pointer exception
 		if (!name.equals(this.name)) {
 			String oldName = this.name;
 			this.name = name;
@@ -182,6 +192,8 @@ public class GSSequence {
 	}
 	
 	public void addSequenceListener(GSISequenceListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		if (listeners == null)
 			listeners = new ArrayList<>();
 		listeners.add(listener);
@@ -217,12 +229,12 @@ public class GSSequence {
 			listener.channelMoved(channel, newPrevUUID, oldPrevUUID);
 	}
 	
-	public static GSSequence read(PacketByteBuf buf) throws IOException {
+	public static GSSequence read(GSDecodeBuffer buf) throws IOException {
 		// Skip reserved byte
 		buf.readByte();
 
-		UUID sequenceUUID = buf.readUuid();
-		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		UUID sequenceUUID = buf.readUUID();
+		String name = buf.readString();
 		GSSequence sequence = new GSSequence(sequenceUUID, name);
 
 		int channelCount = buf.readInt();
@@ -236,11 +248,11 @@ public class GSSequence {
 		return sequence;
 	}
 
-	public static void write(PacketByteBuf buf, GSSequence sequence) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSSequence sequence) throws IOException {
 		// Reserved for future use
-		buf.writeByte(0x00);
+		buf.writeByte((byte)0x00);
 		
-		buf.writeUuid(sequence.getSequenceUUID());
+		buf.writeUUID(sequence.getSequenceUUID());
 		buf.writeString(sequence.getName());
 		
 		Collection<GSChannel> channels = sequence.getChannels();

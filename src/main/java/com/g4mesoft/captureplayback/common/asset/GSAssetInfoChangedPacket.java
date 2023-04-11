@@ -6,10 +6,11 @@ import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.server.GSServerController;
 import com.g4mesoft.packet.GSIPacket;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSAssetInfoChangedPacket implements GSIPacket {
@@ -24,13 +25,13 @@ public class GSAssetInfoChangedPacket implements GSIPacket {
 	}
 	
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		GSAssetInfo.write(buf, info);
+	public void read(GSDecodeBuffer buf) throws IOException {
+		info = GSAssetInfo.read(buf);
 	}
 
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		info = GSAssetInfo.read(buf);
+	public void write(GSEncodeBuffer buf) throws IOException {
+		GSAssetInfo.write(buf, info);
 	}
 	
 	@Override
@@ -42,6 +43,6 @@ public class GSAssetInfoChangedPacket implements GSIPacket {
 	public void handleOnClient(GSClientController controller) {
 		GSCapturePlaybackClientModule module = controller.getModule(GSCapturePlaybackClientModule.class);
 		if (module != null)
-			module.onAssetInfoChanged(info);
+			module.getAssetManager().onAssetInfoChanged(info);
 	}
 }

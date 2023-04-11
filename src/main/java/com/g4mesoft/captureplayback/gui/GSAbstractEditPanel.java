@@ -1,35 +1,36 @@
 package com.g4mesoft.captureplayback.gui;
 
+import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.client.GSClientController;
-import com.g4mesoft.panel.GSColoredIcon;
-import com.g4mesoft.panel.GSEAnchor;
-import com.g4mesoft.panel.GSECursorType;
-import com.g4mesoft.panel.GSEFill;
-import com.g4mesoft.panel.GSETextAlignment;
-import com.g4mesoft.panel.GSGridLayoutManager;
-import com.g4mesoft.panel.GSIActionListener;
-import com.g4mesoft.panel.GSIcon;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSPanelContext;
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.button.GSButton;
-import com.g4mesoft.panel.dropdown.GSDropdown;
-import com.g4mesoft.panel.dropdown.GSDropdownAction;
-import com.g4mesoft.panel.dropdown.GSDropdownSubMenu;
-import com.g4mesoft.panel.event.GSFocusEvent;
-import com.g4mesoft.panel.event.GSIFocusEventListener;
-import com.g4mesoft.panel.event.GSIKeyListener;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.field.GSTextField;
-import com.g4mesoft.panel.scroll.GSEScrollBarPolicy;
-import com.g4mesoft.panel.scroll.GSScrollBar;
-import com.g4mesoft.panel.scroll.GSScrollPanel;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSColoredIcon;
+import com.g4mesoft.ui.panel.GSEAnchor;
+import com.g4mesoft.ui.panel.GSECursorType;
+import com.g4mesoft.ui.panel.GSEFill;
+import com.g4mesoft.ui.panel.GSETextAlignment;
+import com.g4mesoft.ui.panel.GSGridLayoutManager;
+import com.g4mesoft.ui.panel.GSIActionListener;
+import com.g4mesoft.ui.panel.GSIcon;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSPanelContext;
+import com.g4mesoft.ui.panel.GSParentPanel;
+import com.g4mesoft.ui.panel.button.GSButton;
+import com.g4mesoft.ui.panel.dropdown.GSDropdown;
+import com.g4mesoft.ui.panel.dropdown.GSDropdownAction;
+import com.g4mesoft.ui.panel.dropdown.GSDropdownSubMenu;
+import com.g4mesoft.ui.panel.event.GSFocusEvent;
+import com.g4mesoft.ui.panel.event.GSIFocusEventListener;
+import com.g4mesoft.ui.panel.event.GSIKeyListener;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSKeyEvent;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.field.GSTextField;
+import com.g4mesoft.ui.panel.scroll.GSEScrollBarPolicy;
+import com.g4mesoft.ui.panel.scroll.GSScrollBar;
+import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -57,7 +58,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	
 	protected final GSButton backButton;
 	protected final GSTextField nameField;
-	protected final GSTextField assetUUIDField;
+	protected final GSTextField handleField;
 	protected final GSScrollPanel scrollPanel;
 	
 	private final GSContentEventHandler contentHandler;
@@ -89,14 +90,18 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		nameField.setBorderWidth(0);
 		nameField.setVerticalMargin(TITLE_MARGIN);
 		nameField.setHorizontalMargin(0);
+		nameField.setFocusLostOnConfirm(true);
 
-		assetUUIDField = new GSTextField(session.get(GSSession.ASSET_UUID).toString());
-		assetUUIDField.setEditable(false);
-		assetUUIDField.setBackgroundColor(0x00000000);
-		assetUUIDField.setTextAlignment(GSETextAlignment.RIGHT);
-		assetUUIDField.setBorderWidth(0);
-		assetUUIDField.setVerticalMargin(TITLE_MARGIN);
-		assetUUIDField.setHorizontalMargin(0);
+		handleField = new GSTextField();
+		GSAssetHandle handle = session.get(GSSession.ASSET_HANDLE);
+		if (handle != null)
+			handleField.setText(handle.toString());
+		handleField.setEditable(false);
+		handleField.setBackgroundColor(0x00000000);
+		handleField.setTextAlignment(GSETextAlignment.RIGHT);
+		handleField.setBorderWidth(0);
+		handleField.setVerticalMargin(TITLE_MARGIN);
+		handleField.setHorizontalMargin(0);
 		
 		scrollPanel = new GSScrollPanel();
 		scrollPanel.setHorizontalScrollBarPolicy(GSEScrollBarPolicy.SCROLLBAR_ALWAYS);
@@ -131,13 +136,13 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.CENTER)
 			.set(GSGridLayoutManager.PREFERRED_WIDTH, TITLE_PREFERRED_WIDTH);
 		add(nameField);
-		assetUUIDField.getLayout()
+		handleField.getLayout()
 			.set(GSGridLayoutManager.GRID_X, 2)
 			.set(GSGridLayoutManager.GRID_Y, 0)
 			.set(GSGridLayoutManager.WEIGHT_X, 0.0f)
 			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.EAST)
 			.set(GSGridLayoutManager.RIGHT_MARGIN, ASSET_UUID_RIGHT_MARGIN);
-		add(assetUUIDField);
+		add(handleField);
 		scrollPanel.getLayout()
 			.set(GSGridLayoutManager.GRID_X, 0)
 			.set(GSGridLayoutManager.GRID_Y, 1)
@@ -155,32 +160,8 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 			}
 		});
 		
-		nameField.addFocusEventListener(new GSIFocusEventListener() {
-			@Override
-			public void focusLost(GSFocusEvent event) {
-				if (!nameField.hasPopupVisible()) {
-					onNameChanged(nameField.getText());
-					nameField.getCaret().setCaretLocation(0);
-					event.consume();
-				}
-			}
-		});
-		
-		nameField.addKeyEventListener(new GSIKeyListener() {
-			@Override
-			public void keyPressed(GSKeyEvent event) {
-				if (!event.isRepeating()) {
-					switch (event.getKeyCode()) {
-					case GSKeyEvent.KEY_ENTER:
-						onNameChanged(nameField.getText());
-					case GSKeyEvent.KEY_ESCAPE:
-						GSAbstractEditPanel.this.requestFocus();
-						event.consume();
-					default:
-						break;
-					}
-				}
-			}
+		nameField.addActionListener(() -> {
+			onNameChanged(nameField.getText());
 		});
 		
 		// Handle undo/redo events

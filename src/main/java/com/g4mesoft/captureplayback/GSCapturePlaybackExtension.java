@@ -9,6 +9,11 @@ import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHistoryPacket;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfoChangedPacket;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfoRemovedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSCreateAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSDeleteAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryAddedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryRemovedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCachePacket;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
@@ -39,7 +44,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	
 	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
 	
-	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
+	private static final String TRANSLATION_PATH = "/assets/g4mespeed-capture-playback/lang/en.lang";
 	
 	private static GSCapturePlaybackExtension instance;
 	
@@ -64,6 +69,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		addSignalEventHandler(Blocks.REDSTONE_WIRE, generalBlockHandler);
 		addSignalEventHandler(Blocks.POWERED_RAIL, generalBlockHandler);
 		addSignalEventHandler(Blocks.ACTIVATOR_RAIL, generalBlockHandler);
+		addSignalEventHandler(Blocks.BELL, generalBlockHandler);
 		// Add doors
 		addSignalEventHandler(Blocks.IRON_DOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.OAK_DOOR, generalBlockHandler);
@@ -109,6 +115,12 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		registry.register(14, GSAssetHistoryPacket.class, GSAssetHistoryPacket::new);
 		registry.register(15, GSAssetInfoChangedPacket.class, GSAssetInfoChangedPacket::new);
 		registry.register(16, GSAssetInfoRemovedPacket.class, GSAssetInfoRemovedPacket::new);
+		registry.register(17, GSCreateAssetPacket.class, GSCreateAssetPacket::new);
+		registry.register(18, GSDeleteAssetPacket.class, GSDeleteAssetPacket::new);
+		
+		registry.register(19, GSPlayerCachePacket.class, GSPlayerCachePacket::new);
+		registry.register(20, GSPlayerCacheEntryAddedPacket.class, GSPlayerCacheEntryAddedPacket::new);
+		registry.register(21, GSPlayerCacheEntryRemovedPacket.class, GSPlayerCacheEntryRemovedPacket::new);
 	}
 	
 	@Override

@@ -10,8 +10,8 @@ import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.common.GSIDeltaListener;
 import com.g4mesoft.registry.GSSupplierRegistry;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSUndoRedoHistory {
 
@@ -113,8 +113,9 @@ public class GSUndoRedoHistory {
 	}
 	
 	public void addUndoRedoListener(GSIUndoRedoListener listener) {
-		if (listener != null)
-			historyListeners.add(listener);
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
+		historyListeners.add(listener);
 	}
 
 	public void removeUndoRedoListener(GSIUndoRedoListener listener) {
@@ -128,8 +129,9 @@ public class GSUndoRedoHistory {
 	
 	/* Visible for GSUndoRedoHistorySessionField */
 	void addDeltaListener(GSIDeltaListener<GSUndoRedoHistory> listener) {
-		if (listener != null)
-			deltaListeners.add(listener);
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
+		deltaListeners.add(listener);
 	}
 
 	/* Visible for GSUndoRedoHistorySessionField */
@@ -183,7 +185,7 @@ public class GSUndoRedoHistory {
 		return i;
 	}
 
-	public static GSUndoRedoHistory read(PacketByteBuf buf) throws IOException {
+	public static GSUndoRedoHistory read(GSDecodeBuffer buf) throws IOException {
 		Deque<GSIUndoRedoEntry> undoHistory = new LinkedList<>();
 		Deque<GSIUndoRedoEntry> redoHistory = new LinkedList<>();
 		
@@ -197,7 +199,7 @@ public class GSUndoRedoHistory {
 		return new GSUndoRedoHistory(undoHistory, redoHistory);
 	}
 	
-	public static void write(PacketByteBuf buf, GSUndoRedoHistory history) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSUndoRedoHistory history) throws IOException {
 		buf.writeInt(history.undoHistory.size());
 		for (GSIUndoRedoEntry entry : history.undoHistory)
 			writeEntry(buf, entry);
@@ -208,7 +210,7 @@ public class GSUndoRedoHistory {
 	}
 	
 	/* Visible for GSTrackUndoRedoHistoryDelta */
-	static GSIUndoRedoEntry readEntry(PacketByteBuf buf) throws IOException {
+	static GSIUndoRedoEntry readEntry(GSDecodeBuffer buf) throws IOException {
 		int identifier = (int)buf.readUnsignedByte();
 		GSIUndoRedoEntry entry = ENTRY_REGISTRY.createNewElement(identifier);
 		if (entry == null)
@@ -218,8 +220,8 @@ public class GSUndoRedoHistory {
 	}
 	
 	/* Visible for GSTrackUndoRedoHistoryDelta */
-	static void writeEntry(PacketByteBuf buf, GSIUndoRedoEntry entry) throws IOException {
-		buf.writeByte(ENTRY_REGISTRY.getIdentifier(entry));
+	static void writeEntry(GSEncodeBuffer buf, GSIUndoRedoEntry entry) throws IOException {
+		buf.writeUnsignedByte(ENTRY_REGISTRY.getIdentifier(entry).shortValue());
 		entry.write(buf);
 	}
 }

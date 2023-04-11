@@ -9,8 +9,8 @@ import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSChannelRemovedDelta extends GSChannelDelta {
 
@@ -58,7 +58,7 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		super.read(buf);
 		
 		info = GSChannelInfo.read(buf);
@@ -68,11 +68,11 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		for (int i = 0; i < entryDeltas.length; i++)
 			(entryDeltas[i] = new GSChannelEntryRemovedDelta()).read(buf);
 		
-		prevUUID = buf.readBoolean() ? buf.readUuid() : null;
+		prevUUID = buf.readBoolean() ? buf.readUUID() : null;
 	}
 	
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		super.write(buf);
 	
 		GSChannelInfo.write(buf, info);
@@ -84,6 +84,6 @@ public class GSChannelRemovedDelta extends GSChannelDelta {
 		
 		buf.writeBoolean(prevUUID != null);
 		if (prevUUID != null)
-			buf.writeUuid(prevUUID);
+			buf.writeUUID(prevUUID);
 	}
 }

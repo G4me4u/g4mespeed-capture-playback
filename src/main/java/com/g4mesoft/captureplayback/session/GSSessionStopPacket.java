@@ -7,10 +7,11 @@ import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.server.GSServerController;
 import com.g4mesoft.packet.GSIPacket;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionStopPacket implements GSIPacket {
@@ -25,13 +26,13 @@ public class GSSessionStopPacket implements GSIPacket {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		assetUUID = buf.readUuid();
+	public void read(GSDecodeBuffer buf) throws IOException {
+		assetUUID = buf.readUUID();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeUuid(assetUUID);
+	public void write(GSEncodeBuffer buf) throws IOException {
+		buf.writeUUID(assetUUID);
 	}
 
 	@Override
@@ -43,6 +44,6 @@ public class GSSessionStopPacket implements GSIPacket {
 	public void handleOnClient(GSClientController controller) {
 		GSCapturePlaybackClientModule module = controller.getModule(GSCapturePlaybackClientModule.class);
 		if (module != null)
-			module.onSessionStop(assetUUID);
+			module.getAssetManager().onSessionStop(assetUUID);
 	}
 }

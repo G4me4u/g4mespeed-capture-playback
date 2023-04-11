@@ -6,8 +6,8 @@ import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSDeltaRegistries;
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSSequenceUndoRedoEntry implements GSIUndoRedoEntry {
 
@@ -44,13 +44,13 @@ public class GSSequenceUndoRedoEntry implements GSIUndoRedoEntry {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		delta = GSDeltaRegistries.SEQUENCE_DELTA_REGISTRY.read(buf);
 		timestampMillis = buf.readLong();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		GSDeltaRegistries.SEQUENCE_DELTA_REGISTRY.write(buf, delta);
 		buf.writeLong(timestampMillis);
 	}

@@ -5,8 +5,8 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSChannelMovedDelta extends GSChannelDelta {
 
@@ -39,22 +39,22 @@ public class GSChannelMovedDelta extends GSChannelDelta {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		super.read(buf);
 		
-		newPrevUUID = buf.readBoolean() ? buf.readUuid() : null;
-		oldPrevUUID = buf.readBoolean() ? buf.readUuid() : null;
+		newPrevUUID = buf.readBoolean() ? buf.readUUID() : null;
+		oldPrevUUID = buf.readBoolean() ? buf.readUUID() : null;
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		super.write(buf);
 
 		buf.writeBoolean(newPrevUUID != null);
 		if (newPrevUUID != null)
-			buf.writeUuid(newPrevUUID);
+			buf.writeUUID(newPrevUUID);
 		buf.writeBoolean(oldPrevUUID != null);
 		if (oldPrevUUID != null)
-			buf.writeUuid(oldPrevUUID);
+			buf.writeUUID(oldPrevUUID);
 	}
 }

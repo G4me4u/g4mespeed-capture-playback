@@ -9,8 +9,8 @@ import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public abstract class GSTrackDelta implements GSIDelta<GSComposition> {
 	
@@ -96,12 +96,12 @@ public abstract class GSTrackDelta implements GSIDelta<GSComposition> {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		trackUUID = buf.readUuid();
+	public void read(GSDecodeBuffer buf) throws IOException {
+		trackUUID = buf.readUUID();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeUuid(trackUUID);
+	public void write(GSEncodeBuffer buf) throws IOException {
+		buf.writeUUID(trackUUID);
 	}
 }

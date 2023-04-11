@@ -11,7 +11,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSAssetHistory implements GSIAssetHistory {
 
@@ -19,12 +20,14 @@ public class GSAssetHistory implements GSIAssetHistory {
 	
 	private final SortedSet<GSAssetInfo> infoSet;
 	private final Map<UUID, GSAssetInfo> uuidToInfo;
+	private final Map<GSAssetHandle, GSAssetInfo> handleToInfo;
 
 	private final List<GSIAssetHistoryListener> listeners;
 	
 	public GSAssetHistory() {
 		infoSet = new TreeSet<>();
 		uuidToInfo = new HashMap<>();
+		handleToInfo = new HashMap<>();
 		
 		listeners = new ArrayList<>();
 	}
@@ -34,11 +37,13 @@ public class GSAssetHistory implements GSIAssetHistory {
 		
 		// Asset info is mutable...
 		for (GSAssetInfo info : history)
-			add(new GSAssetInfo(info));
+			addImpl(new GSAssetInfo(info));
 	}
 	
 	@Override
 	public void addListener(GSIAssetHistoryListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		listeners.add(listener);
 	}
 
@@ -54,40 +59,52 @@ public class GSAssetHistory implements GSIAssetHistory {
 	}
 
 	@Override
-	public void set(GSIAssetHistory other) {
-		clear();
-		if (other instanceof GSAssetHistory) {
-			// More efficient than addAll(history)
-			GSAssetHistory history = (GSAssetHistory)other;
-			infoSet.addAll(history.infoSet);
-			uuidToInfo.putAll(history.uuidToInfo);
-		} else {
-			for (GSAssetInfo info : other) {
-				infoSet.add(info);
-				uuidToInfo.put(info.getAssetUUID(), info);
-			}
-		}
-		dispatchHistoryChanged(null);
-	}
-	
-	@Override
 	public boolean contains(UUID assetUUID) {
 		return uuidToInfo.containsKey(assetUUID);
 	}
 
 	@Override
+	public boolean containsHandle(GSAssetHandle handle) {
+		return handleToInfo.containsKey(handle);
+	}
+	
+	@Override
 	public GSAssetInfo get(UUID assetUUID) {
 		return uuidToInfo.get(assetUUID);
+	}
+	
+	@Override
+	public GSAssetInfo getFromHandle(GSAssetHandle handle) {
+		return handleToInfo.get(handle);
 	}
 
 	@Override
 	public void add(GSAssetInfo info) {
+		addImpl(info);
+		dispatchHistoryChanged(info.getAssetUUID());
+	}
+	
+	@Override
+	public void addAll(Iterable<GSAssetInfo> iterable) {
+		for (GSAssetInfo info : iterable)
+			addImpl(new GSAssetInfo(info));
+		dispatchHistoryChanged(null);
+	}
+	
+	private void addImpl(GSAssetInfo info) {
 		GSAssetInfo oldInfo = get(info.getAssetUUID());
-		if (oldInfo != null)
+		if (oldInfo != null) {
 			infoSet.remove(oldInfo);
+			if (oldInfo.getHandle() != null)
+				handleToInfo.remove(oldInfo.getHandle());
+		}
 		infoSet.add(info);
 		uuidToInfo.put(info.getAssetUUID(), info);
-		dispatchHistoryChanged(info.getAssetUUID());
+		if (info.getHandle() != null) {
+			if (handleToInfo.containsKey(info.getHandle()))
+				throw new IllegalStateException("Duplicate asset handle");
+			handleToInfo.put(info.getHandle(), info);
+		}
 	}
 	
 	@Override
@@ -95,16 +112,28 @@ public class GSAssetHistory implements GSIAssetHistory {
 		GSAssetInfo info = uuidToInfo.remove(assetUUID);
 		if (info != null) {
 			infoSet.remove(info);
+			handleToInfo.remove(info.getHandle());
 			dispatchHistoryChanged(info.getAssetUUID());
 		}
 		return info;
 	}
 	
 	@Override
+	public void set(GSIAssetHistory other) {
+		clearImpl();
+		addAll(other);
+	}
+	
+	@Override
 	public void clear() {
+		clearImpl();
+		dispatchHistoryChanged(null);
+	}
+	
+	private void clearImpl() {
 		infoSet.clear();
 		uuidToInfo.clear();
-		dispatchHistoryChanged(null);
+		handleToInfo.clear();
 	}
 
 	public void setAssetName(UUID assetUUID, String name) {
@@ -145,7 +174,17 @@ public class GSAssetHistory implements GSIAssetHistory {
 		return infoSet.isEmpty();
 	}
 
-	public static GSAssetHistory read(PacketByteBuf buf) throws IOException {
+	@Override
+	public SortedSet<GSAssetInfo> asCollection() {
+		return Collections.unmodifiableSortedSet(infoSet);
+	}
+	
+	@Override
+	public Iterator<GSAssetInfo> iterator() {
+		return asCollection().iterator();
+	}
+	
+	public static GSAssetHistory read(GSDecodeBuffer buf) throws IOException {
 		// Reserved byte for file version
 		byte fileVersion = buf.readByte();
 		if (fileVersion != SUPPORTED_FILE_VERSION)
@@ -160,21 +199,11 @@ public class GSAssetHistory implements GSIAssetHistory {
 		return history;
 	}
 
-	public static void write(PacketByteBuf buf, GSIAssetHistory history) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSIAssetHistory history) throws IOException {
 		buf.writeByte(SUPPORTED_FILE_VERSION);
 		
 		buf.writeInt(history.size());
 		for (GSAssetInfo info : history)
 			GSAssetInfo.write(buf, info);
-	}
-	
-	@Override
-	public Iterator<GSAssetInfo> iterator() {
-		return getInfoSet().iterator();
-	}
-
-	@Override
-	public SortedSet<GSAssetInfo> getInfoSet() {
-		return Collections.unmodifiableSortedSet(infoSet);
 	}
 }

@@ -9,8 +9,8 @@ import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListener {
 
@@ -24,6 +24,13 @@ public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListe
 		super(GSEAssetType.SEQUENCE);
 		
 		this.sequence = sequence;
+	}
+	
+	@Override
+	protected void duplicateFrom(GSAbstractAsset other) {
+		if (!(other instanceof GSSequenceAsset))
+			throw new IllegalArgumentException("Expected sequence asset");
+		sequence.duplicateFrom(((GSSequenceAsset)other).getSequence());
 	}
 	
 	@Override
@@ -79,11 +86,11 @@ public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListe
 		dispatchNameChanged(sequence.getName());
 	}
 
-	public static GSSequenceAsset read(PacketByteBuf buf) throws IOException {
+	public static GSSequenceAsset read(GSDecodeBuffer buf) throws IOException {
 		return new GSSequenceAsset(GSSequence.read(buf));
 	}
 	
-	public static void write(PacketByteBuf buf, GSSequenceAsset asset) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSSequenceAsset asset) throws IOException {
 		GSSequence.write(buf, asset.getSequence());
 	}
 }

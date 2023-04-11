@@ -11,9 +11,8 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
-import com.g4mesoft.util.GSBufferUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSTrack {
 
@@ -89,6 +88,21 @@ public class GSTrack {
 			group.removeTrack(trackUUID);
 		
 		this.parent = null;
+	}
+	
+	void duplicateFrom(GSTrack other) {
+		clear();
+
+		setName(other.getName());
+		setColor(other.getColor());
+		// Already changed correctly.
+		//setGroupUUID(other.getGroupUUID());
+		
+		sequence.duplicateFrom(other.getSequence());
+		// Note: sequence name is not update in #duplicateFrom
+		sequence.setName(other.getSequence().getName());
+		for (GSTrackEntry entry : other.getEntries())
+			addEntry(entry.getOffset()).duplicateFrom(entry);
 	}
 	
 	void set(GSTrack other) {
@@ -265,11 +279,11 @@ public class GSTrack {
 		}
 	}
 	
-	public static GSTrack read(PacketByteBuf buf) throws IOException {
-		UUID trackUUID = buf.readUuid();
-		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+	public static GSTrack read(GSDecodeBuffer buf) throws IOException {
+		UUID trackUUID = buf.readUUID();
+		String name = buf.readString();
 		int color = buf.readMedium();
-		UUID groupUUID = buf.readUuid();
+		UUID groupUUID = buf.readUUID();
 		
 		GSSequence sequence = GSSequence.read(buf);
 		
@@ -286,11 +300,11 @@ public class GSTrack {
 		return track;
 	}
 
-	public static void write(PacketByteBuf buf, GSTrack track) throws IOException {
-		buf.writeUuid(track.getTrackUUID());
+	public static void write(GSEncodeBuffer buf, GSTrack track) throws IOException {
+		buf.writeUUID(track.getTrackUUID());
 		buf.writeString(track.getName());
 		buf.writeMedium(track.getColor());
-		buf.writeUuid(track.getGroupUUID());
+		buf.writeUUID(track.getGroupUUID());
 		
 		GSSequence.write(buf, track.getSequence());
 		

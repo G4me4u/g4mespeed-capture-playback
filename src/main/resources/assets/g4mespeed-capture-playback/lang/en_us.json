@@ -1,0 +1,75 @@
+{
+	"gui.tab.capture-playback": "Capture & Playback",
+
+	"gui.tab.capture-playback.historyTitle": "Available Assets",
+	"gui.tab.capture-playback.name": "Name",
+	"gui.tab.capture-playback.handle": "Handle",
+	"gui.tab.capture-playback.ownerUUID": "Owned By",
+	"gui.tab.capture-playback.modified": "Last Modified",
+	"gui.tab.capture-playback.created": "Created",
+	"gui.tab.capture-playback.type": "Type",
+	"gui.tab.capture-playback.type.composition": "Composition",
+	"gui.tab.capture-playback.type.sequence": "Sequence",
+	"gui.tab.capture-playback.type.playlist": "Playlist",
+	"gui.tab.capture-playback.namespace": "Storage",
+	"gui.tab.capture-playback.namespace.global": "Global",
+	"gui.tab.capture-playback.namespace.world": "World",
+
+	"gui.tab.capture-playback.import": "Import",
+	"gui.tab.capture-playback.export": "Export",
+	"gui.tab.capture-playback.edit": "Edit",
+	"gui.tab.capture-playback.new": "New",
+	"gui.tab.capture-playback.duplicate": "Duplicate",
+	"gui.tab.capture-playback.delete": "Delete",
+
+	"gui.tab.capture-playback.popup.createTitle": "Create Asset",
+	"gui.tab.capture-playback.popup.duplicateTitle": "Duplicate Asset",
+	"gui.tab.capture-playback.popup.name": "Name:",
+	"gui.tab.capture-playback.popup.type": "Type:",
+	"gui.tab.capture-playback.popup.namespace": "Storage:",
+	"gui.tab.capture-playback.popup.handle": "Handle:",
+	"gui.tab.capture-playback.unknownOwner": "Unknown",
+
+	"gui.tab.capture-playback.nameCopy": "%s (Copy)",
+
+	"gui.tab.capture-playback.assetBackup": "Backup History",
+
+	"gui.tab.capture-playback.playlistTitle": "Playlist Overview",
+
+	"gui.tab.capture-playback.create": "Create",
+	"gui.tab.capture-playback.done": "Done",
+	"gui.tab.capture-playback.apply": "Apply",
+	"gui.tab.capture-playback.cancel": "Cancel",
+
+
+	"panel.sequencecolumnheader.expand": "Expand",
+	"panel.sequencecolumnheader.collapse": "Collapse",
+	"panel.sequencecolumnheader.expandall": "Expand All",
+	"panel.sequencecolumnheader.collapseall": "Collapse All",
+
+	"panel.opacity": "Opacity",
+	"panel.opacity25": "25%% Opacity",
+	"panel.opacity50": "50%% Opacity",
+	"panel.opacity75": "75%% Opacity",
+	"panel.opacity90": "90%% Opacity",
+	"panel.opacity100": "Fully Opaque",
+
+	"panel.sequence.defaultname": "New Channel",
+
+	"panel.sequencecontent.createentry": "New Entry",
+	"panel.sequencecontent.entrytype": "Entry Type",
+	"panel.sequencecontent.deleteentry": "Delete Entry",
+	"panel.sequencecontent.typeboth": "Both",
+	"panel.sequencecontent.typestart": "Update at Start",
+	"panel.sequencecontent.typeend": "Update at End",
+	"panel.sequencecontent.typenone": "None",
+
+	"panel.edit.undo": "Undo",
+	"panel.edit.redo": "Redo",
+	"panel.edit.back": "Back",
+
+	"panel.edit.channel.title": "Edit Channel",
+	"panel.edit.channel.name": "Name:",
+	"panel.edit.channel.color": "Color:",
+	"panel.edit.channel.positions": "Positions:"
+}

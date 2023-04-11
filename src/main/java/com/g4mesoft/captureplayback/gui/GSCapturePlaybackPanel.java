@@ -1,183 +1,116 @@
 package com.g4mesoft.captureplayback.gui;
 
-import java.time.Instant;
-import java.util.UUID;
-
-import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
-import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
-import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
-import com.g4mesoft.captureplayback.common.asset.GSIAssetHistoryListener;
-import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSEAnchor;
-import com.g4mesoft.panel.GSEFill;
-import com.g4mesoft.panel.GSGridLayoutManager;
-import com.g4mesoft.panel.GSMargin;
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.field.GSTextLabel;
-import com.g4mesoft.panel.scroll.GSScrollPanel;
-import com.g4mesoft.panel.table.GSBasicTableModel;
-import com.g4mesoft.panel.table.GSEHeaderResizePolicy;
-import com.g4mesoft.panel.table.GSITableModel;
-import com.g4mesoft.panel.table.GSTablePanel;
-import com.g4mesoft.renderer.GSTexture;
+import com.g4mesoft.captureplayback.module.client.GSClientAssetManager;
+import com.g4mesoft.ui.panel.GSEFill;
+import com.g4mesoft.ui.panel.GSGridLayoutManager;
+import com.g4mesoft.ui.panel.GSMargin;
+import com.g4mesoft.ui.panel.GSPanelContext;
+import com.g4mesoft.ui.panel.GSParentPanel;
+import com.g4mesoft.ui.panel.scroll.GSIScrollable;
+import com.g4mesoft.ui.renderer.GSTexture;
 
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 
-public class GSCapturePlaybackPanel extends GSParentPanel implements GSIAssetHistoryListener {
+public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollable {
 
 	/* Icon sheet used for Capture & Playback UI elements. */
-	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed", "captureplayback/textures/icons.png");
+	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed-capture-playback", "textures/icons.png");
 	public static final GSTexture ICONS_SHEET = new GSTexture(ICONS_IDENTIFIER, 128, 128);
-	
-	/* Titles for the elements shown in the asset history table */
-	private static final Text NAME_TITLE          = new TranslatableText("gui.tab.capture-playback.name");
-	private static final Text ASSET_UUID_TITLE    = new TranslatableText("gui.tab.capture-playback.assetUUID");
-	private static final Text OWNER_UUID_TITLE    = new TranslatableText("gui.tab.capture-playback.ownerUUID");
-	private static final Text MODIFIED_TITLE      = new TranslatableText("gui.tab.capture-playback.modified");
-	private static final Text CREATED_TITLE       = new TranslatableText("gui.tab.capture-playback.created");
-	private static final Text TYPE_TITLE          = new TranslatableText("gui.tab.capture-playback.type");
-	/* Indices pointing to the column of each of the titles */
-	private static final int NAME_COLUMN_INDEX;
-	private static final int ASSET_UUID_COLUMN_INDEX;
-	private static final int OWNER_UUID_COLUMN_INDEX;
-	private static final int MODIFIED_COLUMN_INDEX;
-	private static final int CREATED_COLUMN_INDEX;
-	private static final int TYPE_COLUMN_INDEX;
-	private static final Text[] TABLE_TITLES;
-	/* Text shown in place of each of the asset types */
-	private static final Text COMPOSITION_TEXT = new TranslatableText("gui.tab.capture-playback.type.composition");
-	private static final Text SEQUENCE_TEXT    = new TranslatableText("gui.tab.capture-playback.type.sequence");
 
-	/* Content titles */
-	private static final Text ASSET_HISTORY_TITLE = new TranslatableText("gui.tab.capture-playback.historyTitle");
-	private static final Text PLAYLIST_TITLE = new TranslatableText("gui.tab.capture-playback.playlistTitle");
-	private static final GSMargin TITLE_MARGIN = new GSMargin(10);
-	private static final GSMargin TABLE_MARGIN = new GSMargin(0, 10);
-
-	/* Compute title column indices */
-	static {
-		int titleCount = 0;
-		// Table title order is specified by order of these.
-		NAME_COLUMN_INDEX       = titleCount++;
-		ASSET_UUID_COLUMN_INDEX = titleCount++;
-		OWNER_UUID_COLUMN_INDEX = titleCount++;
-		MODIFIED_COLUMN_INDEX   = titleCount++;
-		CREATED_COLUMN_INDEX    = titleCount++;
-		TYPE_COLUMN_INDEX       = titleCount++;
-		// Compute array with table titles
-		TABLE_TITLES = new Text[titleCount];
-		TABLE_TITLES[NAME_COLUMN_INDEX]       = NAME_TITLE;
-		TABLE_TITLES[ASSET_UUID_COLUMN_INDEX] = ASSET_UUID_TITLE;
-		TABLE_TITLES[OWNER_UUID_COLUMN_INDEX] = OWNER_UUID_TITLE;
-		TABLE_TITLES[MODIFIED_COLUMN_INDEX]   = MODIFIED_TITLE;
-		TABLE_TITLES[CREATED_COLUMN_INDEX]    = CREATED_TITLE;
-		TABLE_TITLES[TYPE_COLUMN_INDEX]       = TYPE_TITLE;
+	/* Helper method for getting translatable text. */
+	public static Text translatable(String key) {
+		return new TranslatableText("gui.tab.capture-playback." + key);
 	}
 	
-	private final GSCapturePlaybackClientModule module;
+	private final GSAssetHistoryPanel assetHistoryPanel;
+	private final GSAssetBackupPanel assetBackupPanel;
+	private final GSPlaylistOverviewPanel playlistOverviewPanel;
 	
-	private GSTablePanel table;
+	private boolean compactView;
+	
+	public GSCapturePlaybackPanel(GSClientAssetManager assetManager) {
+		assetHistoryPanel = new GSAssetHistoryPanel(assetManager);
+		assetBackupPanel = new GSAssetBackupPanel();
+		playlistOverviewPanel = new GSPlaylistOverviewPanel();
 
-	public GSCapturePlaybackPanel(GSCapturePlaybackClientModule module) {
-		this.module = module;
+		// Force scroll panel to allocate exactly its own width to
+		// us (note that #isScrollableWidthFilled() returns true).
+		setProperty(PREFERRED_WIDTH, 0);
 		
-		table = new GSTablePanel(createTableModel());
-
-		table.setColumnHeaderResizePolicy(GSEHeaderResizePolicy.RESIZE_SUBSEQUENT);
-		table.setRowHeaderResizePolicy(GSEHeaderResizePolicy.RESIZE_OFF);
-		table.setPreferredRowCount(10);
-
 		initLayout();
-	}
-
-	private GSITableModel createTableModel() {
-		GSIAssetHistory history = module.getAssetHistory();
-		
-		GSITableModel model = new GSBasicTableModel(TABLE_TITLES.length, history.size());
-		// Prepare table headers
-		for (int c = 0; c < TABLE_TITLES.length; c++)
-			model.getColumn(c).setHeaderValue(TABLE_TITLES[c]);
-		model.setRowHeaderHidden(true);
-
-		model.getColumn(MODIFIED_COLUMN_INDEX).setMaximumSize(new GSDimension(100, 0));
-		model.getColumn(CREATED_COLUMN_INDEX).setMaximumSize(new GSDimension(100, 0));
-		model.getColumn(TYPE_COLUMN_INDEX).setMaximumSize(new GSDimension(70, 0));
-		
-		int r = 0;
-		for (GSAssetInfo info : history) {
-			model.setCellValue(NAME_COLUMN_INDEX, r, info.getAssetName());
-			model.setCellValue(ASSET_UUID_COLUMN_INDEX, r, info.getAssetUUID().toString());
-			model.setCellValue(OWNER_UUID_COLUMN_INDEX, r, info.getOwnerUUID().toString());
-			model.setCellValue(CREATED_COLUMN_INDEX, r, Instant.ofEpochMilli(info.getCreatedTimestamp()));
-			model.setCellValue(MODIFIED_COLUMN_INDEX, r, Instant.ofEpochMilli(info.getLastModifiedTimestamp()));
-			model.setCellValue(TYPE_COLUMN_INDEX, r, assetTypeToText(info.getType()));
-			r++;
-		}
-		
-		return model;
-	}
-	
-	private Text assetTypeToText(GSEAssetType type) {
-		switch (type) {
-		case COMPOSITION:
-			return COMPOSITION_TEXT;
-		case SEQUENCE:
-			return SEQUENCE_TEXT;
-		}
-		throw new IllegalStateException("Unknown asset type: " + type);
 	}
 	
 	private void initLayout() {
 		setLayoutManager(new GSGridLayoutManager());
 		
-		int gridY = 0;
-		
-		GSTextLabel historyTitle = new GSTextLabel(ASSET_HISTORY_TITLE);
-		historyTitle.getLayout()
-			.set(GSGridLayoutManager.GRID_Y, gridY++)
-			.set(GSGridLayoutManager.MARGIN, TITLE_MARGIN)
-			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.WEST);
-		add(historyTitle);
-		
-		GSScrollPanel scrollPanel = new GSScrollPanel(table);
-		scrollPanel.getLayout()
-			.set(GSGridLayoutManager.GRID_Y, gridY++)
+		assetHistoryPanel.getLayout()
+			.set(GSGridLayoutManager.GRID_X, 0)
+			.set(GSGridLayoutManager.GRID_Y, 0)
+			.set(GSGridLayoutManager.GRID_WIDTH, 1)
 			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
-			.set(GSGridLayoutManager.MARGIN, TABLE_MARGIN)
-			.set(GSGridLayoutManager.FILL, GSEFill.HORIZONTAL);
-		add(scrollPanel);
-		
-		GSTextLabel playlistTitle = new GSTextLabel(PLAYLIST_TITLE);
-		playlistTitle.getLayout()
-			.set(GSGridLayoutManager.GRID_Y, gridY++)
 			.set(GSGridLayoutManager.WEIGHT_Y, 1.0f)
-			.set(GSGridLayoutManager.MARGIN, TITLE_MARGIN)
-			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.NORTHWEST);
-		add(playlistTitle);
-	}
-
-	@Override
-	protected void onShown() {
-		super.onShown();
-
-		module.getAssetHistory().addListener(this);
-		// Assume history has changed
-		onHistoryChanged(null);
-	}
-
-	@Override
-	protected void onHidden() {
-		super.onHidden();
-
-		module.getAssetHistory().removeListener(this);
+			.set(GSGridLayoutManager.MARGIN, new GSMargin(10))
+			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
+		add(assetHistoryPanel);
+		assetBackupPanel.getLayout()
+			.set(GSGridLayoutManager.GRID_X, 1)
+			.set(GSGridLayoutManager.GRID_Y, 0)
+			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
+			.set(GSGridLayoutManager.WEIGHT_Y, 1.0f)
+			.set(GSGridLayoutManager.MARGIN, new GSMargin(10))
+			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
+		add(assetBackupPanel);
+		// Default is compact view disabled.
+		compactView = false;
+		
+		// Note: we leave 1 grid-cell above playlist overview
+		//       in the case where we want to move the asset
+		//       backup panel there.
+		playlistOverviewPanel.getLayout()
+			.set(GSGridLayoutManager.GRID_X, 0)
+			.set(GSGridLayoutManager.GRID_Y, 2)
+			.set(GSGridLayoutManager.GRID_WIDTH, 2)
+			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
+			.set(GSGridLayoutManager.WEIGHT_Y, 2.0f)
+			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
+		add(playlistOverviewPanel);
 	}
 	
 	@Override
-	public void onHistoryChanged(UUID assetUUID) {
-		// Update table model to reflect changes.
-		table.setModel(createTableModel());
+	protected void onResized(int oldWidth, int oldHeight) {
+		super.onResized(oldWidth, oldHeight);
+
+		// Check whether there is space for asset history and
+		// asset backups next to each other. Otherwise place
+		// the backup panel underneath.
+		long pw = (long)assetHistoryPanel.getProperty(MINIMUM_WIDTH) +
+		                assetBackupPanel.getProperty(MINIMUM_WIDTH);
+		boolean shouldCompactView = (pw > width);
+		if (compactView != shouldCompactView) {
+			if (shouldCompactView) {
+				assetHistoryPanel.getLayout()
+					.set(GSGridLayoutManager.GRID_WIDTH, 2);
+				assetBackupPanel.getLayout()
+					.set(GSGridLayoutManager.GRID_X, 0)
+					.set(GSGridLayoutManager.GRID_Y, 1);
+			} else {
+				assetHistoryPanel.getLayout()
+					.set(GSGridLayoutManager.GRID_WIDTH, 1);
+				assetBackupPanel.getLayout()
+					.set(GSGridLayoutManager.GRID_X, 1)
+					.set(GSGridLayoutManager.GRID_Y, 0);
+			}
+			compactView = shouldCompactView;
+			// Preferred size has changed. Invalidate later,
+			// since we are not allowed to invalidate here.
+			GSPanelContext.schedule(this::invalidate);
+		}
+	}
+	
+	@Override
+	public boolean isScrollableWidthFilled() {
+		return true;
 	}
 }

@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.common.asset;
 
-import java.util.SortedSet;
+import java.util.Collection;
 import java.util.UUID;
 
 public interface GSIAssetHistory extends Iterable<GSAssetInfo> {
@@ -11,10 +11,16 @@ public interface GSIAssetHistory extends Iterable<GSAssetInfo> {
 
 	public boolean contains(UUID assetUUID);
 
+	public boolean containsHandle(GSAssetHandle handle);
+
 	public GSAssetInfo get(UUID assetUUID);
+
+	public GSAssetInfo getFromHandle(GSAssetHandle handle);
 	
 	public void add(GSAssetInfo info);
 
+	public void addAll(Iterable<GSAssetInfo> iterable);
+	
 	public GSAssetInfo remove(UUID assetUUID);
 
 	public void set(GSIAssetHistory other);
@@ -24,7 +30,7 @@ public interface GSIAssetHistory extends Iterable<GSAssetInfo> {
 	public int size();
 
 	public boolean isEmpty();
-
-	public SortedSet<GSAssetInfo> getInfoSet();
+	
+	public Collection<GSAssetInfo> asCollection();
 	
 }

@@ -34,6 +34,8 @@ public abstract class GSDeltaTransformer<M> {
 	}
 	
 	public void addDeltaListener(GSIDeltaListener<M> listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		listeners.add(listener);
 	}
 

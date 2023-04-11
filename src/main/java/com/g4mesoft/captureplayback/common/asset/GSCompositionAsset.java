@@ -9,8 +9,8 @@ import com.g4mesoft.captureplayback.composition.GSICompositionListener;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSCompositionAsset extends GSAbstractAsset implements GSICompositionListener {
 
@@ -26,6 +26,13 @@ public class GSCompositionAsset extends GSAbstractAsset implements GSICompositio
 		this.composition = composition;
 	}
 
+	@Override
+	protected void duplicateFrom(GSAbstractAsset other) {
+		if (!(other instanceof GSCompositionAsset))
+			throw new IllegalArgumentException("Expected composition asset");
+		composition.duplicateFrom(((GSCompositionAsset)other).getComposition());
+	}
+	
 	@Override
 	protected void onAdded() {
 		super.onAdded();
@@ -93,11 +100,11 @@ public class GSCompositionAsset extends GSAbstractAsset implements GSICompositio
 		dispatchDerivedAssetRemoved(track.getTrackUUID());
 	}
 
-	public static GSCompositionAsset read(PacketByteBuf buf) throws IOException {
+	public static GSCompositionAsset read(GSDecodeBuffer buf) throws IOException {
 		return new GSCompositionAsset(GSComposition.read(buf));
 	}
 	
-	public static void write(PacketByteBuf buf, GSCompositionAsset asset) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSCompositionAsset asset) throws IOException {
 		GSComposition.write(buf, asset.getComposition());
 	}
 }

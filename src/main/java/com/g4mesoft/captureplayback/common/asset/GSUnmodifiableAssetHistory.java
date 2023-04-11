@@ -1,7 +1,7 @@
 package com.g4mesoft.captureplayback.common.asset;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.SortedSet;
 import java.util.UUID;
 
 public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
@@ -16,6 +16,8 @@ public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
 	
 	@Override
 	public void addListener(GSIAssetHistoryListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		history.addListener(listener);
 	}
 
@@ -28,6 +30,11 @@ public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
 	public boolean contains(UUID assetUUID) {
 		return history.contains(assetUUID);
 	}
+	
+	@Override
+	public boolean containsHandle(GSAssetHandle handle) {
+		return history.containsHandle(handle);
+	}
 
 	@Override
 	public GSAssetInfo get(UUID assetUUID) {
@@ -35,7 +42,17 @@ public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
 	}
 	
 	@Override
+	public GSAssetInfo getFromHandle(GSAssetHandle handle) {
+		return history.getFromHandle(handle);
+	}
+	
+	@Override
 	public void add(GSAssetInfo info) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public void addAll(Iterable<GSAssetInfo> iterable) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -65,13 +82,14 @@ public class GSUnmodifiableAssetHistory implements GSIAssetHistory {
 	}
 
 	@Override
-	public SortedSet<GSAssetInfo> getInfoSet() {
+	public Collection<GSAssetInfo> asCollection() {
 		// Already unmodifiable in GSAssetHistory.
-		return history.getInfoSet();
+		return history.asCollection();
 	}
 	
 	@Override
 	public Iterator<GSAssetInfo> iterator() {
-		return getInfoSet().iterator();
+		// Already unmodifiable in GSAssetHistory.
+		return history.iterator();
 	}
 }

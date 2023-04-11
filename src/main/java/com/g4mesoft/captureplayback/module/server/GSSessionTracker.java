@@ -8,9 +8,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
-import com.g4mesoft.captureplayback.common.asset.GSAbstractAsset;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
+import com.g4mesoft.captureplayback.common.asset.GSAssetRef;
 import com.g4mesoft.captureplayback.common.asset.GSCompositionAsset;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
+import com.g4mesoft.captureplayback.common.asset.GSPlaylistAsset;
 import com.g4mesoft.captureplayback.common.asset.GSSequenceAsset;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSESessionType;
@@ -30,21 +32,29 @@ public class GSSessionTracker implements GSISessionListener {
 	private static final String SESSION_EXTENSION = ".session";
 	
 	private final GSIServerModuleManager manager;
-	private final GSAbstractAsset asset;
+	private final GSAssetInfo info;
+	private final GSAssetRef ref;
 	private final File cacheDir;
 	private final GSESessionType sessionType;
 	
 	private final Map<UUID, GSSession> playerUUIDToSession;
 	private final Map<GSSession, UUID> sessionToPlayerUUID;
 	
-	GSSessionTracker(GSIServerModuleManager manager, GSAbstractAsset asset, File cacheDir) {
+	private GSISessionStatusListener listener;
+	
+	GSSessionTracker(GSIServerModuleManager manager, GSAssetInfo info, GSAssetRef ref, File cacheDir) {
+		if (!info.getAssetUUID().equals(ref.get().getUUID()))
+			throw new IllegalArgumentException("Asset info does not correspond to the asset.");
 		this.manager = manager;
-		this.asset = asset;
+		this.info = info;
+		this.ref = ref;
 		this.cacheDir = cacheDir;
-		sessionType = toSessionType(asset.getType());
+		sessionType = toSessionType(info.getType());
 	
 		playerUUIDToSession = new HashMap<>();
 		sessionToPlayerUUID = new IdentityHashMap<>();
+
+		listener = null;
 	}
 	
 	private static GSESessionType toSessionType(GSEAssetType assetType) {
@@ -53,6 +63,8 @@ public class GSSessionTracker implements GSISessionListener {
 			return GSESessionType.COMPOSITION;
 		case SEQUENCE:
 			return GSESessionType.SEQUENCE;
+		case PLAYLIST:
+			return GSESessionType.PLAYLIST;
 		}
 		throw new IllegalStateException("Unknown asset type");
 	}
@@ -72,27 +84,36 @@ public class GSSessionTracker implements GSISessionListener {
 		if (playerUUIDToSession.containsKey(playerUUID))
 			onRequestStop(player);
 		GSSession session = readSession(playerUUID);
-		if (session == null || !asset.getUUID().equals(session.get(GSSession.ASSET_UUID))) {
+		if (session == null || !info.getAssetUUID().equals(session.get(GSSession.ASSET_UUID))) {
 			session = new GSSession(sessionType);
-			session.set(GSSession.ASSET_UUID, asset.getUUID());
+			session.set(GSSession.ASSET_UUID, info.getAssetUUID());
+			session.set(GSSession.ASSET_HANDLE, info.getHandle());
 		}
-		// The the primary asset of the session
+		// The primary asset of the session
 		switch (sessionType) {
 		case COMPOSITION:
-			session.set(GSSession.COMPOSITION, ((GSCompositionAsset)asset).getComposition());
+			session.set(GSSession.COMPOSITION, ((GSCompositionAsset)ref.get()).getComposition());
 			break;
 		case SEQUENCE:
-			session.set(GSSession.SEQUENCE, ((GSSequenceAsset)asset).getSequence());
+			session.set(GSSession.SEQUENCE, ((GSSequenceAsset)ref.get()).getSequence());
+			break;
+		case PLAYLIST:
+			session.set(GSSession.PLAYLIST, ((GSPlaylistAsset)ref.get()).getPlaylist());
 			break;
 		}
 		session.setSide(GSSessionSide.SERVER_SIDE);
-		session.addListener(this);
 
 		playerUUIDToSession.put(playerUUID, session);
 		sessionToPlayerUUID.put(session, playerUUID);
-		manager.sendPacket(new GSSessionStartPacket(session), player);
+		onSessionStarted(player, session);
 		
 		return true;
+	}
+	
+	private void onSessionStarted(ServerPlayerEntity player, GSSession session) {
+		session.addListener(this);
+		manager.sendPacket(new GSSessionStartPacket(session), player);
+		dispatchSessionStarted(player, info.getAssetUUID());
 	}
 
 	private boolean onRequestStop(ServerPlayerEntity player) {
@@ -108,7 +129,8 @@ public class GSSessionTracker implements GSISessionListener {
 	private void onSessionStopped(ServerPlayerEntity player, GSSession session) {
 		writeSession(player.getUuid(), session);
 		session.removeListener(this);
-		manager.sendPacket(new GSSessionStopPacket(asset.getUUID()), player);
+		manager.sendPacket(new GSSessionStopPacket(info.getAssetUUID()), player);
+		dispatchSessionStopped(player, info.getAssetUUID());
 	}
 
 	public void onDeltasReceived(ServerPlayerEntity player, GSIDelta<GSSession>[] deltas) {
@@ -125,6 +147,26 @@ public class GSSessionTracker implements GSISessionListener {
 		}
 		playerUUIDToSession.clear();
 		sessionToPlayerUUID.clear();
+	}
+	
+	public GSSession getSession(ServerPlayerEntity player) {
+		return playerUUIDToSession.get(player.getUuid());
+	}
+	
+	public void setListener(GSISessionStatusListener listener) {
+		if (this.listener != null && listener != null)
+			throw new IllegalStateException("Tracker only supports a single listener");
+		this.listener = listener;
+	}
+
+	private void dispatchSessionStarted(ServerPlayerEntity player, UUID assetUUID) {
+		if (listener != null)
+			listener.sessionStarted(player, assetUUID);
+	}
+
+	private void dispatchSessionStopped(ServerPlayerEntity player, UUID assetUUID) {
+		if (listener != null)
+			listener.sessionStopped(player, assetUUID);
 	}
 	
 	private GSSession readSession(UUID playerUUID) {
@@ -153,6 +195,10 @@ public class GSSessionTracker implements GSISessionListener {
 	public boolean isEmpty() {
 		return playerUUIDToSession.isEmpty();
 	}
+
+	public GSAssetRef getRef() {
+		return ref;
+	}
 	
 	@Override
 	public void onSessionDeltas(GSSession session, GSIDelta<GSSession>[] deltas) {
@@ -160,7 +206,7 @@ public class GSSessionTracker implements GSISessionListener {
 		if (playerUUID != null) {
 			ServerPlayerEntity player = manager.getPlayer(playerUUID);
 			if (player != null)
-				manager.sendPacket(new GSSessionDeltasPacket(asset.getUUID(), deltas), player);
+				manager.sendPacket(new GSSessionDeltasPacket(info.getAssetUUID(), deltas), player);
 		}
 	}
 }

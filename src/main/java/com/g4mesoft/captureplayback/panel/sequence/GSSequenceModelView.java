@@ -15,10 +15,10 @@ import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.panel.GSPanelContext;
-import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.renderer.GSIRenderer2D;
-import com.g4mesoft.util.GSMathUtil;
+import com.g4mesoft.ui.panel.GSPanelContext;
+import com.g4mesoft.ui.panel.GSRectangle;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.util.GSMathUtil;
 
 public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColumnModelListener {
 
@@ -489,12 +489,14 @@ public class GSSequenceModelView implements GSISequenceListener, GSIExpandedColu
 	
 	/* ******************** LISTENER & EVENT methods ******************** */
 	
-	public void addModelViewListener(GSIModelViewListener listenter) {
-		listenters.add(listenter);
+	public void addModelViewListener(GSIModelViewListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
+		listenters.add(listener);
 	}
 
-	public void removeModelViewListener(GSIModelViewListener listenter) {
-		listenters.remove(listenter);
+	public void removeModelViewListener(GSIModelViewListener listener) {
+		listenters.remove(listener);
 	}
 	
 	private void dispatchModelViewChangedEvent() {
