@@ -24,6 +24,7 @@
 
 	"gui.tab.capture-playback.popup.createTitle": "Create Asset",
 	"gui.tab.capture-playback.popup.duplicateTitle": "Duplicate Asset",
+	"gui.tab.capture-playback.popup.importTitle": "Import Asset",
 	"gui.tab.capture-playback.popup.name": "Name:",
 	"gui.tab.capture-playback.popup.type": "Type:",
 	"gui.tab.capture-playback.popup.namespace": "Storage:",

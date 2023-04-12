@@ -11,8 +11,10 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
+import com.g4mesoft.captureplayback.common.asset.GSDecodedAssetFile;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetNamespace;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
@@ -341,7 +343,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 			});
 		});
 		newButton.addActionListener(() -> {
-			GSCreateAssetPanel.show(null, assetManager, null);
+			GSCreateAssetPanel.show(null, assetManager);
 		});
 		editButton.addActionListener(this::editSelection);
 		duplicateButton.addActionListener(() -> {
@@ -360,22 +362,37 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	}
 	
 	private void importAsset(Path path) {
-		Object asset = null;
+		GSDecodedAssetFile assetFile = null;
 		try {
-			asset = GSFileUtil.readFile(path.toFile(), buf -> {
-				return null;
-			});
-		} catch (IOException ignore) {
-			// TODO: show failure popup
+			assetFile = GSFileUtil.readFile(path.toFile(), GSDecodedAssetFile::read);
+		} catch (IOException e) {
+			CapturePlaybackMod.GSCP_LOGGER.warn("Unable to import asset", e);
 		}
-		
-		if (asset != null) {
-			
+		if (assetFile != null) {
+			GSCreateAssetPanel.show(null, assetManager, assetFile);
+		} else {
+			// TODO: show failure popup
 		}
 	}
 
 	private void exportAsset(Path path) {
-		
+		GSAssetInfo info = history.getFromHandle(selectedHandle);
+		if (info != null) {
+			assetManager.requestAsset(info.getAssetUUID(), (assetFile) -> {
+				if (assetFile == null) {
+					// TODO: show failure popup (access denied)
+				} else {
+					try {
+						GSFileUtil.writeFile(path.toFile(), assetFile, GSDecodedAssetFile::write);
+					} catch (IOException e) {
+						CapturePlaybackMod.GSCP_LOGGER.warn("Unable to export asset ({})",
+								assetFile.getAsset().getUUID(), e);
+					}
+				}
+			});
+		} else {
+			// TODO: Show failure popup
+		}
 	}
 	
 	private void editSelection() {

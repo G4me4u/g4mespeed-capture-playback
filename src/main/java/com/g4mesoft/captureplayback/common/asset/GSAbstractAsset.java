@@ -21,6 +21,8 @@ public abstract class GSAbstractAsset {
 		
 		listeners = new ArrayList<>();
 	}
+
+	protected abstract GSAbstractAsset copy();
 	
 	protected abstract void duplicateFrom(GSAbstractAsset other);
 	

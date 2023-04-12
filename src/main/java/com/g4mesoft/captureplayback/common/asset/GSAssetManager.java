@@ -289,6 +289,32 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 			storage.deleteAsset(assetUUID);
 	}
 	
+	public UUID importAsset(GSEAssetNamespace namespace, String name, UUID ownerUUID, GSDecodedAssetFile assetFile) {
+		GSAssetHandle handle = GSAssetHandle.fromNameUnique(namespace, name, this::hasAssetHandle);
+		return importAsset(handle, name, ownerUUID, assetFile);
+	}
+
+	public UUID importAsset(GSAssetHandle handle, String name, UUID ownerUUID, GSDecodedAssetFile assetFile) {
+		if (hasAssetHandle(handle)) {
+			// Fallback for unlikely cases where handle already exists.
+			handle = GSAssetHandle.fromNameUnique(handle.getNamespace(), name, this::hasAssetHandle);
+		}
+		final GSAssetHandle fHandle = handle;
+		GSAssetFileHeader header = assetFile.getHeader();
+		UUID assetUUID = GSUUIDUtil.randomUnique(this::hasAsset);
+		GSAssetStorage storage = getStorage(fHandle.getNamespace());
+		storage.createDuplicateAsset(new GSAssetInfo(
+			header.getType(),
+			assetUUID,
+			fHandle,
+			name,
+			header.getCreatedTimestamp(),
+			header.getCreatedByUUID(),
+			ownerUUID
+		), assetFile.getAsset());
+		return assetUUID;
+	}
+	
 	public GSAssetRef requestAsset(UUID assetUUID) {
 		GSAssetStorage storage = getStorage(assetUUID);
 		return (storage != null) ? storage.requestAsset(assetUUID) : null;

@@ -9,11 +9,14 @@ import com.g4mesoft.GSIExtension;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHistoryPacket;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfoChangedPacket;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfoRemovedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetRequestResponsePacket;
 import com.g4mesoft.captureplayback.common.asset.GSCreateAssetPacket;
 import com.g4mesoft.captureplayback.common.asset.GSDeleteAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSImportAssetPacket;
 import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryAddedPacket;
 import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryRemovedPacket;
 import com.g4mesoft.captureplayback.common.asset.GSPlayerCachePacket;
+import com.g4mesoft.captureplayback.common.asset.GSRequestAssetPacket;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
@@ -117,10 +120,13 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		registry.register(16, GSAssetInfoRemovedPacket.class, GSAssetInfoRemovedPacket::new);
 		registry.register(17, GSCreateAssetPacket.class, GSCreateAssetPacket::new);
 		registry.register(18, GSDeleteAssetPacket.class, GSDeleteAssetPacket::new);
+		registry.register(19, GSImportAssetPacket.class, GSImportAssetPacket::new);
+		registry.register(20, GSRequestAssetPacket.class, GSRequestAssetPacket::new);
+		registry.register(21, GSAssetRequestResponsePacket.class, GSAssetRequestResponsePacket::new);
 		
-		registry.register(19, GSPlayerCachePacket.class, GSPlayerCachePacket::new);
-		registry.register(20, GSPlayerCacheEntryAddedPacket.class, GSPlayerCacheEntryAddedPacket::new);
-		registry.register(21, GSPlayerCacheEntryRemovedPacket.class, GSPlayerCacheEntryRemovedPacket::new);
+		registry.register(22, GSPlayerCachePacket.class, GSPlayerCachePacket::new);
+		registry.register(23, GSPlayerCacheEntryAddedPacket.class, GSPlayerCacheEntryAddedPacket::new);
+		registry.register(24, GSPlayerCacheEntryRemovedPacket.class, GSPlayerCacheEntryRemovedPacket::new);
 	}
 	
 	@Override

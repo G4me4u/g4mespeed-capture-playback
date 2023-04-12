@@ -15,7 +15,6 @@ import com.g4mesoft.core.server.GSIServerModuleManager;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 import com.g4mesoft.util.GSFileUtil;
-import com.g4mesoft.util.GSFileUtil.GSFileEncoder;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -128,22 +127,17 @@ public class GSAssetStorage {
 			return true;
 		GSAssetInfo info = storedHistory.get(assetUUID);
 		if (info != null) {
-			GSAbstractAsset asset;
+			GSDecodedAssetFile assetFile;
 			try {
-				asset = GSFileUtil.readFile(getAssetFile(info), this::readAsset);
-				checkCorrespondingInfo(info, asset);
-			} catch (Throwable ignore) {
+				assetFile = GSFileUtil.readFile(getAssetFile(info), GSDecodedAssetFile::read);
+				addAsset(info, assetFile.getAsset());
+				return true;
+			} catch (Throwable t) {
+				CapturePlaybackMod.GSCP_LOGGER.warn("Unable to load asset ({})", info.getAssetUUID(), t);
 				return false;
 			}
-			addAsset(info, asset);
-			return true;
 		}
 		return false;
-	}
-	
-	private GSAbstractAsset readAsset(GSDecodeBuffer buf) throws Exception {
-		GSAssetHeader header = GSAssetHeader.read(buf);
-		return GSAssetRegistry.getDecoder(header.getType()).decode(buf);
 	}
 	
 	public boolean isLoaded(UUID assetUUID) {
@@ -366,10 +360,10 @@ public class GSAssetStorage {
 			if (asset != null) {
 				long saveTimeMs = System.currentTimeMillis();
 				// Save the asset itself
+				GSAssetFileHeader header = new GSAssetFileHeader(info);
+				GSDecodedAssetFile assetFile = new GSDecodedAssetFile(header, asset);
 				try {
-					GSFileUtil.writeFile(getAssetFile(info), asset, (buf, a) -> {
-						writeAsset(buf, info, a);
-					});
+					GSFileUtil.writeFile(getAssetFile(info), assetFile, GSDecodedAssetFile::write);
 				} catch (IOException ignore) {
 					return false;
 				}
@@ -381,13 +375,6 @@ public class GSAssetStorage {
 		return false;
 	}
 	
-	private <T extends GSAbstractAsset> void writeAsset(GSEncodeBuffer buf, GSAssetInfo info, T asset) throws Exception {
-		GSAssetHeader.write(buf, new GSAssetHeader(info));
-		@SuppressWarnings("unchecked")
-		GSFileEncoder<T> encoder = (GSFileEncoder<T>)GSAssetRegistry.getEncoder(asset.getType());
-		encoder.encode(buf, asset);
-	}
-
 	public boolean saveHistory(UUID assetUUID) {
 		try {
 			GSFileUtil.writeFile(getHistoryFile(), storedHistory, GSAssetHistory::write);

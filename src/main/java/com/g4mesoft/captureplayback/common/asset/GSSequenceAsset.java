@@ -27,6 +27,14 @@ public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListe
 	}
 	
 	@Override
+	protected GSSequenceAsset copy() {
+		GSSequence sequence = new GSSequence(getUUID(), getName());
+		GSSequenceAsset asset = new GSSequenceAsset(sequence);
+		asset.duplicateFrom(this);
+		return asset;
+	}
+	
+	@Override
 	protected void duplicateFrom(GSAbstractAsset other) {
 		if (!(other instanceof GSSequenceAsset))
 			throw new IllegalArgumentException("Expected sequence asset");

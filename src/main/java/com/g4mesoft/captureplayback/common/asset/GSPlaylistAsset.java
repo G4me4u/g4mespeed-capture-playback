@@ -27,6 +27,14 @@ public class GSPlaylistAsset extends GSAbstractAsset implements GSIPlaylistListe
 	}
 	
 	@Override
+	protected GSPlaylistAsset copy() {
+		GSPlaylist playlist = new GSPlaylist(getUUID(), getName());
+		GSPlaylistAsset asset = new GSPlaylistAsset(playlist);
+		asset.duplicateFrom(this);
+		return asset;
+	}
+	
+	@Override
 	protected void duplicateFrom(GSAbstractAsset other) {
 		if (!(other instanceof GSPlaylistAsset))
 			throw new IllegalArgumentException("Expected playlist asset");

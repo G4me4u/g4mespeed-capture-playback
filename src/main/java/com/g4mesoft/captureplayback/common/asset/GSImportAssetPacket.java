@@ -1,7 +1,6 @@
 package com.g4mesoft.captureplayback.common.asset;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.core.client.GSClientController;
@@ -14,65 +13,46 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-public class GSCreateAssetPacket implements GSIPacket {
+public class GSImportAssetPacket implements GSIPacket {
 
 	private String name;
-	private GSEAssetType type;
 	private GSAssetHandle handle;
+	private GSDecodedAssetFile assetFile;
 	
-	private UUID originalAssetUUID;
-	
-	public GSCreateAssetPacket() {
+	public GSImportAssetPacket() {
 	}
 
-	public GSCreateAssetPacket(String name, GSEAssetType type, GSAssetHandle handle, UUID originalAssetUUID) {
+	public GSImportAssetPacket(String name, GSAssetHandle handle, GSDecodedAssetFile assetFile) {
 		if (name == null)
 			throw new IllegalArgumentException("name is null");
-		if (type == null)
-			throw new IllegalArgumentException("type is null");
 		if (handle == null)
 			throw new IllegalArgumentException("handle is null");
+		if (assetFile == null)
+			throw new IllegalArgumentException("assetFile is null");
 		this.name = name;
-		this.type = type;
 		this.handle = handle;
-		// Create duplicate of:
-		this.originalAssetUUID = originalAssetUUID;
+		this.assetFile = assetFile;
 	}
 	
 	@Override
 	public void read(GSDecodeBuffer buf) throws IOException {
 		name = buf.readString();
-		type = GSEAssetType.fromIndex(buf.readUnsignedByte());
-		if (type == null)
-			throw new IOException("Unknown asset type");
 		handle = GSAssetHandle.read(buf);
-		originalAssetUUID = buf.readBoolean() ? buf.readUUID() : null;
+		assetFile = GSDecodedAssetFile.read(buf);
 	}
 
 	@Override
 	public void write(GSEncodeBuffer buf) throws IOException {
 		buf.writeString(name);
-		buf.writeUnsignedByte((short)type.getIndex());
 		GSAssetHandle.write(buf, handle);
-		buf.writeBoolean(originalAssetUUID != null);
-		if (originalAssetUUID != null)
-			buf.writeUUID(originalAssetUUID);
+		GSDecodedAssetFile.write(buf, assetFile);
 	}
-	
+
 	@Override
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
-		if (module != null) {
-			GSAssetManager assetManager = module.getAssetManager();
-			if (originalAssetUUID != null) {
-				GSAssetInfo originalInfo = assetManager.getInfo(originalAssetUUID);
-				if (originalInfo != null && type == originalInfo.getType() && originalInfo.hasPermission(player))
-					assetManager.createDuplicateAsset(handle, name, player.getUuid(), originalAssetUUID);
-			} else {
-				assetManager.createAsset(type, handle, name, player.getUuid());
-			}
-		}
-		// TODO: send feedback for asset creation
+		if (module != null)
+			module.getAssetManager().importAsset(handle, name, player.getUuid(), assetFile);
 	}
 
 	@Override

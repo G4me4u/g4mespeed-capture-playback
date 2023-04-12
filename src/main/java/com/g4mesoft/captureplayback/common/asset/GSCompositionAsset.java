@@ -27,6 +27,14 @@ public class GSCompositionAsset extends GSAbstractAsset implements GSICompositio
 	}
 
 	@Override
+	protected GSCompositionAsset copy() {
+		GSComposition composition = new GSComposition(getUUID(), getName());
+		GSCompositionAsset asset = new GSCompositionAsset(composition);
+		asset.duplicateFrom(this);
+		return asset;
+	}
+	
+	@Override
 	protected void duplicateFrom(GSAbstractAsset other) {
 		if (!(other instanceof GSCompositionAsset))
 			throw new IllegalArgumentException("Expected composition asset");

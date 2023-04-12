@@ -4,16 +4,20 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHistory;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
 import com.g4mesoft.captureplayback.common.asset.GSCreateAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSDecodedAssetFile;
 import com.g4mesoft.captureplayback.common.asset.GSDeleteAssetPacket;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
+import com.g4mesoft.captureplayback.common.asset.GSImportAssetPacket;
 import com.g4mesoft.captureplayback.common.asset.GSPlayerCache;
+import com.g4mesoft.captureplayback.common.asset.GSRequestAssetPacket;
 import com.g4mesoft.captureplayback.common.asset.GSUnmodifiableAssetHistory;
 import com.g4mesoft.captureplayback.gui.GSCompositionEditPanel;
 import com.g4mesoft.captureplayback.gui.GSSequenceEditPanel;
@@ -41,6 +45,8 @@ public class GSClientAssetManager implements GSISessionListener {
 	private final GSIAssetHistory history;
 	private final GSIAssetHistory unmodifiableHistory;
 	
+	private final Map<UUID, Consumer<GSDecodedAssetFile>> requestCallbacks;
+	
 	private final GSPlayerCache playerCache;
 	
 	/* Visible for GSCapturePlaybackClientModule */
@@ -53,6 +59,8 @@ public class GSClientAssetManager implements GSISessionListener {
 		
 		history = new GSAssetHistory();
 		unmodifiableHistory = new GSUnmodifiableAssetHistory(history);
+		
+		requestCallbacks = new HashMap<>();
 	
 		playerCache = new GSPlayerCache();
 	}
@@ -78,7 +86,7 @@ public class GSClientAssetManager implements GSISessionListener {
 	public GSSession getSession(GSESessionType sessionType) {
 		return sessionByType.get(sessionType);
 	}
-	
+
 	public void createAsset(String name, GSEAssetType type, GSAssetHandle handle, UUID originalAssetUUID) {
 		if (originalAssetUUID == null || hasPermission(originalAssetUUID))
 			manager.sendPacket(new GSCreateAssetPacket(name, type, handle, originalAssetUUID));
@@ -87,6 +95,22 @@ public class GSClientAssetManager implements GSISessionListener {
 	public void deleteAsset(UUID assetUUID) {
 		if (hasPermission(assetUUID))
 			manager.sendPacket(new GSDeleteAssetPacket(assetUUID));
+	}
+	
+	public void importAsset(String name, GSAssetHandle handle, GSDecodedAssetFile assetFile) {
+		manager.sendPacket(new GSImportAssetPacket(name, handle, assetFile));
+	}
+	
+	public void requestAsset(UUID assetUUID, Consumer<GSDecodedAssetFile> callback) {
+		if (callback == null)
+			throw new IllegalArgumentException("callback is null");
+		if (hasPermission(assetUUID)) {
+			requestCallbacks.put(assetUUID, callback);
+			manager.sendPacket(new GSRequestAssetPacket(assetUUID));
+		} else {
+			// Indicate access denied.
+			callback.accept(null);
+		}
 	}
 	
 	public boolean hasPermission(UUID assetUUID) {
@@ -168,6 +192,19 @@ public class GSClientAssetManager implements GSISessionListener {
 		history.remove(assetUUID);
 	}
 
+	public void onAssetRequestDenied(UUID assetUUID) {
+		Consumer<GSDecodedAssetFile> callback = requestCallbacks.remove(assetUUID);
+		if (callback != null)
+			callback.accept(null);
+	}
+	
+	public void onAssetRequestSuccess(GSDecodedAssetFile assetFile) {
+		UUID assetUUID = assetFile.getAsset().getUUID();
+		Consumer<GSDecodedAssetFile> callback = requestCallbacks.remove(assetUUID);
+		if (callback != null)
+			callback.accept(assetFile);
+	}
+	
 	public GSIAssetHistory getAssetHistory() {
 		return unmodifiableHistory;
 	}

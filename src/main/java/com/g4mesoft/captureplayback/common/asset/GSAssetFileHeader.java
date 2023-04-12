@@ -6,17 +6,17 @@ import java.util.UUID;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-public class GSAssetHeader {
+public class GSAssetFileHeader {
 
 	private final GSEAssetType type;
 	private final long createdTimestamp;
 	private final UUID createdByUUID;
 
-	public GSAssetHeader(GSAssetInfo info) {
+	public GSAssetFileHeader(GSAssetInfo info) {
 		this(info.getType(), info.getCreatedTimestamp(), info.getCreatedByUUID());
 	}
 
-	public GSAssetHeader(GSEAssetType type, long createdTimestamp, UUID createdByUUID) {
+	public GSAssetFileHeader(GSEAssetType type, long createdTimestamp, UUID createdByUUID) {
 		if (type == null)
 			throw new IllegalArgumentException("type is null");
 		if (createdByUUID == null)
@@ -26,7 +26,7 @@ public class GSAssetHeader {
 		this.createdByUUID = createdByUUID;
 	}
 
-	public GSAssetHeader(GSAssetHeader other) {
+	public GSAssetFileHeader(GSAssetFileHeader other) {
 		type = other.type;
 		createdTimestamp = other.createdTimestamp;
 		createdByUUID = other.createdByUUID;
@@ -57,8 +57,8 @@ public class GSAssetHeader {
 	public boolean equals(Object obj) {
 		if (obj == this)
 			return true;
-		if (obj instanceof GSAssetHeader) {
-			GSAssetHeader other = (GSAssetHeader)obj;
+		if (obj instanceof GSAssetFileHeader) {
+			GSAssetFileHeader other = (GSAssetFileHeader)obj;
 			if (type != other.type)
 				return false;
 			if (createdTimestamp != other.createdTimestamp)
@@ -70,16 +70,16 @@ public class GSAssetHeader {
 		return false;
 	}
 	
-	public static GSAssetHeader read(GSDecodeBuffer buf) throws IOException {
+	public static GSAssetFileHeader read(GSDecodeBuffer buf) throws IOException {
 		GSEAssetType type = GSEAssetType.fromIndex(buf.readUnsignedByte());
 		if (type == null)
 			throw new IOException("Unknown asset type");
 		long createdTimestamp = buf.readLong();
 		UUID createdByUUID = buf.readUUID();
-		return new GSAssetHeader(type, createdTimestamp, createdByUUID);
+		return new GSAssetFileHeader(type, createdTimestamp, createdByUUID);
 	}
 	
-	public static void write(GSEncodeBuffer buf, GSAssetHeader header) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSAssetFileHeader header) throws IOException {
 		buf.writeUnsignedByte((short)header.getType().getIndex());
 		buf.writeLong(header.getCreatedTimestamp());
 		buf.writeUUID(header.getCreatedByUUID());

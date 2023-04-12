@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
+import com.g4mesoft.captureplayback.common.asset.GSDecodedAssetFile;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetNamespace;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
@@ -34,6 +35,7 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	
 	private static final Text CREATE_TITLE    = translatable("popup.createTitle");
 	private static final Text DUPLICATE_TITLE = translatable("popup.duplicateTitle");
+	private static final Text IMPORT_TITLE    = translatable("popup.importTitle");
 	
 	private static final Text NAME_TEXT       = translatable("popup.name");
 	private static final Text TYPE_TEXT       = translatable("popup.type");
@@ -52,8 +54,10 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	private static final String NAME_COPY_KEY = "gui.tab.capture-playback.nameCopy";
 	
 	private final GSClientAssetManager assetManager;
-	private final GSAssetInfo originalInfo;
 	private final GSIAssetHistory history;
+	// Initialized in their respective constructor
+	private GSAssetInfo originalInfo;
+	private GSDecodedAssetFile assetFile;
 	
 	private final GSTextLabel titleLabel;
 	private final GSTextField nameField;
@@ -62,13 +66,12 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	private final GSTextField handleField;
 	private final GSButton createButton;
 	private final GSButton cancelButton;
-	
-	private GSCreateAssetPanel(GSClientAssetManager assetManager, GSAssetInfo originalInfo) {
+
+	private GSCreateAssetPanel(GSClientAssetManager assetManager) {
 		this.assetManager = assetManager;
-		this.originalInfo = originalInfo;
 		this.history = assetManager.getAssetHistory();
 		
-		titleLabel = new GSTextLabel((originalInfo != null) ? DUPLICATE_TITLE : CREATE_TITLE);
+		titleLabel = new GSTextLabel(CREATE_TEXT);
 		nameField = new GSTextField();
 		typeField = new GSDropdownList<>(GSAssetHistoryPanel.TYPE_TEXTS);
 		typeField.setEmptySelectionAllowed(false);
@@ -82,14 +85,38 @@ public class GSCreateAssetPanel extends GSParentPanel {
 		
 		initLayout();
 		initEventListeners();
-
+	}
+	
+	private GSCreateAssetPanel(GSClientAssetManager assetManager, GSAssetInfo originalInfo) {
+		this(assetManager);
+		
+		this.originalInfo = originalInfo;
+		
+		titleLabel.setText((originalInfo != null) ? DUPLICATE_TITLE : CREATE_TITLE);
+		
 		if (originalInfo != null) {
-			setFromInfo(originalInfo);
+			nameField.setText(copyOfName(originalInfo.getAssetName()));
+			typeField.setSelectedIndex(originalInfo.getType().getIndex());
+			namespaceField.setSelectedIndex(originalInfo.getHandle().getNamespace().getIndex());
 			// Type should be the same as original asset
 			typeField.setEnabled(false);
 		} else {
 			updateHandle();
 		}
+	}
+	
+	private GSCreateAssetPanel(GSClientAssetManager assetManager, GSDecodedAssetFile assetFile) {
+		this(assetManager);
+		
+		if (assetFile == null)
+			throw new IllegalArgumentException("assetFile is null");
+		this.assetFile = assetFile;
+		
+		titleLabel.setText(IMPORT_TITLE);
+		nameField.setText(assetFile.getAsset().getName());
+		typeField.setSelectedIndex(assetFile.getHeader().getType().getIndex());
+		// Type should be the same as imported asset
+		typeField.setEnabled(false);
 	}
 	
 	private void initLayout() {
@@ -240,12 +267,6 @@ public class GSCreateAssetPanel extends GSParentPanel {
 		handleField.setText(handle.toString());
 	}
 	
-	private void setFromInfo(GSAssetInfo info) {
-		nameField.setText(copyOfName(info.getAssetName()));
-		typeField.setSelectedIndex(info.getType().getIndex());
-		namespaceField.setSelectedIndex(info.getHandle().getNamespace().getIndex());
-	}
-	
 	private String copyOfName(String name) {
 		return GSPanelContext.i18nTranslateFormatted(NAME_COPY_KEY, name);
 	}
@@ -275,9 +296,14 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	}
 	
 	private void createAndHide() {
-		UUID originalAssetUUID = (originalInfo != null) ?
-				originalInfo.getAssetUUID() : null;
-		assetManager.createAsset(getName(), getType(), getHandle(), originalAssetUUID);
+		if (assetFile != null) {
+			assetManager.importAsset(getName(), getHandle(), assetFile);
+		} else {
+			UUID originalAssetUUID = (originalInfo != null) ?
+					originalInfo.getAssetUUID() : null;
+			assetManager.createAsset(getName(), getType(),
+					getHandle(), originalAssetUUID);
+		}
 		hide();
 	}
 	
@@ -289,6 +315,18 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	}
 	
 	/**
+	 * Shows the <i>create asset</i> popup used to create an empty asset.
+	 * 
+	 * @param source - the popup source
+	 * @param assetManager - the asset manager
+	 * 
+	 * @return the popup on which the create asset panel was shown.
+	 */
+	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager) {
+		return show(source, new GSCreateAssetPanel(assetManager, (GSAssetInfo)null));
+	}
+	
+	/**
 	 * Shows the <i>create asset</i> popup used to either create an empty asset
 	 * if the given {@code originalInfo} is null, or a copy based on the asset
 	 * with the given asset info.
@@ -296,12 +334,29 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	 * @param source - the popup source
 	 * @param assetManager - the asset manager
 	 * @param originalInfo - the info of the asset which the new asset should
-	 *                       be based on.
+	 *                       be based on, or null if creating an empty asset.
 	 * 
 	 * @return the popup on which the create asset panel was shown.
 	 */
 	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager, GSAssetInfo originalInfo) {
-		GSPopup popup = new GSPopup(new GSCreateAssetPanel(assetManager, originalInfo), true);
+		return show(source, new GSCreateAssetPanel(assetManager, originalInfo));
+	}
+
+	/**
+	 * Shows the <i>import asset</i> popup used to import the given decoded asset.
+	 * 
+	 * @param source - the popup source
+	 * @param assetManager - the asset manager
+	 * @param assetFile - the decoded asset to be imported
+	 * 
+	 * @return the popup on which the create asset panel was shown.
+	 */
+	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager, GSDecodedAssetFile assetFile) {
+		return show(source, new GSCreateAssetPanel(assetManager, assetFile));
+	}
+	
+	private static GSPopup show(GSPanel source, GSCreateAssetPanel panel) {
+		GSPopup popup = new GSPopup(panel, true);
 		popup.setHiddenOnFocusLost(false);
 		popup.setSourceFocusedOnHide(source != null);
 		popup.show(source, 0, 0, GSEPopupPlacement.CENTER);
