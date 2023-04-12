@@ -1,16 +1,16 @@
-package com.g4mesoft.captureplayback.common;
+package com.g4mesoft.captureplayback.stream;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import com.g4mesoft.captureplayback.common.GSAbstractStream;
+import com.g4mesoft.captureplayback.common.GSESignalEdge;
+import com.g4mesoft.captureplayback.common.GSETickPhase;
+import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
-import com.g4mesoft.captureplayback.stream.GSBlockRegion;
-import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
-import com.g4mesoft.captureplayback.stream.GSPlaybackEntry;
-import com.g4mesoft.captureplayback.stream.GSSignalEvent;
 import com.g4mesoft.captureplayback.stream.frame.GSBasicSignalFrame;
 import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
@@ -22,8 +22,9 @@ public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPl
 	private final PriorityQueue<GSPlaybackEntry> entries;
 
 	private long playbackTime;
-	private boolean closing;
-
+	
+	private boolean wasCloseCalled;
+	
 	public GSPlaybackStream(GSBlockRegion blockRegion) {
 		this.blockRegion = blockRegion;
 		entries = new PriorityQueue<>();
@@ -62,7 +63,7 @@ public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPl
 		GSISignalFrame frame = GSISignalFrame.EMPTY;
 
 		if (!isClosed()) {
-			if (closing) {
+			if (wasCloseCalled) {
 				List<GSSignalEvent> frameEvents = new ArrayList<>();
 				
 				// Add all entries as immediate shadow events to
@@ -71,7 +72,6 @@ public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPl
 				while ((entry = entries.poll()) != null)
 					frameEvents.add(toCleanupEvent(entry.getEvent()));
 				frame = new GSBasicSignalFrame(frameEvents);
-				dispatchCloseEvent();
 			} else if (isEntryInFrame(entries.peek())) {
 				List<GSSignalEvent> frameEvents = new ArrayList<>();
 	
@@ -84,6 +84,9 @@ public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPl
 		}
 
 		playbackTime++;
+
+		if (isClosed())
+			dispatchCloseEvent();
 
 		return frame;
 	}
@@ -99,11 +102,16 @@ public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPl
 
 	@Override
 	public void close() {
-		closing = true;
+		wasCloseCalled = true;
 	}
-
+	
 	@Override
 	public boolean isClosed() {
 		return entries.isEmpty();
+	}
+	
+	@Override
+	public boolean isForceClosed() {
+		return isClosed() && wasCloseCalled;
 	}
 }

@@ -51,11 +51,11 @@ public class GSAssetRef {
 		if (amount <= 0)
 			throw new IllegalArgumentException("amount must be positive!");
 		if (cnt < amount)
-			throw new IllegalStateException("released too many times");
+			throw new IllegalStateException("Released too many times");
 		cnt -= amount;
 		// Unload the asset from the storage
 		if (cnt == 0) {
-			storage.unloadAsset(asset.getUUID());
+			storage.onRefInvalidated(asset.getUUID());
 			invalidate();
 		}
 	}

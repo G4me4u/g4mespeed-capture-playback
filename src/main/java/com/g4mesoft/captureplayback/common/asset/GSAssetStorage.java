@@ -291,6 +291,17 @@ public class GSAssetStorage {
 		}
 	}
 	
+	/* Visible for GSAssetRef */
+	void onRefInvalidated(UUID assetUUID) {
+		if (hasStoredAsset(assetUUID)) {
+			save(assetUUID);
+			removeAsset(assetUUID);
+		} else {
+			// Asset itself is still retained by its parent.
+			activeRefs.remove(assetUUID);
+		}
+	}
+	
 	public void unloadAsset(UUID assetUUID) {
 		if (hasStoredAsset(assetUUID) && loadedAssets.containsKey(assetUUID)) {
 			save(assetUUID);
