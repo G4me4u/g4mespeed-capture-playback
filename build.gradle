@@ -31,7 +31,7 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
 	modImplementation "com.g4mesoft:g4mespeed:${project.g4mespeed_core_version}-mc${project.minecraft_version}"
-	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}-SNAPSHOT"
+	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}"
 }
 
 configurations.all {
