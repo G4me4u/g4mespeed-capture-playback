@@ -2,9 +2,9 @@ package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
 
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 import com.g4mesoft.util.GSFileUtil;
-
-import net.minecraft.network.PacketByteBuf;
 
 public class GSBasicSessionFieldCodec<T> implements GSISessionFieldCodec<T> {
 
@@ -17,7 +17,7 @@ public class GSBasicSessionFieldCodec<T> implements GSISessionFieldCodec<T> {
 	}
 	
 	@Override
-	public T decode(PacketByteBuf buf) throws IOException {
+	public T decode(GSDecodeBuffer buf) throws IOException {
 		if (buf.readBoolean()) {
 			try {
 				return decoder.decode(buf);
@@ -30,7 +30,7 @@ public class GSBasicSessionFieldCodec<T> implements GSISessionFieldCodec<T> {
 	}
 	
 	@Override
-	public void encode(PacketByteBuf buf, T value) throws IOException {
+	public void encode(GSEncodeBuffer buf, T value) throws IOException {
 		buf.writeBoolean(value != null);
 		
 		if (value != null) {

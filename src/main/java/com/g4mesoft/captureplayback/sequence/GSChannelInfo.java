@@ -6,9 +6,9 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import com.g4mesoft.util.GSBufferUtil;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.math.BlockPos;
 
 public final class GSChannelInfo {
@@ -30,10 +30,13 @@ public final class GSChannelInfo {
 	public GSChannelInfo(String name, int color, Set<BlockPos> positions, boolean immutable) {
 		if (positions.isEmpty() || positions.size() > MAX_POSITION_COUNT)
 			throw new IllegalArgumentException("Insufficient or too many positions");
+		if (name == null)
+			throw new IllegalArgumentException("name is null");
 		
 		this.name = name;
 		this.color = color | 0xFF000000;
 		if (immutable) {
+			//assert(positions != null)
 			this.positions = positions;
 		} else {
 			this.positions = new LinkedHashSet<>();
@@ -98,8 +101,8 @@ public final class GSChannelInfo {
 		return false;
 	}
 	
-	public static GSChannelInfo read(PacketByteBuf buf) throws IOException {
-		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+	public static GSChannelInfo read(GSDecodeBuffer buf) throws IOException {
+		String name = buf.readString();
 		int color = buf.readUnsignedMedium();
 
 		int positionCount = buf.readUnsignedShort();
@@ -112,10 +115,10 @@ public final class GSChannelInfo {
 		return new GSChannelInfo(name, color, positions, true);
 	}
 
-	public static void write(PacketByteBuf buf, GSChannelInfo info) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSChannelInfo info) throws IOException {
 		buf.writeString(info.name);
 		buf.writeMedium(info.color);
-		buf.writeShort(info.positions.size());
+		buf.writeUnsignedShort(info.positions.size());
 		for (BlockPos position : info.positions)
 			buf.writeBlockPos(position);
 	}

@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.gui;
 
-import com.g4mesoft.panel.scroll.GSAbstractScrollBarModel;
+import com.g4mesoft.ui.panel.scroll.GSAbstractScrollBarModel;
+import com.g4mesoft.ui.util.GSMathUtil;
 
 public class GSUnlimitedScrollBarModel extends GSAbstractScrollBarModel {
 
@@ -36,15 +37,22 @@ public class GSUnlimitedScrollBarModel extends GSAbstractScrollBarModel {
 	}
 
 	@Override
-	public void setScroll(float scroll) {
-		if (Float.isNaN(scroll) || scroll < minScroll) {
-			this.scroll = minScroll;
+	public boolean setScroll(float scroll) {
+		// Ensure new scroll value is within expected bounds. Here,
+		// we also ensure that values are always valid, i.e. not NaN.
+		if (Float.isNaN(scroll)) {
+			scroll = minScroll;
 		} else {
-			this.scroll = scroll;
+			scroll = Math.max(scroll, minScroll);
 		}
-		
-		dispatchScrollChanged(this.scroll);
-		dispatchValueChanged();
+
+		if (!GSMathUtil.equalsApproximate(scroll, this.scroll)) {
+			this.scroll = scroll;
+			dispatchScrollChanged(this.scroll);
+			dispatchValueChanged();
+			return true;
+		}
+		return false;
 	}
 
 	@Override

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public final class GSChannelEntry {
 
@@ -155,8 +155,8 @@ public final class GSChannelEntry {
 		}
 	}
 	
-	public static GSChannelEntry read(PacketByteBuf buf) throws IOException {
-		UUID entryUUID = buf.readUuid();
+	public static GSChannelEntry read(GSDecodeBuffer buf) throws IOException {
+		UUID entryUUID = buf.readUUID();
 
 		GSSignalTime startTime = GSSignalTime.read(buf);
 		GSSignalTime endTime = GSSignalTime.read(buf);
@@ -173,8 +173,8 @@ public final class GSChannelEntry {
 		return entry;
 	}
 
-	public static void write(PacketByteBuf buf, GSChannelEntry entry) throws IOException {
-		buf.writeUuid(entry.getEntryUUID());
+	public static void write(GSEncodeBuffer buf, GSChannelEntry entry) throws IOException {
+		buf.writeUUID(entry.getEntryUUID());
 		
 		GSSignalTime.write(buf, entry.getStartTime());
 		GSSignalTime.write(buf, entry.getEndTime());

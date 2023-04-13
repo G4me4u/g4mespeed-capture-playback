@@ -1,7 +1,7 @@
 package com.g4mesoft.captureplayback.panel.sequence;
 
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSParentPanel;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
 public class GSSequenceButtonPanel extends GSParentPanel {
 
@@ -13,7 +13,7 @@ public class GSSequenceButtonPanel extends GSParentPanel {
 	@Override
 	public void render(GSIRenderer2D renderer) {
 		renderer.fillRect(0, 1, width, height, BACKGROUND_COLOR);
-		renderer.drawHLine(0, width, 0, 0xFF000000);
+		renderer.drawHLine(0, width, 0, 0xFF060606);
 		
 		super.render(renderer);
 	}

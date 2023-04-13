@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSIDelta;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSTrackUndoRedoHistoryDelta implements GSIDelta<GSUndoRedoHistory> {
 
@@ -29,12 +29,12 @@ public class GSTrackUndoRedoHistoryDelta implements GSIDelta<GSUndoRedoHistory> 
 	}
 
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		entry = GSUndoRedoHistory.readEntry(buf);
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		GSUndoRedoHistory.writeEntry(buf, entry);
 	}
 }
