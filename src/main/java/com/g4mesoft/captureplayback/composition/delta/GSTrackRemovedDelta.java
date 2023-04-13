@@ -9,9 +9,8 @@ import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.util.GSBufferUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSTrackRemovedDelta extends GSTrackDelta {
 
@@ -64,12 +63,12 @@ public class GSTrackRemovedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		super.read(buf);
 		
-		name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		name = buf.readString();
 		color = buf.readInt();
-		groupUUID = buf.readUuid();
+		groupUUID = buf.readUUID();
 		
 		sequence = GSSequence.read(buf);
 		
@@ -79,12 +78,12 @@ public class GSTrackRemovedDelta extends GSTrackDelta {
 	}
 	
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		super.write(buf);
 
 		buf.writeString(name);
 		buf.writeInt(color);
-		buf.writeUuid(groupUUID);
+		buf.writeUUID(groupUUID);
 		
 		GSSequence.write(buf, sequence);
 		

@@ -2,7 +2,8 @@ package com.g4mesoft.captureplayback.common;
 
 import java.io.IOException;
 
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public final class GSSignalTime {
 
@@ -61,7 +62,7 @@ public final class GSSignalTime {
 		return isEqual((GSSignalTime)other);
 	}
 	
-	public static GSSignalTime read(PacketByteBuf buf) throws IOException {
+	public static GSSignalTime read(GSDecodeBuffer buf) throws IOException {
 		long gametick = buf.readLong();
 		int microtick = buf.readInt();
 		
@@ -71,7 +72,7 @@ public final class GSSignalTime {
 		return new GSSignalTime(gametick, microtick);
 	}
 
-	public static void write(PacketByteBuf buf, GSSignalTime time) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSSignalTime time) throws IOException {
 		buf.writeLong(time.gametick);
 		buf.writeInt(time.microtick);
 	}

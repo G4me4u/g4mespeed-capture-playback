@@ -7,8 +7,8 @@ import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.composition.GSTrack;
 import com.g4mesoft.captureplayback.composition.GSTrackEntry;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public abstract class GSTrackEntryDelta extends GSTrackDelta {
 
@@ -50,20 +50,26 @@ public abstract class GSTrackEntryDelta extends GSTrackDelta {
 		GSTrack track = getTrack(composition);
 		if (track.hasEntryUUID(entryUUID))
 			throw new GSDeltaException("Entry already exists");
-		return track.addEntry(entryUUID, offset);
+	
+		try {
+			return track.addEntry(entryUUID, offset);
+		} catch (Throwable t) {
+			track.removeEntry(entryUUID);
+			throw new GSDeltaException("Failed to add entry", t);
+		}
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		super.read(buf);
 		
-		entryUUID = buf.readUuid();
+		entryUUID = buf.readUUID();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		super.write(buf);
 		
-		buf.writeUuid(entryUUID);
+		buf.writeUUID(entryUUID);
 	}
 }

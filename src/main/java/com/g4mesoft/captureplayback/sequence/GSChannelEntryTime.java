@@ -3,8 +3,8 @@ package com.g4mesoft.captureplayback.sequence;
 import java.io.IOException;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSChannelEntryTime {
 
@@ -47,7 +47,7 @@ public class GSChannelEntryTime {
 		return true;
 	}
 	
-	public static GSChannelEntryTime read(PacketByteBuf buf) throws IOException {
+	public static GSChannelEntryTime read(GSDecodeBuffer buf) throws IOException {
 		GSSignalTime time = GSSignalTime.read(buf);
 		int subordering = buf.readInt();
 		
@@ -57,7 +57,7 @@ public class GSChannelEntryTime {
 		return new GSChannelEntryTime(time, subordering);
 	}
 
-	public static void write(PacketByteBuf buf, GSChannelEntryTime entryTime) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSChannelEntryTime entryTime) throws IOException {
 		GSSignalTime.write(buf, entryTime.time);
 		buf.writeInt(entryTime.subordering);
 	}

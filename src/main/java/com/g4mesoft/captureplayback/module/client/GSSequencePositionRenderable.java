@@ -1,8 +1,9 @@
 package com.g4mesoft.captureplayback.module.client;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import com.g4mesoft.captureplayback.sequence.GSChannel;
@@ -10,10 +11,10 @@ import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
-import com.g4mesoft.renderer.GSERenderPhase;
-import com.g4mesoft.renderer.GSIRenderable3D;
-import com.g4mesoft.renderer.GSIRenderer3D;
-import com.g4mesoft.util.GSColorUtil;
+import com.g4mesoft.ui.renderer.GSERenderPhase;
+import com.g4mesoft.ui.renderer.GSIRenderable3D;
+import com.g4mesoft.ui.renderer.GSIRenderer3D;
+import com.g4mesoft.ui.util.GSColorUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.MinecraftClient;
@@ -33,18 +34,20 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	private static final float[] SELECTION_VERTICES = computeSelectionVertices(SELECTION_THICKNESS, SELECTION_NOTCH);
 	
 	private final GSCapturePlaybackClientModule module;
+	private final GSClientAssetManager assetManager;
 	
 	public GSSequencePositionRenderable(GSCapturePlaybackClientModule module) {
 		this.module = module;
+		this.assetManager = module.getAssetManager();
 	}
 	
 	@Override
 	public void render(GSIRenderer3D renderer) {
-		GSSession session = module.getSession(GSESessionType.SEQUENCE);
+		GSSession session = assetManager.getSession(GSESessionType.SEQUENCE);
 		if (session != null) {
 			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			
-			switch(module.cChannelRenderingType.getValue()) {
+			switch(module.cChannelRenderingType.get()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
 				renderCubes(renderer, session, sequence);
 				break;
@@ -68,7 +71,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		
 		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
 		
-		Set<GSCubeEntry> cubes = new TreeSet<>();
+		List<GSCubeEntry> cubes = new ArrayList<>();
 		for (GSChannel channel : sequence.getChannels()) {
 			GSChannelInfo info = channel.getInfo();
 			boolean selected = Objects.equals(selectedChannelUUID, channel.getChannelUUID());
@@ -81,9 +84,14 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 				
 				float dist = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
 				if (dist <= viewDistance)
-					cubes.add(new GSCubeEntry(position, info.getColor(), dist, cubes.size(), selected));
+					cubes.add(new GSCubeEntry(position, info.getColor(), dist, selected));
 			}
 		}
+		// Efficiently uses Arrays.sort on backing array
+		Collections.sort(cubes, (c0, c1) -> {
+			// Sort back to front (decreasing distance).
+			return Float.compare(c1.dist, c0.dist);
+		});
 		
 		renderer.build(GSIRenderer3D.QUADS, VertexFormats.POSITION_COLOR);
 
@@ -238,29 +246,20 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		return vertices;
 	}
 	
-	private class GSCubeEntry implements Comparable<GSCubeEntry> {
+	private class GSCubeEntry {
 		
 		private final BlockPos position;
 		private final int color;
 		private final float dist;
-		private final int order;
 		
 		private boolean selected;
 		
-		public GSCubeEntry(BlockPos position, int color, float distSqr, int order, boolean selected) {
+		public GSCubeEntry(BlockPos position, int color, float distSqr, boolean selected) {
 			this.position = position;
 			this.color = color;
 			this.dist = distSqr;
-			this.order = order;
 			
 			this.selected = selected;
-		}
-		
-		@Override
-		public int compareTo(GSCubeEntry other) {
-			// Sort back to front (decreasing distance).
-			int cmp = Float.compare(other.dist, dist);
-			return (cmp != 0) ? cmp : Integer.compare(order, other.order);
 		}
 	}
 }

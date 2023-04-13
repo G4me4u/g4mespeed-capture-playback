@@ -5,9 +5,8 @@ import com.g4mesoft.captureplayback.panel.composition.GSIChannelProvider;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.core.client.GSClientController;
-import com.g4mesoft.module.translation.GSTranslationModule;
-import com.g4mesoft.util.GSColorUtil;
+import com.g4mesoft.ui.panel.GSPanelContext;
+import com.g4mesoft.ui.util.GSColorUtil;
 
 import net.minecraft.util.math.BlockPos;
 
@@ -16,7 +15,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	private static final String DEFAULT_CHANNEL_NAME = "panel.sequence.defaultname";
 	private static final int MAX_COLOR_TRIES = 10;
 	
-	private static String defaultChannelName;
+	private static String defaultChannelName = null;
 	
 	@Override
 	public GSChannelInfo createChannelInfo(GSSequence sequence) {
@@ -29,9 +28,8 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	}
 
 	private static String getDefaultChannelName() {
-		GSTranslationModule translationModule = GSClientController.getInstance().getTranslationModule();
-		if (defaultChannelName == null && translationModule.hasTranslation(DEFAULT_CHANNEL_NAME))
-			defaultChannelName = translationModule.getTranslation(DEFAULT_CHANNEL_NAME);
+		if (defaultChannelName == null)
+			defaultChannelName = GSPanelContext.i18nTranslate(DEFAULT_CHANNEL_NAME);
 		return defaultChannelName;
 	}
 
@@ -41,13 +39,9 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 
 	private static int getUniqueColor(GSSequence sequence, int maxTries) {
 		int color;
-
 		do {
 			color = (int)(Math.random() * 0xFFFFFF);
-			if (isColorUnique(sequence, color))
-				break;
-		} while (maxTries-- <= 0);
-
+		} while (!isColorUnique(sequence, color) && maxTries-- <= 0);
 		return color;
 	}
 
@@ -56,7 +50,6 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 			if (GSColorUtil.isRGBSimilar(channel.getInfo().getColor(), color))
 				return false;
 		}
-
 		return true;
 	}
 }

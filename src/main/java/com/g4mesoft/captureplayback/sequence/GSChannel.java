@@ -11,8 +11,8 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSChannel {
 
@@ -66,6 +66,23 @@ public class GSChannel {
 			throw new IllegalStateException("Channel does not have specified parent");
 		
 		this.parent = null;
+	}
+	
+	void duplicateFrom(GSChannel other) {
+		clear();
+
+		setInfo(other.getInfo());
+		setDisabled(other.isDisabled());
+		
+		for (GSChannelEntry entry : other.getEntries()) {
+			UUID entryUUID = GSUUIDUtil.randomUnique(this::hasEntryUUID);
+			GSChannelEntry entryCopy = new GSChannelEntry(entryUUID,
+					entry.getStartTime(), entry.getEndTime());
+		
+			addEntryInternal(entryCopy);
+			dispatchEntryAdded(entryCopy);
+			entryCopy.set(entry);
+		}
 	}
 	
 	void set(GSChannel other) {
@@ -231,8 +248,8 @@ public class GSChannel {
 		}
 	}
 	
-	public static GSChannel read(PacketByteBuf buf) throws IOException {
-		UUID channelUUID = buf.readUuid();
+	public static GSChannel read(GSDecodeBuffer buf) throws IOException {
+		UUID channelUUID = buf.readUUID();
 		GSChannelInfo info = GSChannelInfo.read(buf);
 		GSChannel channel = new GSChannel(channelUUID, info);
 
@@ -251,8 +268,8 @@ public class GSChannel {
 		return channel;
 	}
 
-	public static void write(PacketByteBuf buf, GSChannel channel) throws IOException {
-		buf.writeUuid(channel.getChannelUUID());
+	public static void write(GSEncodeBuffer buf, GSChannel channel) throws IOException {
+		buf.writeUUID(channel.getChannelUUID());
 		GSChannelInfo.write(buf, channel.getInfo());
 		
 		buf.writeBoolean(channel.isDisabled());

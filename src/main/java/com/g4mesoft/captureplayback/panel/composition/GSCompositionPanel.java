@@ -11,23 +11,21 @@ import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
-import com.g4mesoft.captureplayback.session.GSESessionType;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSPanelUtil;
-import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.event.GSEvent;
-import com.g4mesoft.panel.event.GSFocusEvent;
-import com.g4mesoft.panel.event.GSIFocusEventListener;
-import com.g4mesoft.panel.event.GSIKeyListener;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer;
-import com.g4mesoft.renderer.GSIRenderer2D;
-import com.g4mesoft.util.GSColorUtil;
-import com.g4mesoft.util.GSMathUtil;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSPanelUtil;
+import com.g4mesoft.ui.panel.GSRectangle;
+import com.g4mesoft.ui.panel.event.GSEvent;
+import com.g4mesoft.ui.panel.event.GSFocusEvent;
+import com.g4mesoft.ui.panel.event.GSIFocusEventListener;
+import com.g4mesoft.ui.panel.event.GSIKeyListener;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSKeyEvent;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.scroll.GSIScrollable;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.util.GSColorUtil;
+import com.g4mesoft.ui.util.GSMathUtil;
 
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.VertexFormats;
@@ -59,6 +57,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 //	private static final int SELECTION_BORDER_COLOR = 0x80AAAAAA;
 	private static final int SELECTION_BACKGROUND_COLOR = 0x40EEEEEE;
 	private static final int SELECTION_BORDER_COLOR = 0x40FFFFFF;
+	
+	private static final int SELECTED_ENTRY_COLOR = 0xFF1190E6;
 
 	private static final long SLOW_INCREMENTAL_DELTA = 1L;
 	private static final long FAST_INCREMENTAL_DELTA = 5L;
@@ -187,14 +187,14 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	private void renderEntry(GSIRenderer2D renderer, GSTrackEntry entry, int color, GSRectangle bounds) {
 		if (selectionModel.isSelected(entry))
-			color = 0xFF00FF00;
+			color = SELECTED_ENTRY_COLOR;
 
 		GSTrack track = entry.getParent();
 		GSRectangle entryBounds = modelView.modelToView(entry);
 		
 		if (track != null && entryBounds != null && entryBounds.intersects(bounds)) {
-			int titleColor = GSIRenderer.brightenColor(color);
-			int titleBgColor = GSColorUtil.withAlpha(GSIRenderer.darkenColor(color), ENTRY_TITLE_BG_ALPHA);
+			int titleColor = GSColorUtil.brighter(color);
+			int titleBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(color), ENTRY_TITLE_BG_ALPHA);
 
 			String title = renderer.trimString(track.getSequence().getName(), entryBounds.width - 4);
 			int tx = entryBounds.x + ENTRY_TITLE_LEFT_MARGIN;
@@ -211,8 +211,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	}
 	
 	private void renderSequencePreview(GSIRenderer2D renderer, GSTrackEntry entry, GSRectangle bounds, int color) {
-		int darkColor = GSIRenderer.darkenColor(color);
-		int previewBgColor = GSColorUtil.withAlpha(GSIRenderer.darkenColor(darkColor), ENTRY_PREVIEW_BG_ALPHA);
+		int darkColor = GSColorUtil.darker(color);
+		int previewBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(darkColor), ENTRY_PREVIEW_BG_ALPHA);
 		
 		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, previewBgColor);
@@ -343,7 +343,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	private void editTrackSequence(GSTrack track) {
 		GSCapturePlaybackClientModule module = GSCapturePlaybackExtension.getInstance().getClientModule();
-		module.requestSession(GSESessionType.SEQUENCE, GSESessionRequestType.REQUEST_START, track.getTrackUUID());
+		module.getAssetManager().requestSession(GSESessionRequestType.REQUEST_START, track.getTrackUUID());
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,9 +17,8 @@ import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.captureplayback.util.GSMutableLinkedHashMap;
 import com.g4mesoft.captureplayback.util.GSUUIDUtil;
-import com.g4mesoft.util.GSBufferUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSComposition {
 
@@ -59,6 +59,27 @@ public class GSComposition {
 		listeners = null;
 	}
 
+	/**
+	 * A version of {@link #set(GSComposition)} which does not change the
+	 * name, and ensures that any group and track has unique UUIDs.
+	 */
+	public void duplicateFrom(GSComposition other) {
+		if (!groups.isEmpty() || !tracks.isEmpty())
+			throw new IllegalArgumentException("Expected an empty composition");
+
+		Map<UUID, UUID> otherGroupToUUID = new HashMap<>();
+		for (GSTrackGroup group : other.getGroups()) {
+			GSTrackGroup newGroup = addGroup(group.getName());
+			newGroup.duplicateFrom(group);
+			otherGroupToUUID.put(group.getGroupUUID(), newGroup.getGroupUUID());
+		}
+		for (GSTrack track : other.getTracks()) {
+			UUID groupUUID = otherGroupToUUID.get(track.getGroupUUID());
+			GSTrack newTrack = addTrack(track.getName(), track.getColor(), groupUUID);
+			newTrack.duplicateFrom(track);
+		}
+	}
+	
 	public void set(GSComposition other) {
 		clear();
 
@@ -92,7 +113,7 @@ public class GSComposition {
 	
 	public GSTrackGroup addGroup(UUID groupUUID, String groupName) {
 		if (hasGroupUUID(groupUUID))
-			throw new IllegalStateException("Duplicate sequence UUID");
+			throw new IllegalStateException("Duplicate group UUID");
 	
 		GSTrackGroup group = new GSTrackGroup(groupUUID, groupName);
 		addGroupInternal(group);
@@ -177,9 +198,7 @@ public class GSComposition {
 	}
 	
 	public void setName(String name) {
-		if (name == null)
-			throw new IllegalArgumentException("name is null");
-		
+		// Note: deliberate null-pointer exception
 		if (!name.equals(this.name)) {
 			String oldName = this.name;
 			this.name = name;
@@ -221,6 +240,8 @@ public class GSComposition {
 	}
 	
 	public void addCompositionListener(GSICompositionListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		if (listeners == null)
 			listeners = new ArrayList<>();
 		listeners.add(listener);
@@ -261,12 +282,12 @@ public class GSComposition {
 			listener.trackRemoved(track);
 	}
 
-	public static GSComposition read(PacketByteBuf buf) throws IOException {
+	public static GSComposition read(GSDecodeBuffer buf) throws IOException {
 		// Skip reserved byte
 		buf.readByte();
 		
-		UUID compositionUUID = buf.readUuid();
-		String name = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+		UUID compositionUUID = buf.readUUID();
+		String name = buf.readString();
 		GSComposition composition = new GSComposition(compositionUUID, name);
 
 		int groupCount = buf.readInt();
@@ -288,11 +309,11 @@ public class GSComposition {
 		return composition;
 	}
 
-	public static void write(PacketByteBuf buf, GSComposition composition) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSComposition composition) throws IOException {
 		// Reserved byte for future use
-		buf.writeByte(0x00);
+		buf.writeByte((byte)0x00);
 
-		buf.writeUuid(composition.getCompositionUUID());
+		buf.writeUUID(composition.getCompositionUUID());
 		buf.writeString(composition.getName());
 
 		Collection<GSTrackGroup> groups = composition.getGroups();

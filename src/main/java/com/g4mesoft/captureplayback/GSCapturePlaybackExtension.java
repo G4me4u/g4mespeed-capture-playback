@@ -6,6 +6,17 @@ import java.util.Map;
 import com.g4mesoft.GSExtensionInfo;
 import com.g4mesoft.GSExtensionUID;
 import com.g4mesoft.GSIExtension;
+import com.g4mesoft.captureplayback.common.asset.GSAssetHistoryPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfoChangedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetInfoRemovedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSAssetRequestResponsePacket;
+import com.g4mesoft.captureplayback.common.asset.GSCreateAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSDeleteAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSImportAssetPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryAddedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntryRemovedPacket;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCachePacket;
+import com.g4mesoft.captureplayback.common.asset.GSRequestAssetPacket;
 import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
 import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.captureplayback.session.GSSessionDeltasPacket;
@@ -32,11 +43,11 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 	public static final String NAME = "Capture & Playback";
 	/* "CAPL" in ASCII as HEX */
 	public static final GSExtensionUID UID = new GSExtensionUID(0x4341504C);
-	public static final GSVersion VERSION = new GSVersion(0, 4, 1);
+	public static final GSVersion VERSION = new GSVersion(0, 4, 2);
 	
 	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
 	
-	private static final String TRANSLATION_PATH = "/assets/g4mespeed/captureplayback/lang/en.lang";
+	private static final String TRANSLATION_PATH = "/assets/g4mespeed-capture-playback/lang/en.lang";
 	
 	private static GSCapturePlaybackExtension instance;
 	
@@ -61,6 +72,7 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		addSignalEventHandler(Blocks.REDSTONE_WIRE, generalBlockHandler);
 		addSignalEventHandler(Blocks.POWERED_RAIL, generalBlockHandler);
 		addSignalEventHandler(Blocks.ACTIVATOR_RAIL, generalBlockHandler);
+		addSignalEventHandler(Blocks.BELL, generalBlockHandler);
 		// Add doors
 		addSignalEventHandler(Blocks.IRON_DOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.OAK_DOOR, generalBlockHandler);
@@ -102,6 +114,19 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		registry.register(11, GSSessionStartPacket.class, GSSessionStartPacket::new);
 		registry.register(12, GSSessionStopPacket.class, GSSessionStopPacket::new);
 		registry.register(13, GSSessionDeltasPacket.class, GSSessionDeltasPacket::new);
+
+		registry.register(14, GSAssetHistoryPacket.class, GSAssetHistoryPacket::new);
+		registry.register(15, GSAssetInfoChangedPacket.class, GSAssetInfoChangedPacket::new);
+		registry.register(16, GSAssetInfoRemovedPacket.class, GSAssetInfoRemovedPacket::new);
+		registry.register(17, GSCreateAssetPacket.class, GSCreateAssetPacket::new);
+		registry.register(18, GSDeleteAssetPacket.class, GSDeleteAssetPacket::new);
+		registry.register(19, GSImportAssetPacket.class, GSImportAssetPacket::new);
+		registry.register(20, GSRequestAssetPacket.class, GSRequestAssetPacket::new);
+		registry.register(21, GSAssetRequestResponsePacket.class, GSAssetRequestResponsePacket::new);
+		
+		registry.register(22, GSPlayerCachePacket.class, GSPlayerCachePacket::new);
+		registry.register(23, GSPlayerCacheEntryAddedPacket.class, GSPlayerCacheEntryAddedPacket::new);
+		registry.register(24, GSPlayerCacheEntryRemovedPacket.class, GSPlayerCacheEntryRemovedPacket::new);
 	}
 	
 	@Override
