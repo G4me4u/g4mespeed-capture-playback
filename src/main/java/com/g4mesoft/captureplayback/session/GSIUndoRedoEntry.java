@@ -3,8 +3,8 @@ package com.g4mesoft.captureplayback.session;
 import java.io.IOException;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public interface GSIUndoRedoEntry {
 
@@ -14,9 +14,9 @@ public interface GSIUndoRedoEntry {
 	
 	public void redo(GSSession session) throws GSDeltaException;
 	
-	public void read(PacketByteBuf buf) throws IOException;
+	public void read(GSDecodeBuffer buf) throws IOException;
 
-	public void write(PacketByteBuf buf) throws IOException;
+	public void write(GSEncodeBuffer buf) throws IOException;
 	
 	public long getTimestampMillis();
 	

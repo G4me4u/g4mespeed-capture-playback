@@ -6,9 +6,8 @@ import java.util.Objects;
 import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.util.GSBufferUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSSequenceNameDelta implements GSIDelta<GSSequence> {
 
@@ -40,13 +39,13 @@ public class GSSequenceNameDelta implements GSIDelta<GSSequence> {
 	}
 
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		newName = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
-		oldName = buf.readString(GSBufferUtil.MAX_STRING_LENGTH);
+	public void read(GSDecodeBuffer buf) throws IOException {
+		newName = buf.readString();
+		oldName = buf.readString();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		buf.writeString(newName);
 		buf.writeString(oldName);
 	}

@@ -7,50 +7,45 @@ import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.server.GSServerController;
 import com.g4mesoft.packet.GSIPacket;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionRequestPacket implements GSIPacket {
 
-	private GSESessionType sessionType;
 	private GSESessionRequestType requestType;
-	private UUID structureUUID;
+	private UUID assetUUID;
 	
 	public GSSessionRequestPacket() {
 	}
 
-	public GSSessionRequestPacket(GSESessionType sessionType, GSESessionRequestType requestType, UUID structureUUID) {
-		this.sessionType = sessionType;
+	public GSSessionRequestPacket(GSESessionRequestType requestType, UUID structureUUID) {
 		this.requestType = requestType;
-		this.structureUUID = structureUUID;
+		this.assetUUID = structureUUID;
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		sessionType = GSESessionType.fromIndex(buf.readInt());
-		if (sessionType == null)
-			throw new IOException("Unknown session type");
+	public void read(GSDecodeBuffer buf) throws IOException {
 		requestType = GSESessionRequestType.fromIndex(buf.readInt());
-		if (sessionType == null)
+		if (requestType == null)
 			throw new IOException("Unknown request type");
-		structureUUID = buf.readUuid();
+		assetUUID = buf.readUUID();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeInt(sessionType.getIndex());
+	public void write(GSEncodeBuffer buf) throws IOException {
 		buf.writeInt(requestType.getIndex());
-		buf.writeUuid(structureUUID);
+		buf.writeUUID(assetUUID);
 	}
 
 	@Override
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		if (module != null)
-			module.onSessionRequest(player, sessionType, requestType, structureUUID);
+			module.onSessionRequest(player, requestType, assetUUID);
 	}
 	
 	@Override

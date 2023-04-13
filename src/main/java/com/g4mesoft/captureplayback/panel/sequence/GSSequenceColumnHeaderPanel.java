@@ -2,16 +2,16 @@ package com.g4mesoft.captureplayback.panel.sequence;
 
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.dropdown.GSDropdown;
-import com.g4mesoft.panel.dropdown.GSDropdownAction;
-import com.g4mesoft.panel.event.GSEvent;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSRectangle;
+import com.g4mesoft.ui.panel.dropdown.GSDropdown;
+import com.g4mesoft.ui.panel.dropdown.GSDropdownAction;
+import com.g4mesoft.ui.panel.event.GSEvent;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.scroll.GSIScrollable;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
 

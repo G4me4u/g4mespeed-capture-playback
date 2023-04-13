@@ -12,25 +12,28 @@ import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSECursorType;
-import com.g4mesoft.panel.GSETextAlignment;
-import com.g4mesoft.panel.GSIcon;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.GSTexturedIcon;
-import com.g4mesoft.panel.button.GSButton;
-import com.g4mesoft.panel.event.GSEvent;
-import com.g4mesoft.panel.event.GSFocusEvent;
-import com.g4mesoft.panel.event.GSIFocusEventListener;
-import com.g4mesoft.panel.event.GSIKeyListener;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.field.GSTextField;
-import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSECursorType;
+import com.g4mesoft.ui.panel.GSETextAlignment;
+import com.g4mesoft.ui.panel.GSIcon;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSParentPanel;
+import com.g4mesoft.ui.panel.GSTexturedIcon;
+import com.g4mesoft.ui.panel.button.GSButton;
+import com.g4mesoft.ui.panel.event.GSEvent;
+import com.g4mesoft.ui.panel.event.GSFocusEvent;
+import com.g4mesoft.ui.panel.event.GSIFocusEventListener;
+import com.g4mesoft.ui.panel.event.GSIKeyListener;
+import com.g4mesoft.ui.panel.event.GSILayoutEventListener;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSKeyEvent;
+import com.g4mesoft.ui.panel.event.GSLayoutEvent;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.field.GSTextField;
+import com.g4mesoft.ui.panel.scroll.GSIScrollable;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 
 public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable, GSISequenceListener, 
@@ -326,9 +329,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 			editButton.setHoveredBackgroundColor(0);
 			editButton.setDisabledBackgroundColor(0);
 			editButton.setBorderWidth(0);
-			editButton.addActionListener(() -> {
-				new GSChannelEditorPanel(this.channel).show(null);
-			});
+			editButton.addActionListener(this::openEditor);
 			
 			moveButton = new GSButton(MOVE_ICON);
 			moveButton.setHoveredIcon(HOVERED_MOVE_ICON);
@@ -338,7 +339,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 			moveButton.setHoveredBackgroundColor(0);
 			moveButton.setDisabledBackgroundColor(0);
 			moveButton.setBorderWidth(0);
-			moveButton.setClickSound(null);
+			moveButton.setClickSound((SoundEvent)null);
 			moveButton.addMouseEventListener(new GSIMouseListener() {
 				@Override
 				public void mousePressed(GSMouseEvent event) {
@@ -373,6 +374,18 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 
 			onChannelInfoChanged();
 			onEditableChanged();
+		}
+		
+		private void openEditor() {
+			GSEditorPanel editor = new GSChannelEditorPanel(this.channel);
+			editor.show(null);
+			editor.addLayoutEventListener(new GSILayoutEventListener() {
+				@Override
+				public void panelHidden(GSLayoutEvent event) {
+					/* force focus to channel header */
+					GSChannelHeaderPanel.this.requestFocus();
+				}
+			});
 		}
 		
 		private void onChannelInfoChanged() {

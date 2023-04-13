@@ -4,14 +4,14 @@ import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.session.GSIUndoRedoListener;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.captureplayback.session.GSUndoRedoHistory;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSECursorType;
-import com.g4mesoft.panel.GSEIconAlignment;
-import com.g4mesoft.panel.GSIcon;
-import com.g4mesoft.panel.GSParentPanel;
-import com.g4mesoft.panel.GSTexturedIcon;
-import com.g4mesoft.panel.button.GSButton;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSECursorType;
+import com.g4mesoft.ui.panel.GSEIconAlignment;
+import com.g4mesoft.ui.panel.GSIcon;
+import com.g4mesoft.ui.panel.GSParentPanel;
+import com.g4mesoft.ui.panel.GSTexturedIcon;
+import com.g4mesoft.ui.panel.button.GSButton;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
 import net.minecraft.text.Text;
 

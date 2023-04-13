@@ -12,12 +12,13 @@ import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
+import com.g4mesoft.captureplayback.playlist.GSPlaylist;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.util.GSBufferUtil;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSSession {
 
@@ -27,22 +28,24 @@ public class GSSession {
 	private static final GSISessionFieldCodec<GSEContentOpacity> OPACITY_CODEC           = new GSOpacitySessionFieldCodec();
 	private static final GSISessionFieldCodec<GSComposition>     COMPOSITION_CODEC       = new GSBasicSessionFieldCodec<>(GSComposition::read, GSComposition::write);
 	private static final GSISessionFieldCodec<GSSequence>        SEQUENCE_CODEC          = new GSBasicSessionFieldCodec<>(GSSequence::read, GSSequence::write);
-	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(PacketByteBuf::readUuid, PacketByteBuf::writeUuid);
+	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(GSDecodeBuffer::readUUID, GSEncodeBuffer::writeUUID);
+	private static final GSISessionFieldCodec<GSAssetHandle>     ASSET_HANDLE_CODEC      = new GSBasicSessionFieldCodec<>(GSAssetHandle::read, GSAssetHandle::write);
 	private static final GSISessionFieldCodec<GSUndoRedoHistory> UNDO_REDO_HISTORY_CODEC = new GSBasicSessionFieldCodec<>(GSUndoRedoHistory::read, GSUndoRedoHistory::write);
+	private static final GSISessionFieldCodec<GSPlaylist>        PLAYLIST_CODEC          = new GSBasicSessionFieldCodec<>(GSPlaylist::read, GSPlaylist::write);
 	
+	public static final GSSessionFieldType<UUID>              ASSET_UUID;
+	public static final GSSessionFieldType<GSAssetHandle>     ASSET_HANDLE;
 	public static final GSSessionFieldType<Float>             X_OFFSET;
 	public static final GSSessionFieldType<Float>             Y_OFFSET;
 	public static final GSSessionFieldType<GSEContentOpacity> OPACITY;
-
 	public static final GSSessionFieldType<GSUndoRedoHistory> UNDO_REDO_HISTORY;
-
 	public static final GSSessionFieldType<GSComposition>     COMPOSITION;
 	public static final GSSessionFieldType<Double>            GAMETICK_WIDTH;
-	
 	public static final GSSessionFieldType<GSSequence>        SEQUENCE;
 	public static final GSSessionFieldType<UUID>              SELECTED_CHANNEL;
 	public static final GSSessionFieldType<Integer>           MIN_EXPANDED_COLUMN;
 	public static final GSSessionFieldType<Integer>           MAX_EXPANDED_COLUMN;
+	public static final GSSessionFieldType<GSPlaylist>        PLAYLIST;
 
 	private static final Map<String, GSSessionFieldType<?>> nameToType;
 	private static final Map<GSESessionType, Set<GSSessionFieldType<?>>> sessionFieldTypes;
@@ -53,19 +56,111 @@ public class GSSession {
 		
 		GSSessionFieldTypeBuilder<?> builder = new GSSessionFieldTypeBuilder<>(nameToType, sessionFieldTypes);
 		
-		X_OFFSET = builder.<Float>cast().name("xOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-		Y_OFFSET = builder.<Float>cast().name("yOffset").def(0.0f).codec(FLOAT_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-		OPACITY  = builder.<GSEContentOpacity>cast().name("opacity").def(GSEContentOpacity.FULLY_OPAQUE).codec(OPACITY_CODEC).session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-
-		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast().name("undoRedoHistory").constr(GSUndoRedoHistorySessionField::new).def(GSUndoRedoHistory::new).assignOnce().codec(UNDO_REDO_HISTORY_CODEC).noSync().session(GSESessionType.COMPOSITION).session(GSESessionType.SEQUENCE).build();
-	
-		COMPOSITION = builder.<GSComposition>cast().name("composition").constr(GSCompositionSessionField::new).nullable().assignOnce().codec(COMPOSITION_CODEC).noCache().noSync().session(GSESessionType.COMPOSITION).build();
-		GAMETICK_WIDTH = builder.<Double>cast().name("gametickWidth").def(8.0).codec(DOUBLE_CODEC).session(GSESessionType.COMPOSITION).build();
-		
-		SEQUENCE = builder.<GSSequence>cast().name("sequence").constr(GSSequenceSessionField::new).nullable().assignOnce().codec(SEQUENCE_CODEC).noCache().noSync().session(GSESessionType.SEQUENCE).build();
-		SELECTED_CHANNEL = builder.<UUID>cast().name("selectedChannel").nullable().codec(UUID_CODEC).session(GSESessionType.SEQUENCE).build();
-		MIN_EXPANDED_COLUMN = builder.<Integer>cast().name("minExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
-		MAX_EXPANDED_COLUMN = builder.<Integer>cast().name("maxExpandedColumn").def(-1).codec(INTEGER_CODEC).session(GSESessionType.SEQUENCE).build();
+		ASSET_UUID = builder.<UUID>cast()
+				.name("assetUUID")
+				.nullable()
+				.assignOnce()
+				.codec(UUID_CODEC)
+				.noSync()
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.session(GSESessionType.PLAYLIST)
+				.build();
+		ASSET_HANDLE = builder.<GSAssetHandle>cast()
+				.name("assetHandle")
+				.nullable()
+				.assignOnce()
+				.codec(ASSET_HANDLE_CODEC)
+				.noSync()
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.session(GSESessionType.PLAYLIST)
+				.build();
+		X_OFFSET = builder.<Float>cast()
+				.name("xOffset")
+				.def(0.0f)
+				.codec(FLOAT_CODEC)
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		Y_OFFSET = builder.<Float>cast()
+				.name("yOffset")
+				.def(0.0f)
+				.codec(FLOAT_CODEC)
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		OPACITY  = builder.<GSEContentOpacity>cast()
+				.name("opacity")
+				.def(GSEContentOpacity.FULLY_OPAQUE)
+				.codec(OPACITY_CODEC)
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		UNDO_REDO_HISTORY = builder.<GSUndoRedoHistory>cast()
+				.name("undoRedoHistory")
+				.constr(GSUndoRedoHistorySessionField::new)
+				.def(GSUndoRedoHistory::new)
+				.assignOnce()
+				.codec(UNDO_REDO_HISTORY_CODEC)
+				.noSync()
+				.session(GSESessionType.COMPOSITION)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		COMPOSITION = builder.<GSComposition>cast()
+				.name("composition")
+				.constr(GSCompositionSessionField::new)
+				.nullable()
+				.assignOnce()
+				.codec(COMPOSITION_CODEC)
+				.noCache()
+				.noSync()
+				.session(GSESessionType.COMPOSITION)
+				.build();
+		GAMETICK_WIDTH = builder.<Double>cast()
+				.name("gametickWidth")
+				.def(8.0)
+				.codec(DOUBLE_CODEC)
+				.session(GSESessionType.COMPOSITION)
+				.build();
+		SEQUENCE = builder.<GSSequence>cast()
+				.name("sequence")
+				.constr(GSSequenceSessionField::new)
+				.nullable()
+				.assignOnce()
+				.codec(SEQUENCE_CODEC)
+				.noCache()
+				.noSync()
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		SELECTED_CHANNEL = builder.<UUID>cast()
+				.name("selectedChannel")
+				.nullable()
+				.codec(UUID_CODEC)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		MIN_EXPANDED_COLUMN = builder.<Integer>cast()
+				.name("minExpandedColumn")
+				.def(-1)
+				.codec(INTEGER_CODEC)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		MAX_EXPANDED_COLUMN = builder.<Integer>cast()
+				.name("maxExpandedColumn")
+				.def(-1)
+				.codec(INTEGER_CODEC)
+				.session(GSESessionType.SEQUENCE)
+				.build();
+		PLAYLIST = builder.<GSPlaylist>cast()
+				.name("playlist")
+				.constr(GSPlaylistSessionField::new)
+				.nullable()
+				.assignOnce()
+				.codec(PLAYLIST_CODEC)
+				.noCache()
+				.noSync()
+				.session(GSESessionType.PLAYLIST)
+				.build();
 	}
 	
 	private final GSESessionType type;
@@ -178,6 +273,8 @@ public class GSSession {
 	}
 	
 	public void addListener(GSISessionListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		if (listeners == null)
 			listeners = new ArrayList<>(2);
 		listeners.add(listener);
@@ -218,38 +315,38 @@ public class GSSession {
 		}
 	}
 	
-	public static GSSessionFieldType<?> readFieldType(PacketByteBuf buf) throws IOException {
-		GSSessionFieldType<?> type = nameToType.get(buf.readString(GSBufferUtil.MAX_STRING_LENGTH));
+	public static GSSessionFieldType<?> readFieldType(GSDecodeBuffer buf) throws IOException {
+		GSSessionFieldType<?> type = nameToType.get(buf.readString());
 		if (type == null)
 			throw new IOException("Unknown type");
 		return type;
 	}
 
-	public static void writeFieldType(PacketByteBuf buf, GSSessionFieldType<?> type) throws IOException {
+	public static void writeFieldType(GSEncodeBuffer buf, GSSessionFieldType<?> type) throws IOException {
 		buf.writeString(type.getName());
 	}
 
-	public static <T> T readField(PacketByteBuf buf, GSSessionFieldType<T> type) throws IOException {
+	public static <T> T readField(GSDecodeBuffer buf, GSSessionFieldType<T> type) throws IOException {
 		return type.getCodec().decode(buf);
 	}
 	
-	public static <T> void writeField(PacketByteBuf buf, GSSessionFieldType<T> type, T value) throws IOException {
+	public static <T> void writeField(GSEncodeBuffer buf, GSSessionFieldType<T> type, T value) throws IOException {
 		type.getCodec().encode(buf, value);
 	}
 
 	/** Expands to readFieldType(...) and readField(...) */
-	public static <T> GSSessionFieldPair<T> readFieldPair(PacketByteBuf buf) throws IOException {
+	public static <T> GSSessionFieldPair<T> readFieldPair(GSDecodeBuffer buf) throws IOException {
 		GSSessionFieldType<?> type = readFieldType(buf);
 		return new GSSessionFieldPair<>(type, readField(buf, type));
 	}
 	
 	/** Expands to for writeFieldType(...) and writeField(...) */
-	public static <T> void writeFieldPair(PacketByteBuf buf, GSSessionFieldPair<T> pair) throws IOException {
+	public static <T> void writeFieldPair(GSEncodeBuffer buf, GSSessionFieldPair<T> pair) throws IOException {
 		writeFieldType(buf, pair.getType());
 		writeField(buf, pair.getType(), pair.getValue());
 	}
 	
-	public static GSSession read(PacketByteBuf buf) throws IOException {
+	public static GSSession read(GSDecodeBuffer buf) throws IOException {
 		GSESessionType sessionType = GSESessionType.fromIndex(buf.readInt());
 		if (sessionType == null)
 			throw new IOException("Unknown session type");
@@ -263,15 +360,15 @@ public class GSSession {
 		return session;
 	}
 
-	public static void writeCache(PacketByteBuf buf, GSSession session) throws IOException {
+	public static void writeCache(GSEncodeBuffer buf, GSSession session) throws IOException {
 		write(buf, session, true);
 	}
 
-	public static void writePacket(PacketByteBuf buf, GSSession session) throws IOException {
+	public static void writePacket(GSEncodeBuffer buf, GSSession session) throws IOException {
 		write(buf, session, false);
 	}
 
-	private static void write(PacketByteBuf buf, GSSession session, boolean cache) throws IOException {
+	private static void write(GSEncodeBuffer buf, GSSession session, boolean cache) throws IOException {
 		buf.writeInt(session.getType().getIndex());
 		
 		if (cache) {

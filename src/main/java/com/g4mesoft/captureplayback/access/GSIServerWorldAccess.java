@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.access;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
@@ -15,13 +16,21 @@ public interface GSIServerWorldAccess {
 
 	public void gcp_handleCaptureEvent(GSESignalEdge edge, BlockPos pos);
 
-	public List<GSIPlaybackStream> gcp_getPlaybackStreams();
+	public boolean gcp_hasPlaybackStream(UUID assetUUID);
 	
-	public void gcp_addPlaybackStream(GSIPlaybackStream playbackStream);
+	public void gcp_addPlaybackStream(UUID assetUUID, GSIPlaybackStream playbackStream);
 
-	public List<GSICaptureStream> gcp_getCaptureStreams();
-	
-	public void gcp_addCaptureStream(GSICaptureStream captureStream);
+	public GSIPlaybackStream gcp_getPlaybackStream(UUID assetUUID);
+
+	public Collection<GSIPlaybackStream> gcp_getPlaybackStreams();
+
+	public boolean gcp_hasCaptureStream(UUID assetUUID);
+
+	public void gcp_addCaptureStream(UUID assetUUID, GSICaptureStream captureStream);
+
+	public GSICaptureStream gcp_getCaptureStream(UUID assetUUID);
+
+	public Collection<GSICaptureStream> gcp_getCaptureStreams();
 
 	public boolean gcp_isPlaybackPosition(BlockPos pos);
 

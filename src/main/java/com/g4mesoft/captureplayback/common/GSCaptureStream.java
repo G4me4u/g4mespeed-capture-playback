@@ -15,21 +15,23 @@ import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
 import net.minecraft.util.math.BlockPos;
 
-public abstract class GSCaptureStream implements GSICaptureStream {
+public abstract class GSCaptureStream extends GSAbstractStream implements GSICaptureStream {
 
 	private final GSBlockRegion blockRegion;
 	private final Map<BlockPos, List<GSChannelCapture>> posToCaptures;
 	
-	private boolean closed;
 	private long captureTime;
 	private long latestEventTime;
+	
+	private boolean closed;
 	
 	public GSCaptureStream(GSBlockRegion blockRegion) {
 		this.blockRegion = blockRegion;
 		posToCaptures = new HashMap<>();
 		
-		closed = false;
 		captureTime = latestEventTime = 0L;
+		
+		closed = false;
 	}
 	
 	protected void addChannelCapture(GSChannel channel, long offset) {
@@ -78,19 +80,19 @@ public abstract class GSCaptureStream implements GSICaptureStream {
 	}
 
 	@Override
-	public void close() {
-		if (!isClosed()) {
+	public final void close() {
+		if (!closed) {
+			closed = true;
 			for (List<GSChannelCapture> captures : posToCaptures.values()) {
 				for (GSChannelCapture capture : captures)
 					capture.onClose(latestEventTime);
 			}
+			dispatchCloseEvent();
 		}
-		
-		closed = true;
 	}
-
+	
 	@Override
-	public boolean isClosed() {
+	public final boolean isClosed() {
 		return closed;
 	}
 	

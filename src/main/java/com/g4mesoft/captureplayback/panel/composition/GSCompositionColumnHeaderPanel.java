@@ -1,11 +1,11 @@
 package com.g4mesoft.captureplayback.panel.composition;
 
 import com.g4mesoft.captureplayback.panel.GSIModelViewListener;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.scroll.GSIScrollable;
-import com.g4mesoft.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSRectangle;
+import com.g4mesoft.ui.panel.scroll.GSIScrollable;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
 public class GSCompositionColumnHeaderPanel extends GSPanel implements GSIScrollable, GSIModelViewListener {
 

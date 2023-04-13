@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.function.Supplier;
 
 import com.g4mesoft.registry.GSSupplierRegistry;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSDeltaRegistry<M> {
 
@@ -19,7 +19,7 @@ public class GSDeltaRegistry<M> {
 		registry.register(id, deltaClazz, deltaSupplier);
 	}
 	
-	public GSIDelta<M> read(PacketByteBuf buf) throws IOException {
+	public GSIDelta<M> read(GSDecodeBuffer buf) throws IOException {
 		GSIDelta<M> delta = registry.createNewElement(buf.readInt());
 		if (delta == null)
 			throw new IOException("Invalid delta ID");
@@ -27,7 +27,7 @@ public class GSDeltaRegistry<M> {
 		return delta;
 	}
 
-	public void write(PacketByteBuf buf, GSIDelta<M> delta)  throws IOException {
+	public void write(GSEncodeBuffer buf, GSIDelta<M> delta)  throws IOException {
 		Integer identifier = registry.getIdentifier(delta);
 		if (identifier == null)
 			throw new IOException("Unknown delta");
