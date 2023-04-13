@@ -8,8 +8,8 @@ import com.g4mesoft.captureplayback.common.GSSignalTime;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 
@@ -48,7 +48,7 @@ public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
+	public void read(GSDecodeBuffer buf) throws IOException {
 		super.read(buf);
 		
 		startTime = GSSignalTime.read(buf);
@@ -60,7 +60,7 @@ public class GSChannelEntryRemovedDelta extends GSChannelEntryDelta {
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
+	public void write(GSEncodeBuffer buf) throws IOException {
 		super.write(buf);
 
 		GSSignalTime.write(buf, startTime);

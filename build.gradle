@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '0.11-SNAPSHOT'
+	id 'fabric-loom' version '0.13-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -17,6 +17,13 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version + "-mc" + project.minecraft_version
 group = project.maven_group
 
+// See https://github.com/TerraformersMC/GradleScripts/blob/2.5/ferry.gradle
+
+ext.includeMod = { Object dep ->
+    dependencies.modImplementation dep
+    dependencies.include dep
+}
+
 dependencies {
 	//to change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -24,12 +31,12 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
 	modImplementation "com.g4mesoft:g4mespeed:${project.g4mespeed_core_version}-mc${project.minecraft_version}"
+	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}-SNAPSHOT"
+}
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	// modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-	// You may need to force-disable transitiveness on them.
+configurations.all {
+	// Ensure we redownload G4mespeed core SNAPSHOT
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
 processResources {

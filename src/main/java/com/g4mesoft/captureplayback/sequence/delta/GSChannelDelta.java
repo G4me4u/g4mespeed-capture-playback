@@ -9,8 +9,8 @@ import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public abstract class GSChannelDelta implements GSIDelta<GSSequence> {
 
@@ -67,18 +67,23 @@ public abstract class GSChannelDelta implements GSIDelta<GSSequence> {
 		if (sequence.hasChannelUUID(channelUUID))
 			throw new GSDeltaException("Channel already exists");
 		
-		GSChannel channel = sequence.addChannel(channelUUID, info);
-		sequence.moveChannelAfter(channelUUID, prevUUID);
-		return channel;
+		try {
+			GSChannel channel = sequence.addChannel(channelUUID, info);
+			sequence.moveChannelAfter(channelUUID, prevUUID);
+			return channel;
+		} catch (Throwable t) {
+			sequence.removeChannel(channelUUID);
+			throw new GSDeltaException("Failed to add channel", t);
+		}
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		channelUUID = buf.readUuid();
+	public void read(GSDecodeBuffer buf) throws IOException {
+		channelUUID = buf.readUUID();
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeUuid(channelUUID);
+	public void write(GSEncodeBuffer buf) throws IOException {
+		buf.writeUUID(channelUUID);
 	}
 }

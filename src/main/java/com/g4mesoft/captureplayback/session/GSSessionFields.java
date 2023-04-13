@@ -10,10 +10,12 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 import com.google.common.base.Predicates;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import net.minecraft.network.PacketByteBuf;
 
 /* Visible for GSSession */
 class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
@@ -94,20 +96,20 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		return new GSSessionFieldIterator();
 	}
 
-	public static GSSessionFields read(PacketByteBuf buf) throws IOException {
+	public static GSSessionFields read(GSDecodeBuffer buf) throws IOException {
 		GSSessionFields fields = new GSSessionFields();
 		
 		int fieldCount = buf.readInt();
 		while (fieldCount-- != 0) {
 			int sizeInBytes = buf.readInt();
-			int location = buf.readerIndex();
+			int location = buf.getLocation();
 			
 			GSSessionFieldType<?> type;
 			try {
 				type = GSSession.readFieldType(buf);
 			} catch (IOException e) {
 				// Skip the remaining field bytes
-				buf.skipBytes(sizeInBytes - (buf.readerIndex() - location));
+				buf.skipBytes(sizeInBytes - (buf.getLocation() - location));
 				continue;
 			}
 			
@@ -122,12 +124,12 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		return fields;
 	}
 
-	public static void write(PacketByteBuf buf, GSSessionFields fields) throws IOException {
+	public static void write(GSEncodeBuffer buf, GSSessionFields fields) throws IOException {
 		write(buf, fields, Predicates.alwaysTrue());
 	}
 	
-	public static void write(PacketByteBuf buf, GSSessionFields fields, Predicate<GSSessionFieldType<?>> fieldFilter) throws IOException {
-		PacketByteBuf fieldBuffer = new PacketByteBuf(Unpooled.buffer());
+	public static void write(GSEncodeBuffer buf, GSSessionFields fields, Predicate<GSSessionFieldType<?>> fieldFilter) throws IOException {
+		ByteBuf fieldBuffer = Unpooled.buffer();
 
 		List<GSSessionFieldPair<?>> pairsToWrite = new ArrayList<>(fields.getSize());
 		for (GSSessionFieldPair<?> pair : fields) {
@@ -137,8 +139,8 @@ class GSSessionFields implements Iterable<GSSessionFieldPair<?>> {
 		
 		buf.writeInt(pairsToWrite.size());
 		for (GSSessionFieldPair<?> pair : pairsToWrite) {
-			GSSession.writeFieldPair(fieldBuffer, pair);
-			buf.writeInt(fieldBuffer.writerIndex() - fieldBuffer.readerIndex());
+			GSSession.writeFieldPair(GSEncodeBuffer.wrap(fieldBuffer), pair);
+			buf.writeInt(fieldBuffer.readableBytes());
 			buf.writeBytes(fieldBuffer);
 		}
 		

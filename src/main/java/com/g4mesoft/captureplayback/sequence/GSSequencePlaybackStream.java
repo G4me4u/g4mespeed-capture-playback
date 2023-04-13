@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.sequence;
 
-import com.g4mesoft.captureplayback.common.GSPlaybackStream;
+import com.g4mesoft.captureplayback.stream.GSPlaybackStream;
 
 class GSSequencePlaybackStream extends GSPlaybackStream {
 

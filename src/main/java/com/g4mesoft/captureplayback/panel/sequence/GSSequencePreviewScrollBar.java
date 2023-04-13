@@ -3,26 +3,26 @@ package com.g4mesoft.captureplayback.panel.sequence;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelEntry;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
-import com.g4mesoft.panel.GSDimension;
-import com.g4mesoft.panel.GSPanel;
-import com.g4mesoft.panel.GSRectangle;
-import com.g4mesoft.panel.scroll.GSIScrollBarModel;
-import com.g4mesoft.panel.scroll.GSScrollBar;
-import com.g4mesoft.panel.scroll.GSScrollPanel;
-import com.g4mesoft.renderer.GSIRenderer;
-import com.g4mesoft.renderer.GSIRenderer2D;
-import com.g4mesoft.renderer.GSTexture;
+import com.g4mesoft.ui.panel.GSDimension;
+import com.g4mesoft.ui.panel.GSPanel;
+import com.g4mesoft.ui.panel.GSRectangle;
+import com.g4mesoft.ui.panel.scroll.GSIScrollBarModel;
+import com.g4mesoft.ui.panel.scroll.GSScrollBar;
+import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
+import com.g4mesoft.ui.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.renderer.GSTexture;
+import com.g4mesoft.ui.util.GSColorUtil;
 
 import net.minecraft.util.Identifier;
 
 public class GSSequencePreviewScrollBar extends GSScrollBar {
 
-	private static final Identifier TEXTURE_IDENTIFIER = new Identifier("g4mespeed/captureplayback/textures/scroll_bar_preview.png");
+	private static final Identifier TEXTURE_IDENTIFIER = new Identifier("g4mespeed-capture-playback", "textures/scroll_bar_preview.png");
 	private static final GSTexture SCROLL_BUTTON_TEXTURE = new GSTexture(TEXTURE_IDENTIFIER, 30, 54);
 	
 	private static final int PREVIEW_BACKGROUND = 0xFF171717;
 	
-	private static final int VERTICAL_BORDER_COLOR = 0xFF000000;
+	private static final int VERTICAL_BORDER_COLOR = 0xFF060606;
 	
 	private static final int DISABLED_KNOB_COLOR = 0x40333333;
 	private static final int HOVERED_KNOB_COLOR = 0x40DDDDDD;
@@ -110,7 +110,7 @@ public class GSSequencePreviewScrollBar extends GSScrollBar {
 	}
 	
 	private void renderChannelPreview(GSIRenderer2D renderer, GSChannel channel, int x, int y, int width, int height) {
-		int color = GSIRenderer.darkenColor(channel.getInfo().getColor());
+		int color = GSColorUtil.darker(channel.getInfo().getColor());
 		
 		for (GSChannelEntry entry : channel.getEntries()) {
 			GSRectangle bounds = getMappedEntryBounds(entry);

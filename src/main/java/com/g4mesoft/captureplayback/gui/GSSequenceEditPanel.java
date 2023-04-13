@@ -16,14 +16,14 @@ import com.g4mesoft.captureplayback.sequence.GSISequenceListener;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
-import com.g4mesoft.panel.GSLocation;
-import com.g4mesoft.panel.GSPanelUtil;
-import com.g4mesoft.panel.event.GSEvent;
-import com.g4mesoft.panel.event.GSIKeyListener;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.scroll.GSScrollPanelCorner;
+import com.g4mesoft.ui.panel.GSLocation;
+import com.g4mesoft.ui.panel.GSPanelUtil;
+import com.g4mesoft.ui.panel.event.GSEvent;
+import com.g4mesoft.ui.panel.event.GSIKeyListener;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSKeyEvent;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.scroll.GSScrollPanelCorner;
 import com.google.common.base.Objects;
 
 public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISequenceListener, GSIModelViewListener,
@@ -48,6 +48,10 @@ public class GSSequenceEditPanel extends GSAbstractEditPanel implements GSISeque
 	private UUID hoveredChannelUUID;
 
 	private boolean changingName;
+
+	public GSSequenceEditPanel(GSSession session) {
+		this(session, new GSDefaultChannelProvider());
+	}
 	
 	public GSSequenceEditPanel(GSSession session, GSIChannelProvider channelProvider) {
 		super(session, GSESessionType.SEQUENCE);

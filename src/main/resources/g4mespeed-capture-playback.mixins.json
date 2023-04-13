@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "package": "com.g4mesoft.captureplayback.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "common.GSServerWorldMixin",
+    "common.GSWorldMixin",
+    
+    "common.GSPistonBlockMixin",
+    "common.GSNoteBlockMixin",
+    "common.GSTntBlockMixin",
+    "common.GSRedstoneWireBlockMixin",
+    "common.GSPoweredRailBlockMixin",
+    "common.GSDoorBlockMixin",
+    "common.GSTrapdoorBlockMixin",
+    "common.GSFenceGateBlockMixin",
+    "common.GSBellBlockMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

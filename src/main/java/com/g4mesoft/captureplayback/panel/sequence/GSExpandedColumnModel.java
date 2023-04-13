@@ -17,6 +17,8 @@ public class GSExpandedColumnModel {
 	}
 	
 	public void addModelListener(GSIExpandedColumnModelListener listener) {
+		if (listener == null)
+			throw new IllegalArgumentException("listener is null!");
 		listeners.add(listener);
 	}
 

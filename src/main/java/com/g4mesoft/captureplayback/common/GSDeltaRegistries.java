@@ -14,6 +14,13 @@ import com.g4mesoft.captureplayback.composition.delta.GSTrackGroupDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackNameDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackRemovedDelta;
 import com.g4mesoft.captureplayback.composition.delta.GSTrackSequenceDelta;
+import com.g4mesoft.captureplayback.playlist.GSPlaylist;
+import com.g4mesoft.captureplayback.playlist.delta.GSEntryAddedDelta;
+import com.g4mesoft.captureplayback.playlist.delta.GSEntryChangedDelta;
+import com.g4mesoft.captureplayback.playlist.delta.GSEntryMovedDelta;
+import com.g4mesoft.captureplayback.playlist.delta.GSEntryRemovedDelta;
+import com.g4mesoft.captureplayback.playlist.delta.GSPlaylistNameDelta;
+import com.g4mesoft.captureplayback.playlist.delta.GSTriggerDelta;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.sequence.delta.GSChannelAddedDelta;
 import com.g4mesoft.captureplayback.sequence.delta.GSChannelDisabledDelta;
@@ -28,6 +35,7 @@ import com.g4mesoft.captureplayback.sequence.delta.GSSequenceNameDelta;
 import com.g4mesoft.captureplayback.session.GSCompositionSessionDelta;
 import com.g4mesoft.captureplayback.session.GSFieldSessionDelta;
 import com.g4mesoft.captureplayback.session.GSMoveUndoRedoHistoryDelta;
+import com.g4mesoft.captureplayback.session.GSPlaylistSessionDelta;
 import com.g4mesoft.captureplayback.session.GSSequenceSessionDelta;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.captureplayback.session.GSTrackUndoRedoHistoryDelta;
@@ -38,6 +46,7 @@ public final class GSDeltaRegistries {
 
 	public static final GSDeltaRegistry<GSSequence>        SEQUENCE_DELTA_REGISTRY;
 	public static final GSDeltaRegistry<GSComposition>     COMPOSITION_DELTA_REGISTRY;
+	public static final GSDeltaRegistry<GSPlaylist>        PLAYLIST_DELTA_REGISTRY;
 	public static final GSDeltaRegistry<GSSession>         SESSION_DELTA_REGISTRY;
 	public static final GSDeltaRegistry<GSUndoRedoHistory> UNDO_REDO_HISTORY_DELTA_REGISTRY;
 	
@@ -69,11 +78,20 @@ public final class GSDeltaRegistries {
 		COMPOSITION_DELTA_REGISTRY.register(11, GSTrackEntryRemovedDelta.class, GSTrackEntryRemovedDelta::new);
 		COMPOSITION_DELTA_REGISTRY.register(12, GSTrackEntryOffsetDelta.class, GSTrackEntryOffsetDelta::new);
 		
+		PLAYLIST_DELTA_REGISTRY = new GSDeltaRegistry<>();
+		PLAYLIST_DELTA_REGISTRY.register(0, GSPlaylistNameDelta.class, GSPlaylistNameDelta::new);
+		PLAYLIST_DELTA_REGISTRY.register(1, GSTriggerDelta.class, GSTriggerDelta::new);
+		PLAYLIST_DELTA_REGISTRY.register(2, GSEntryAddedDelta.class, GSEntryAddedDelta::new);
+		PLAYLIST_DELTA_REGISTRY.register(3, GSEntryRemovedDelta.class, GSEntryRemovedDelta::new);
+		PLAYLIST_DELTA_REGISTRY.register(4, GSEntryMovedDelta.class, GSEntryMovedDelta::new);
+		PLAYLIST_DELTA_REGISTRY.register(5, GSEntryChangedDelta.class, GSEntryChangedDelta::new);
+		
 		SESSION_DELTA_REGISTRY = new GSDeltaRegistry<>();
 		SESSION_DELTA_REGISTRY.register(0, GSFieldSessionDelta.class, GSFieldSessionDelta::new);
 		SESSION_DELTA_REGISTRY.register(1, GSSequenceSessionDelta.class, GSSequenceSessionDelta::new);
 		SESSION_DELTA_REGISTRY.register(2, GSCompositionSessionDelta.class, GSCompositionSessionDelta::new);
 		SESSION_DELTA_REGISTRY.register(3, GSUndoRedoHistorySessionDelta.class, GSUndoRedoHistorySessionDelta::new);
+		SESSION_DELTA_REGISTRY.register(4, GSPlaylistSessionDelta.class, GSPlaylistSessionDelta::new);
 	
 		UNDO_REDO_HISTORY_DELTA_REGISTRY = new GSDeltaRegistry<>();
 		UNDO_REDO_HISTORY_DELTA_REGISTRY.register(0, GSMoveUndoRedoHistoryDelta.class, GSMoveUndoRedoHistoryDelta::new);

@@ -3,7 +3,8 @@ package com.g4mesoft.captureplayback.composition;
 import java.io.IOException;
 import java.util.UUID;
 
-import net.minecraft.network.PacketByteBuf;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 public class GSTrackEntry {
 
@@ -44,6 +45,10 @@ public class GSTrackEntry {
 		this.parent = null;
 	}
 	
+	void duplicateFrom(GSTrackEntry other) {
+		set(other);
+	}
+	
 	public void set(GSTrackEntry other) {
 		setOffset(other.getOffset());
 	}
@@ -75,15 +80,15 @@ public class GSTrackEntry {
 		}
 	}
 	
-	public static GSTrackEntry read(PacketByteBuf buf) throws IOException {
-		UUID entryUUID = buf.readUuid();
+	public static GSTrackEntry read(GSDecodeBuffer buf) throws IOException {
+		UUID entryUUID = buf.readUUID();
 		long offset = buf.readLong();
 
 		return new GSTrackEntry(entryUUID, offset);
 	}
 
-	public static void write(PacketByteBuf buf, GSTrackEntry entry) throws IOException {
-		buf.writeUuid(entry.getEntryUUID());
+	public static void write(GSEncodeBuffer buf, GSTrackEntry entry) throws IOException {
+		buf.writeUUID(entry.getEntryUUID());
 		buf.writeLong(entry.getOffset());
 	}
 }

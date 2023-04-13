@@ -13,14 +13,14 @@ import com.g4mesoft.captureplayback.panel.composition.GSCompositionPanel;
 import com.g4mesoft.captureplayback.panel.composition.GSCompositionTrackHeaderPanel;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
-import com.g4mesoft.panel.GSLocation;
-import com.g4mesoft.panel.GSPanelUtil;
-import com.g4mesoft.panel.event.GSEvent;
-import com.g4mesoft.panel.event.GSIKeyListener;
-import com.g4mesoft.panel.event.GSIMouseListener;
-import com.g4mesoft.panel.event.GSKeyEvent;
-import com.g4mesoft.panel.event.GSMouseEvent;
-import com.g4mesoft.panel.scroll.GSScrollPanelCorner;
+import com.g4mesoft.ui.panel.GSLocation;
+import com.g4mesoft.ui.panel.GSPanelUtil;
+import com.g4mesoft.ui.panel.event.GSEvent;
+import com.g4mesoft.ui.panel.event.GSIKeyListener;
+import com.g4mesoft.ui.panel.event.GSIMouseListener;
+import com.g4mesoft.ui.panel.event.GSKeyEvent;
+import com.g4mesoft.ui.panel.event.GSMouseEvent;
+import com.g4mesoft.ui.panel.scroll.GSScrollPanelCorner;
 
 public class GSCompositionEditPanel extends GSAbstractEditPanel implements GSICompositionListener, GSIModelViewListener,
                                                                            GSIMouseListener, GSIKeyListener {

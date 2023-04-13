@@ -2,6 +2,7 @@ package com.g4mesoft.captureplayback.session;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.UUID;
 
 import com.g4mesoft.captureplayback.common.GSDeltaRegistries;
 import com.g4mesoft.captureplayback.common.GSIDelta;
@@ -10,30 +11,29 @@ import com.g4mesoft.captureplayback.module.server.GSCapturePlaybackServerModule;
 import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.server.GSServerController;
 import com.g4mesoft.packet.GSIPacket;
+import com.g4mesoft.util.GSDecodeBuffer;
+import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class GSSessionDeltasPacket implements GSIPacket {
 
-	private GSESessionType sessionType;
+	private UUID assetUUID;
 	private GSIDelta<GSSession>[] deltas;
 	
 	public GSSessionDeltasPacket() {
 	}
 
-	public GSSessionDeltasPacket(GSESessionType sessionType, GSIDelta<GSSession>[] deltas) {
-		this.sessionType = sessionType;
+	public GSSessionDeltasPacket(UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+		this.assetUUID = assetUUID;
 		this.deltas = deltas;
 	}
 	
 	@Override
-	public void read(PacketByteBuf buf) throws IOException {
-		sessionType = GSESessionType.fromIndex(buf.readInt());
-		if (sessionType == null)
-			throw new IOException("Unknown session type");
+	public void read(GSDecodeBuffer buf) throws IOException {
+		assetUUID = buf.readUUID();
 		
 		int deltaCount = buf.readInt();
 		@SuppressWarnings("unchecked")
@@ -59,9 +59,8 @@ public class GSSessionDeltasPacket implements GSIPacket {
 	}
 
 	@Override
-	public void write(PacketByteBuf buf) throws IOException {
-		buf.writeInt(sessionType.getIndex());
-	
+	public void write(GSEncodeBuffer buf) throws IOException {
+		buf.writeUUID(assetUUID);
 		buf.writeInt(deltas.length);
 		for (GSIDelta<GSSession> delta : deltas)
 			GSDeltaRegistries.SESSION_DELTA_REGISTRY.write(buf, delta);
@@ -71,7 +70,7 @@ public class GSSessionDeltasPacket implements GSIPacket {
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		if (module != null)
-			module.onSessionDeltasReceived(player, sessionType, deltas);
+			module.onSessionDeltasReceived(player, assetUUID, deltas);
 	}
 
 	@Override
@@ -79,6 +78,6 @@ public class GSSessionDeltasPacket implements GSIPacket {
 	public void handleOnClient(GSClientController controller) {
 		GSCapturePlaybackClientModule module = controller.getModule(GSCapturePlaybackClientModule.class);
 		if (module != null)
-			module.onSessionDeltasReceived(sessionType, deltas);
+			module.getAssetManager().onSessionDeltasReceived(assetUUID, deltas);
 	}
 }
