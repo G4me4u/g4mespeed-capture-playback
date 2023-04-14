@@ -17,11 +17,11 @@ archivesBaseName = project.archives_base_name
 version = project.mod_version + "-mc" + project.minecraft_version
 group = project.maven_group
 
-// See https://github.com/TerraformersMC/GradleScripts/blob/2.5/ferry.gradle
+configurations {
+    includeModImplementation
 
-ext.includeMod = { Object dep ->
-    dependencies.modImplementation dep
-    dependencies.include dep
+    include.extendsFrom includeModImplementation
+    modImplementation.extendsFrom includeModImplementation
 }
 
 dependencies {
@@ -31,7 +31,7 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
 	modImplementation "com.g4mesoft:g4mespeed:${project.g4mespeed_core_version}-mc${project.minecraft_version}-SNAPSHOT"
-	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}-SNAPSHOT"
+	includeModImplementation "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}-SNAPSHOT"
 }
 
 configurations.all {
