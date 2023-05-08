@@ -41,7 +41,7 @@ public class GSDeleteAssetPacket implements GSIPacket {
 		if (module != null) {
 			GSAssetManager assetManager = module.getAssetManager();
 			GSAssetInfo info = assetManager.getInfo(assetUUID);
-			if (info != null && info.hasPermission(player))
+			if (info != null && info.hasExtendedPermission(player))
 				assetManager.deleteAsset(assetUUID);
 		}
 		// TODO: send feedback for asset deletion
