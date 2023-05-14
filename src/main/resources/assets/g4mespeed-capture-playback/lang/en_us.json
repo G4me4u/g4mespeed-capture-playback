@@ -22,6 +22,11 @@
 	"gui.tab.capture-playback.duplicate": "Duplicate",
 	"gui.tab.capture-playback.delete": "Delete",
 
+	"gui.tab.capture-playback.permissionTitle": "Asset Permissions",
+	"gui.tab.capture-playback.owner": "Owned By:",
+	"gui.tab.capture-playback.createdBy": "Created By:",
+	"gui.tab.capture-playback.collaborators": "Collaborators:",
+
 	"gui.tab.capture-playback.popup.createTitle": "Create Asset",
 	"gui.tab.capture-playback.popup.duplicateTitle": "Duplicate Asset",
 	"gui.tab.capture-playback.popup.importTitle": "Import Asset",
@@ -36,12 +41,13 @@
 	"gui.tab.capture-playback.assetBackup": "Backup History",
 
 	"gui.tab.capture-playback.playlistTitle": "Playlist Overview",
+	"gui.tab.capture-playback.playerPickerTitle": "Add Collaborator",
 
 	"gui.tab.capture-playback.create": "Create",
 	"gui.tab.capture-playback.done": "Done",
 	"gui.tab.capture-playback.apply": "Apply",
 	"gui.tab.capture-playback.cancel": "Cancel",
-
+	"gui.tab.capture-playback.choose": "Choose",
 
 	"panel.sequencecolumnheader.expand": "Expand",
 	"panel.sequencecolumnheader.collapse": "Collapse",

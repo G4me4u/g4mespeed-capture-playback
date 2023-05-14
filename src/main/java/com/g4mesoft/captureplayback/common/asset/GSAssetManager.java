@@ -228,6 +228,16 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 		return info != null && info.hasPermission(player);
 	}
 
+	public boolean hasExtendedPermission(ServerPlayerEntity player, UUID assetUUID) {
+		GSAssetInfo info = getInfo(assetUUID);
+		return info != null && info.hasExtendedPermission(player);
+	}
+	
+	public boolean hasExtendedPermission(ServerPlayerEntity player, GSAssetHandle handle) {
+		GSAssetInfo info = getInfoFromHandle(handle);
+		return info != null && info.hasExtendedPermission(player);
+	}
+
 	public UUID createAsset(GSEAssetType type, GSEAssetNamespace namespace, String name, UUID ownerUUID) {
 		GSAssetHandle handle = GSAssetHandle.fromNameUnique(namespace, name, this::hasAssetHandle);
 		return createAsset(type, handle, name, ownerUUID);
@@ -303,7 +313,7 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 		GSAssetFileHeader header = assetFile.getHeader();
 		UUID assetUUID = GSUUIDUtil.randomUnique(this::hasAsset);
 		GSAssetStorage storage = getStorage(fHandle.getNamespace());
-		storage.createDuplicateAsset(new GSAssetInfo(
+		storage.importAsset(new GSAssetInfo(
 			header.getType(),
 			assetUUID,
 			fHandle,
@@ -311,8 +321,20 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 			header.getCreatedTimestamp(),
 			header.getCreatedByUUID(),
 			ownerUUID
-		), assetFile.getAsset());
+		), assetFile);
 		return assetUUID;
+	}
+	
+	public void addCollaborator(UUID assetUUID, UUID collabUUID) {
+		GSAssetStorage storage = getStorage(assetUUID);
+		if (storage != null)
+			storage.addCollaborator(assetUUID, collabUUID);
+	}
+
+	public void removeCollaborator(UUID assetUUID, UUID collabUUID) {
+		GSAssetStorage storage = getStorage(assetUUID);
+		if (storage != null)
+			storage.removeCollaborator(assetUUID, collabUUID);
 	}
 	
 	public GSAssetRef requestAsset(UUID assetUUID) {

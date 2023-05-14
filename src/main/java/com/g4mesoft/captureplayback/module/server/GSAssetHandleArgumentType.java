@@ -1,54 +1,43 @@
 package com.g4mesoft.captureplayback.module.server;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
-import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.arguments.ArgumentType;
+import com.g4mesoft.captureplayback.common.asset.GSEAssetNamespace;
+import com.g4mesoft.ui.util.GSTextUtil;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 
+import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
-public class GSAssetHandleArgumentType implements ArgumentType<GSAssetHandle> {
+public class GSAssetHandleArgumentType {
 
 	public static final SimpleCommandExceptionType INVALID_HANDLE =
-			new SimpleCommandExceptionType(Text.translatable("argument.assetHandle.invalid"));
-	private static final Collection<String> EXAMPLES = Arrays.asList("g:my_composition", "w:best_door", "g:small_0_6s_5x5");
-	private static final Pattern VALID_CHARACTERS = Pattern.compile("^([wg]:[0-9A-Za-z_]+)");
+			new SimpleCommandExceptionType(GSTextUtil.translatable("argument.assetHandle.invalid"));
 
-	public static GSAssetHandle getHandle(CommandContext<ServerCommandSource> context, String name) {
-		return context.getArgument(name, GSAssetHandle.class);
+	private GSAssetHandleArgumentType() {
 	}
-
-	public static GSAssetHandleArgumentType handle() {
-		return new GSAssetHandleArgumentType();
-	}
-
-	@Override
-	public GSAssetHandle parse(StringReader reader) throws CommandSyntaxException {
-		String remaining = reader.getRemaining();
-		Matcher matcher = VALID_CHARACTERS.matcher(remaining);
-		if (matcher.find()) {
-			String identifier = matcher.group(1);
+	
+	public static GSAssetHandle getHandle(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
+		Identifier id = IdentifierArgumentType.getIdentifier(context, name);
+		// Convert into asset namespace
+		GSEAssetNamespace namespace = null;
+		if (id.getNamespace().length() == 1) {
+			namespace = GSEAssetNamespace.fromIdentifier(
+					id.getNamespace().charAt(0));
+		}
+		if (namespace != null) {
 			try {
-				GSAssetHandle handle = GSAssetHandle.fromString(identifier);
-				reader.setCursor(reader.getCursor() + identifier.length());
-				return handle;
-			} catch (IllegalArgumentException ignore) {
-				// handled below.
+				return new GSAssetHandle(namespace, id.getPath());
+			} catch (IllegalArgumentException e) {
+				// Path is not base62 or underscore.
 			}
 		}
 		throw INVALID_HANDLE.create();
 	}
 
-	@Override
-	public Collection<String> getExamples() {
-		return EXAMPLES;
+	public static IdentifierArgumentType handle() {
+		return IdentifierArgumentType.identifier();
 	}
 }

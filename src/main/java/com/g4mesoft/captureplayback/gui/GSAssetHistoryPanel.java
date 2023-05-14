@@ -19,8 +19,7 @@ import com.g4mesoft.captureplayback.common.asset.GSEAssetNamespace;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistory;
 import com.g4mesoft.captureplayback.common.asset.GSIAssetHistoryListener;
-import com.g4mesoft.captureplayback.common.asset.GSIPlayerCache;
-import com.g4mesoft.captureplayback.common.asset.GSPlayerCacheEntry;
+import com.g4mesoft.captureplayback.common.asset.GSPlayerCache;
 import com.g4mesoft.captureplayback.module.client.GSClientAssetManager;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.ui.panel.GSEAnchor;
@@ -40,7 +39,6 @@ import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
 import com.g4mesoft.ui.panel.table.GSBasicTableModel;
 import com.g4mesoft.ui.panel.table.GSEHeaderResizePolicy;
 import com.g4mesoft.ui.panel.table.GSEHeaderSelectionPolicy;
-import com.g4mesoft.ui.panel.table.GSIHeaderSelectionListener;
 import com.g4mesoft.ui.panel.table.GSIHeaderSelectionModel;
 import com.g4mesoft.ui.panel.table.GSITableColumn;
 import com.g4mesoft.ui.panel.table.GSITableModel;
@@ -49,8 +47,7 @@ import com.g4mesoft.util.GSFileUtil;
 
 import net.minecraft.text.Text;
 
-public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistoryListener,
-                                                                  GSIHeaderSelectionListener {
+public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistoryListener {
 
 	private static final Text ASSET_HISTORY_TITLE = translatable("historyTitle");
 	/* Indices pointing to the column of each of the titles */
@@ -81,8 +78,6 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final Text DUPLICATE_TEXT = translatable("duplicate");
 	private static final Text DELETE_TEXT    = translatable("delete");
 	
-	private static final Text UNKNOWN_OWNER_NAME = translatable("unknownOwner");
-
 	private static final GSIFileNameFilter GSA_FILE_NAME_FILTER =
 			new GSFileExtensionFilter(new String[] { "gsa" });
 	
@@ -131,8 +126,9 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	}
 	
 	private final GSClientAssetManager assetManager;
+	private final GSAssetPermissionPanel assetPermPanel;
 	private final GSIAssetHistory history;
-	private final GSIPlayerCache playerCache;
+	private final GSPlayerCache playerCache;
 
 	private final GSTablePanel table;
 	
@@ -148,17 +144,17 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	
 	private GSAssetHandle selectedHandle;
 	
-	public GSAssetHistoryPanel(GSClientAssetManager assetManager) {
+	public GSAssetHistoryPanel(GSClientAssetManager assetManager, GSAssetPermissionPanel assetPermPanel) {
 		this.assetManager = assetManager;
 		history = assetManager.getAssetHistory();
 		playerCache = assetManager.getPlayerCache();
+		this.assetPermPanel = assetPermPanel;
 		
 		table = new GSTablePanel(createTableModel(null));
 		table.setColumnHeaderResizePolicy(GSEHeaderResizePolicy.RESIZE_SUBSEQUENT);
 		table.setRowHeaderResizePolicy(GSEHeaderResizePolicy.RESIZE_OFF);
 		table.setColumnSelectionPolicy(GSEHeaderSelectionPolicy.DISABLED);
 		table.setRowSelectionPolicy(GSEHeaderSelectionPolicy.SINGLE_SELECTION);
-		table.getRowSelectionModel().addListener(this);
 		table.setBorderWidth(0, 1);
 		table.setPreferredRowCount(10);
 		table.setMinimumRowHeight(16);
@@ -209,7 +205,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		for (GSAssetInfo info : filtered) {
 			GSEAssetNamespace namespace = info.getHandle().getNamespace();
 			model.setCellValue(NAME_COLUMN_INDEX, r, info.getAssetName());
-			model.setCellValue(OWNER_UUID_COLUMN_INDEX, r, toOwnerName(info.getOwnerUUID()));
+			model.setCellValue(OWNER_UUID_COLUMN_INDEX, r, playerCache.getNameText(info.getOwnerUUID()));
 			model.setCellValue(CREATED_COLUMN_INDEX, r, Instant.ofEpochMilli(info.getCreatedTimestamp()));
 			model.setCellValue(MODIFIED_COLUMN_INDEX, r, Instant.ofEpochMilli(info.getLastModifiedTimestamp()));
 			model.setCellValue(NAMESPACE_COLUMN_INDEX, r, NAMESPACE_TEXTS[namespace.getIndex()]);
@@ -219,14 +215,6 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		}
 		
 		return model;
-	}
-	
-	private Text toOwnerName(UUID ownerUUID) {
-		if (ownerUUID.equals(GSAssetInfo.UNKNOWN_OWNER_UUID))
-			return UNKNOWN_OWNER_NAME;
-		GSPlayerCacheEntry entry = playerCache.get(ownerUUID);
-		return Text.literal((entry != null) ?
-				entry.getName() : ownerUUID.toString());
 	}
 	
 	private void initLayout() {
@@ -358,6 +346,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		searchField.addChangeListener(this::updateTableModel);
 		searchButton.addActionListener(this::updateTableModel);
 		table.addActionListener(this::editSelection);
+		table.getRowSelectionModel().addListener(this::onSelectionChanged);
 	}
 	
 	private void importAsset(Path path) {
@@ -435,8 +424,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 			table.setSelectedRows(0, 0);
 	}
 	
-	@Override
-	public void selectionChanged(int firstIndex, int lastIndex) {
+	public void onSelectionChanged() {
 		GSITableModel model = table.getModel();
 		GSAssetHandle handleToSelect = null;
 		int selectedRow = table.getRowSelectionModel().getIntervalMin();
@@ -456,11 +444,16 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private void selectedHandleChanged(GSAssetHandle handle) {
 		selectedHandle = handle;
 		// Disable buttons if there is no selection
-		boolean hasSelection = (handle != null);
-		exportButton.setEnabled(hasSelection);
-		editButton.setEnabled(hasSelection);
-		duplicateButton.setEnabled(hasSelection);
-		deleteButton.setEnabled(hasSelection);
+		GSAssetInfo info = (handle != null) ?
+				history.getFromHandle(handle) : null;
+		boolean enableButtons = (info != null &&
+				assetManager.hasPermission(info.getAssetUUID()));
+		exportButton.setEnabled(enableButtons);
+		editButton.setEnabled(enableButtons);
+		duplicateButton.setEnabled(enableButtons);
+		deleteButton.setEnabled(enableButtons);
+		
+		assetPermPanel.setInfo(info);
 	}
 	
 	private void setSelectedHandle(GSAssetHandle handle) {

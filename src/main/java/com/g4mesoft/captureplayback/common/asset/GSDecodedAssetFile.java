@@ -46,8 +46,8 @@ public class GSDecodedAssetFile {
 	}
 
 	public static void write(GSEncodeBuffer buf, GSDecodedAssetFile assetFile) throws IOException {
-		GSAssetFileHeader.write(buf, assetFile.header);
-		writeAsset(buf, assetFile.asset);
+		GSAssetFileHeader.write(buf, assetFile.getHeader());
+		writeAsset(buf, assetFile.getAsset());
 	}
 	
 	private static <T extends GSAbstractAsset> void writeAsset(GSEncodeBuffer buf, T asset) throws IOException {

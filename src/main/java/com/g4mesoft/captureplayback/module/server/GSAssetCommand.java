@@ -8,6 +8,7 @@ import com.g4mesoft.captureplayback.common.asset.GSEAssetNamespace;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.core.server.GSServerController;
+import com.g4mesoft.ui.util.GSTextUtil;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -26,7 +27,8 @@ import net.minecraft.util.Formatting;
 
 public class GSAssetCommand {
 
-    private static final SimpleCommandExceptionType INSUFFICIENT_PERMISSION_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("command.assetCommands.insufficientPermission"));
+    private static final SimpleCommandExceptionType INSUFFICIENT_PERMISSION_EXCEPTION =
+    		new SimpleCommandExceptionType(GSTextUtil.translatable("command.assetCommands.insufficientPermission"));
 	
 	private GSAssetCommand() {
 	}
@@ -70,7 +72,7 @@ public class GSAssetCommand {
 
 		assetManager.createAsset(assetType, namespace, assetName, player.getUuid());
 
-		source.sendFeedback(Text.literal("Asset '" + assetName + "' created successfully."), false);
+		source.sendFeedback(GSTextUtil.literal("Asset '" + assetName + "' created successfully."), false);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -84,9 +86,9 @@ public class GSAssetCommand {
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
 		if (info != null && info.getType() == assetType && module.onSessionRequest(player, GSESessionRequestType.REQUEST_START, info.getAssetUUID())) {
-			source.sendFeedback(Text.literal("Session of " + toNameString(info) + " started."), false);
+			source.sendFeedback(GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
 		} else {
-			source.sendError(Text.literal("Failed to edit asset."));
+			source.sendError(GSTextUtil.literal("Failed to edit asset."));
 		}
 
 		return Command.SINGLE_SUCCESS;
@@ -96,10 +98,10 @@ public class GSAssetCommand {
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		
 		String commandPrefix = "/" + assetType.getName() + " edit ";
-		Text hintText = Text.literal("Edit " + assetType.getName());
+		Text hintText = GSTextUtil.literal("Edit " + assetType.getName());
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
 			if (info.getType() == assetType) {
-				source.sendFeedback(Texts.bracketed(Text.literal(info.getAssetName()).styled((style) -> {
+				source.sendFeedback(Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
 					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getHandle()))
 							.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hintText))
 							.withColor(Formatting.GREEN);
@@ -129,6 +131,9 @@ public class GSAssetCommand {
 	}
 
 	public static String toNameString(GSAssetInfo info) {
-		return "'" + info.getAssetName() + "' (" + info.getHandle() + ")";
+		// Note: Users can 'inject' chat formatting into the
+		//       asset name. Reset here to handle that case,
+		//       so it looks intentional...
+		return "'" + info.getAssetName() + "§r' (" + info.getHandle() + ")";
 	}
 }

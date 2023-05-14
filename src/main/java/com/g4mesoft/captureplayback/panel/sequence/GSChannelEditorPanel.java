@@ -15,6 +15,7 @@ import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
 import com.g4mesoft.ui.panel.table.GSEHeaderResizePolicy;
 import com.g4mesoft.ui.panel.table.GSITableModel;
 import com.g4mesoft.ui.panel.table.GSTablePanel;
+import com.g4mesoft.ui.util.GSTextUtil;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -23,10 +24,10 @@ public class GSChannelEditorPanel extends GSEditorPanel {
 
 	private static final int FIELD_MARGIN = 2;
 	
-	private static final Text TITLE_TEXT     = Text.translatable("panel.edit.channel.title");
-	private static final Text NAME_TEXT      = Text.translatable("panel.edit.channel.name");
-	private static final Text COLOR_TEXT     = Text.translatable("panel.edit.channel.color");
-	private static final Text POSITIONS_TEXT = Text.translatable("panel.edit.channel.positions");
+	private static final Text TITLE_TEXT     = GSTextUtil.translatable("panel.edit.channel.title");
+	private static final Text NAME_TEXT      = GSTextUtil.translatable("panel.edit.channel.name");
+	private static final Text COLOR_TEXT     = GSTextUtil.translatable("panel.edit.channel.color");
+	private static final Text POSITIONS_TEXT = GSTextUtil.translatable("panel.edit.channel.positions");
 	
 	private final GSChannel channel;
 	private GSChannelInfo info;

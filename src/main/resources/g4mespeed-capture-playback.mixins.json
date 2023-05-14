@@ -14,8 +14,7 @@
     "common.GSDoorBlockMixin",
     "common.GSTrapdoorBlockMixin",
     "common.GSFenceGateBlockMixin",
-    "common.GSBellBlockMixin",
-    "common.GSArgumentTypesMixin"
+    "common.GSBellBlockMixin"
   ],
   "client": [
   ],

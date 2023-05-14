@@ -14,53 +14,48 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-public class GSRequestAssetPacket implements GSIPacket {
+public class GSAssetCollaboratorPacket implements GSIPacket {
 
 	private UUID assetUUID;
+	private UUID collabUUID;
+	private boolean removed;
 	
-	public GSRequestAssetPacket() {
+	public GSAssetCollaboratorPacket() {
 	}
 
-	public GSRequestAssetPacket(UUID assetUUID) {
-		if (assetUUID == null)
-			throw new IllegalArgumentException("assetUUID is null");
+	public GSAssetCollaboratorPacket(UUID assetUUID, UUID collabUUID, boolean removed) {
 		this.assetUUID = assetUUID;
+		this.collabUUID = collabUUID;
+		this.removed = removed;
 	}
 	
 	@Override
 	public void read(GSDecodeBuffer buf) throws IOException {
 		assetUUID = buf.readUUID();
+		collabUUID = buf.readUUID();
+		removed = buf.readBoolean();
 	}
 
 	@Override
 	public void write(GSEncodeBuffer buf) throws IOException {
 		buf.writeUUID(assetUUID);
+		buf.writeUUID(collabUUID);
+		buf.writeBoolean(removed);
 	}
 
 	@Override
 	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
-		
-		GSIPacket packet = null;
 		if (module != null) {
 			GSAssetManager assetManager = module.getAssetManager();
-			GSAssetInfo info = assetManager.getInfo(assetUUID);
-			if (info != null && info.hasPermission(player)) {
-				GSAssetRef ref = assetManager.requestAsset(assetUUID);
-				if (ref != null) {
-					GSAssetFileHeader header = new GSAssetFileHeader(info, assetManager.getPlayerCache());
-					GSDecodedAssetFile assetFile = new GSDecodedAssetFile(header, ref.get());
-					packet = new GSAssetRequestResponsePacket(assetFile);
-					ref.release();
+			GSAssetInfo info = assetManager.getStoredHistory().get(assetUUID);
+			if (info != null && info.hasExtendedPermission(player)) {
+				if (removed) {
+					assetManager.removeCollaborator(assetUUID, collabUUID);
+				} else {
+					assetManager.addCollaborator(assetUUID, collabUUID);
 				}
 			}
-		}
-		
-		if (packet != null) {
-			controller.sendPacket(packet, player);
-		} else {
-			// The request was denied...
-			controller.sendPacket(new GSAssetRequestResponsePacket(assetUUID), player);
 		}
 	}
 

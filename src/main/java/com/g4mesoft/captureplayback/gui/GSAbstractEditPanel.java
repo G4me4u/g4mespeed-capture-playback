@@ -31,6 +31,7 @@ import com.g4mesoft.ui.panel.scroll.GSEScrollBarPolicy;
 import com.g4mesoft.ui.panel.scroll.GSScrollBar;
 import com.g4mesoft.ui.panel.scroll.GSScrollPanel;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.util.GSTextUtil;
 
 import net.minecraft.text.Text;
 
@@ -46,10 +47,10 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	private static final GSIcon BACK_ICON = GSPanelContext.getIcon(60, 32, 9, 9);
 	private static final GSIcon HOVERED_BACK_ICON = GSPanelContext.getIcon(69, 32, 9, 9);
 	private static final GSIcon DISABLED_BACK_ICON = GSPanelContext.getIcon(78, 32, 9, 9);
-	private static final Text BACK_TEXT = Text.translatable("panel.edit.back");
+	private static final Text BACK_TEXT = GSTextUtil.translatable("panel.edit.back");
 	
 	private static final GSIcon OPACITY_SELECTED_ICON = new GSColoredIcon(0xFFFFFFFF, 4, 4);
-	private static final Text OPACITY_TEXT = Text.translatable("panel.opacity");
+	private static final Text OPACITY_TEXT = GSTextUtil.translatable("panel.opacity");
 	
 	private static final int CONTENT_EVENT_HANDLER_PRIORITY = 100;
 	
@@ -286,7 +287,7 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		GSDropdown opacityMenu = new GSDropdown();
 		for (GSEContentOpacity opacity : GSEContentOpacity.OPACITIES) {
 			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
-			Text text = Text.translatable(opacity.getName());
+			Text text = GSTextUtil.translatable(opacity.getName());
 			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
 				setContentOpacity(opacity);
 			}));

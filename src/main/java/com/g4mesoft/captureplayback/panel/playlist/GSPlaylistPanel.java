@@ -11,6 +11,7 @@ import com.g4mesoft.captureplayback.playlist.GSPlaylistEntry;
 import com.g4mesoft.ui.panel.GSETextAlignment;
 import com.g4mesoft.ui.panel.GSParentPanel;
 import com.g4mesoft.ui.panel.field.GSTextField;
+import com.g4mesoft.ui.util.GSTextUtil;
 
 import net.minecraft.text.Text;
 
@@ -25,11 +26,11 @@ public class GSPlaylistPanel extends GSParentPanel implements GSIPlaylistListene
 		GSETriggerType[] triggerTypes = GSETriggerType.values();
 		TRIGGER_NAMES = new Text[triggerTypes.length];
 		for (GSETriggerType type : triggerTypes)
-			TRIGGER_NAMES[type.getIndex()] = Text.translatable("panel.playlist.trigger." + type.getName());
+			TRIGGER_NAMES[type.getIndex()] = GSTextUtil.translatable("panel.playlist.trigger." + type.getName());
 		GSEPlaylistEntryType[] entryTypes = GSEPlaylistEntryType.values();
 		ENTRY_NAMES = new Text[entryTypes.length];
 		for (GSEPlaylistEntryType type : entryTypes)
-			ENTRY_NAMES[type.getIndex()] = Text.translatable("panel.playlist.entry." + type.getName());
+			ENTRY_NAMES[type.getIndex()] = GSTextUtil.translatable("panel.playlist.entry." + type.getName());
 	}
 	
 	private final GSPlaylist playlist;

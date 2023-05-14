@@ -1,6 +1,7 @@
 package com.g4mesoft.captureplayback.gui;
 
 import com.g4mesoft.captureplayback.module.client.GSClientAssetManager;
+import com.g4mesoft.ui.panel.GSEAnchor;
 import com.g4mesoft.ui.panel.GSEFill;
 import com.g4mesoft.ui.panel.GSGridLayoutManager;
 import com.g4mesoft.ui.panel.GSMargin;
@@ -8,6 +9,7 @@ import com.g4mesoft.ui.panel.GSPanelContext;
 import com.g4mesoft.ui.panel.GSParentPanel;
 import com.g4mesoft.ui.panel.scroll.GSIScrollable;
 import com.g4mesoft.ui.renderer.GSTexture;
+import com.g4mesoft.ui.util.GSTextUtil;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -20,18 +22,18 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 
 	/* Helper method for getting translatable text. */
 	public static Text translatable(String key) {
-		return Text.translatable("gui.tab.capture-playback." + key);
+		return GSTextUtil.translatable("gui.tab.capture-playback." + key);
 	}
 	
+	private final GSAssetPermissionPanel assetPermPanel;
 	private final GSAssetHistoryPanel assetHistoryPanel;
-	private final GSAssetBackupPanel assetBackupPanel;
 	private final GSPlaylistOverviewPanel playlistOverviewPanel;
 	
 	private boolean compactView;
 	
 	public GSCapturePlaybackPanel(GSClientAssetManager assetManager) {
-		assetHistoryPanel = new GSAssetHistoryPanel(assetManager);
-		assetBackupPanel = new GSAssetBackupPanel();
+		assetPermPanel = new GSAssetPermissionPanel(assetManager);
+		assetHistoryPanel = new GSAssetHistoryPanel(assetManager, assetPermPanel);
 		playlistOverviewPanel = new GSPlaylistOverviewPanel();
 
 		// Force scroll panel to allocate exactly its own width to
@@ -53,14 +55,14 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 			.set(GSGridLayoutManager.MARGIN, new GSMargin(10))
 			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
 		add(assetHistoryPanel);
-		assetBackupPanel.getLayout()
+		assetPermPanel.getLayout()
 			.set(GSGridLayoutManager.GRID_X, 1)
 			.set(GSGridLayoutManager.GRID_Y, 0)
-			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
 			.set(GSGridLayoutManager.WEIGHT_Y, 1.0f)
+			.set(GSGridLayoutManager.ANCHOR, GSEAnchor.WEST)
 			.set(GSGridLayoutManager.MARGIN, new GSMargin(10))
-			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
-		add(assetBackupPanel);
+			.set(GSGridLayoutManager.FILL, GSEFill.VERTICAL);
+		add(assetPermPanel);
 		// Default is compact view disabled.
 		compactView = false;
 		
@@ -71,7 +73,6 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 			.set(GSGridLayoutManager.GRID_X, 0)
 			.set(GSGridLayoutManager.GRID_Y, 2)
 			.set(GSGridLayoutManager.GRID_WIDTH, 2)
-			.set(GSGridLayoutManager.WEIGHT_X, 1.0f)
 			.set(GSGridLayoutManager.WEIGHT_Y, 2.0f)
 			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
 		add(playlistOverviewPanel);
@@ -85,21 +86,23 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 		// asset backups next to each other. Otherwise place
 		// the backup panel underneath.
 		long pw = (long)assetHistoryPanel.getProperty(MINIMUM_WIDTH) +
-		                assetBackupPanel.getProperty(MINIMUM_WIDTH);
+		                assetPermPanel.getProperty(MINIMUM_WIDTH);
 		boolean shouldCompactView = (pw > width);
 		if (compactView != shouldCompactView) {
 			if (shouldCompactView) {
 				assetHistoryPanel.getLayout()
 					.set(GSGridLayoutManager.GRID_WIDTH, 2);
-				assetBackupPanel.getLayout()
+				assetPermPanel.getLayout()
 					.set(GSGridLayoutManager.GRID_X, 0)
-					.set(GSGridLayoutManager.GRID_Y, 1);
+					.set(GSGridLayoutManager.GRID_Y, 1)
+					.set(GSGridLayoutManager.GRID_WIDTH, 2);
 			} else {
 				assetHistoryPanel.getLayout()
 					.set(GSGridLayoutManager.GRID_WIDTH, 1);
-				assetBackupPanel.getLayout()
+				assetPermPanel.getLayout()
 					.set(GSGridLayoutManager.GRID_X, 1)
-					.set(GSGridLayoutManager.GRID_Y, 0);
+					.set(GSGridLayoutManager.GRID_Y, 0)
+					.set(GSGridLayoutManager.GRID_WIDTH, 1);
 			}
 			compactView = shouldCompactView;
 			// Preferred size has changed. Invalidate later,
