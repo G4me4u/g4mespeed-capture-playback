@@ -322,7 +322,7 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	 * 
 	 * @return the popup on which the create asset panel was shown.
 	 */
-	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager) {
+	public static GSCreateAssetPanel show(GSPanel source, GSClientAssetManager assetManager) {
 		return show(source, new GSCreateAssetPanel(assetManager, (GSAssetInfo)null));
 	}
 	
@@ -338,7 +338,7 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	 * 
 	 * @return the popup on which the create asset panel was shown.
 	 */
-	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager, GSAssetInfo originalInfo) {
+	public static GSCreateAssetPanel show(GSPanel source, GSClientAssetManager assetManager, GSAssetInfo originalInfo) {
 		return show(source, new GSCreateAssetPanel(assetManager, originalInfo));
 	}
 
@@ -351,16 +351,16 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	 * 
 	 * @return the popup on which the create asset panel was shown.
 	 */
-	public static GSPopup show(GSPanel source, GSClientAssetManager assetManager, GSDecodedAssetFile assetFile) {
+	public static GSCreateAssetPanel show(GSPanel source, GSClientAssetManager assetManager, GSDecodedAssetFile assetFile) {
 		return show(source, new GSCreateAssetPanel(assetManager, assetFile));
 	}
 	
-	private static GSPopup show(GSPanel source, GSCreateAssetPanel panel) {
+	private static GSCreateAssetPanel show(GSPanel source, GSCreateAssetPanel panel) {
 		GSPopup popup = new GSPopup(panel, true);
 		popup.setHiddenOnFocusLost(false);
 		popup.setSourceFocusedOnHide(source != null);
 		popup.show(source, 0, 0, GSEPopupPlacement.CENTER);
-		return popup;
+		return panel;
 	}
 	
 	public void hide() {

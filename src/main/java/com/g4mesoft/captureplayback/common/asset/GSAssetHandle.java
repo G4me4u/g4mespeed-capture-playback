@@ -39,7 +39,7 @@ public class GSAssetHandle implements Comparable<GSAssetHandle> {
 	
 	private String identifierCache;
 
-	private GSAssetHandle(GSEAssetNamespace namespace, String handle) {
+	public GSAssetHandle(GSEAssetNamespace namespace, String handle) {
 		if (namespace == null)
 			throw new IllegalArgumentException("namespace is null!");
 		// Note: Intentional null-pointer exception

@@ -9,6 +9,7 @@ import com.g4mesoft.captureplayback.common.asset.GSAssetManager;
 import com.g4mesoft.captureplayback.common.asset.GSAssetRef;
 import com.g4mesoft.captureplayback.stream.GSDelayedPlaybackStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
+import com.g4mesoft.ui.util.GSTextUtil;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -18,7 +19,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
 
 public final class GSPlaybackCommand {
 
@@ -93,30 +93,30 @@ public final class GSPlaybackCommand {
 		GSAssetInfo info = assetManager.getInfoFromHandle(handle);
 
 		if (info == null) {
-			source.sendError(new LiteralText("Asset does not exist."));
+			source.sendError(GSTextUtil.literal("Asset does not exist."));
 			return 0;
 		}
 		
 		if (!info.getType().isStreamable()) {
-			source.sendError(new LiteralText("Asset is not streamable."));
+			source.sendError(GSTextUtil.literal("Asset is not streamable."));
 			return 0;
 		}
 		
 		ServerWorld world = source.getWorld();
 		if (((GSIServerWorldAccess)world).gcp_hasPlaybackStream(info.getAssetUUID())) {
-			source.sendError(new LiteralText("Already playing back '" + handle + "'."));
+			source.sendError(GSTextUtil.literal("Already playing back '" + handle + "'."));
 			return 0;
 		}
 		
 		GSAssetRef ref = assetManager.requestAsset(info.getAssetUUID());
 		if (ref == null) {
-			source.sendError(new LiteralText("Failed to load asset."));
+			source.sendError(GSTextUtil.literal("Failed to load asset."));
 			return 0;
 		}
 		
 		startPlaybackImpl(world, ref, delay, repeatCount, true);
 		
-		source.sendFeedback(new LiteralText("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
+		source.sendFeedback(GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -152,19 +152,19 @@ public final class GSPlaybackCommand {
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
 		if (info == null) {
-			source.sendError(new LiteralText("Asset with handle '" + handle + "' does not exist."));
+			source.sendError(GSTextUtil.literal("Asset with handle '" + handle + "' does not exist."));
 			return 0;
 		}
 		
 		ServerWorld world = source.getWorld();
 		GSIPlaybackStream stream = ((GSIServerWorldAccess)world).gcp_getPlaybackStream(info.getAssetUUID());
 		if (stream == null) {
-			source.sendError(new LiteralText("No active playback found."));
+			source.sendError(GSTextUtil.literal("No active playback found."));
 			return 0;
 		}
 		
 		stream.close();
-		source.sendFeedback(new LiteralText("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
+		source.sendFeedback(GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -175,7 +175,7 @@ public final class GSPlaybackCommand {
 		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
-		source.sendFeedback(new LiteralText("All playbacks stopped."), true);
+		source.sendFeedback(GSTextUtil.literal("All playbacks stopped."), true);
 
 		return Command.SINGLE_SUCCESS;
 	}

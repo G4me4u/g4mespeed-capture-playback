@@ -167,7 +167,7 @@ public class GSAssetStorage {
 	}
 
 	public void createAsset(GSAssetInfo info) {
-		createAsset(info, GSAssetRegistry.getConstr(info.getType()).apply(info));
+		createAsset(info, null, GSAssetRegistry.getConstr(info.getType()).apply(info));
 	}
 	
 	public void createDuplicateAsset(GSAssetInfo info, GSAbstractAsset originalAsset) {
@@ -175,17 +175,26 @@ public class GSAssetStorage {
 		asset.duplicateFrom(originalAsset);
 		// Note: The check for asset type in info and corresponding
 		//       original asset is checked below.
-		createAsset(info, asset);
+		createAsset(info, null, asset);
 	}
 	
-	private void createAsset(GSAssetInfo info, GSAbstractAsset asset) {
+	public void importAsset(GSAssetInfo info, GSDecodedAssetFile assetFile) {
+		GSAssetFileHeader header = assetFile.getHeader();
+		GSAbstractAsset asset = GSAssetRegistry.getConstr(header.getType()).apply(info);
+		asset.duplicateFrom(assetFile.getAsset());
+		// Note: The check for asset type in info and corresponding
+		//       original asset is checked below.
+		createAsset(info, header, asset);
+	}
+	
+	private void createAsset(GSAssetInfo info, GSAssetFileHeader header, GSAbstractAsset asset) {
 		checkDistinctAssetUUID(info.getAssetUUID());
 		checkCorrespondingInfo(info, asset);
 		checkDistinctHandle(info.getHandle());
 		checkHandleNamespace(info.getHandle());
 		// Note: add to player cache first so clients know about names
 		//       at the time the history updates.
-		playerCache.onAssetAdded(this, info);
+		playerCache.onAssetAdded(this, info, header);
 		storedHistory.add(info);
 		addAsset(info, asset);
 		// Note: immediately unload asset so history is consistent.
@@ -225,6 +234,33 @@ public class GSAssetStorage {
 			// Recursively add asset and its derived assets
 			derivedHistory.add(derivedInfo);
 			addAsset(derivedInfo, derivedAsset);
+		}
+	}
+	
+	public void addCollaborator(UUID assetUUID, UUID collabUUID) {
+		GSAssetInfo info = storedHistory.get(assetUUID);
+		if (info != null && !info.isCollaborator(collabUUID)) {
+			// Note: we are optimistic and assume that we add the
+			//       collaborator. This ensures that the client has
+			//       the player cache entry before we update the
+			//       history accordingly.
+			playerCache.onCollabAdded(this, assetUUID, collabUUID);
+			if (storedHistory.addCollaborator(assetUUID, collabUUID)) {
+				// Ensure history stays persistent.
+				saveHistory(assetUUID);
+			} else {
+				// The assumption was wrong. Corrected here.
+				playerCache.onCollabRemoved(this, assetUUID, collabUUID);
+			}
+		}
+	}
+
+	public void removeCollaborator(UUID assetUUID, UUID collabUUID) {
+		// Note: we do not have to remote the player cache entry
+		//       prematurely as in #addCollaborator(...).
+		if (storedHistory.removeCollaborator(assetUUID, collabUUID)) {
+			playerCache.onCollabRemoved(this, assetUUID, collabUUID);
+			saveHistory(assetUUID);
 		}
 	}
 	
@@ -371,7 +407,7 @@ public class GSAssetStorage {
 			if (asset != null) {
 				long saveTimeMs = System.currentTimeMillis();
 				// Save the asset itself
-				GSAssetFileHeader header = new GSAssetFileHeader(info);
+				GSAssetFileHeader header = new GSAssetFileHeader(info, playerCache);
 				GSDecodedAssetFile assetFile = new GSDecodedAssetFile(header, asset);
 				try {
 					GSFileUtil.writeFile(getAssetFile(info), assetFile, GSDecodedAssetFile::write);
@@ -489,28 +525,40 @@ public class GSAssetStorage {
 		}
 		
 		/* Visible for GSAssetStorage */
-		void onAssetAdded(GSAssetStorage storage, GSAssetInfo info) {
-			incRef(storage, info, 1);
+		void onAssetAdded(GSAssetStorage storage, GSAssetInfo info, GSAssetFileHeader header) {
+			incRef(storage, info, header, 1);
 		}
 
 		/* Visible for GSAssetStorage */
 		void onAssetRemoved(GSAssetStorage storage, GSAssetInfo info) {
-			incRef(storage, info, -1);
-		}
-
-		private void incRef(GSAssetStorage storage, GSAssetInfo info, int sign) {
-			incRef(storage, info.getOwnerUUID(), sign);
-			for (UUID playerUUID : info.getPermissionUUIDs())
-				incRef(storage, playerUUID, sign);
+			incRef(storage, info, null, -1);
 		}
 		
-		private void incRef(GSAssetStorage storage, UUID playerUUID, int sign) {
+		/* Visible for GSAssetStorage */
+		void onCollabAdded(GSAssetStorage storage, UUID assetUUID, UUID collabUUID) {
+			incRef(storage, collabUUID, null, 1);
+		}
+
+		/* Visible for GSAssetStorage */
+		void onCollabRemoved(GSAssetStorage storage, UUID assetUUID, UUID collabUUID) {
+			incRef(storage, collabUUID, null, -1);
+		}
+
+		private void incRef(GSAssetStorage storage, GSAssetInfo info, GSAssetFileHeader header, int sign) {
+			incRef(storage, info.getOwnerUUID(), header, sign);
+			incRef(storage, info.getCreatedByUUID(), header, sign);
+			for (UUID playerUUID : info.getCollaboratorUUIDs())
+				incRef(storage, playerUUID, header, sign);
+		}
+		
+		private void incRef(GSAssetStorage storage, UUID playerUUID,
+		                    GSAssetFileHeader header, int sign) {
 			GSPlayerCacheEntryRef ref = entries.get(playerUUID);
 			if (ref == null) {
 				if (sign > 0) {
 					// Note: the extra check is required in case the
 					// cache is inconsistent with the asset history.
-					ref = createEntry(storage, playerUUID);
+					ref = createEntry(storage, playerUUID, header);
 				}
 				if (ref == null) {
 					// Player not found or sign < 0
@@ -526,13 +574,21 @@ public class GSAssetStorage {
 			}
 		}
 		
-		private GSPlayerCacheEntryRef createEntry(GSAssetStorage storage, UUID playerUUID) {
+		private GSPlayerCacheEntryRef createEntry(GSAssetStorage storage,
+		                                          UUID playerUUID,
+		                                          GSAssetFileHeader header) {
 			ServerPlayerEntity player = storage.manager.getPlayer(playerUUID);
 			if (player != null) {
 				String name = player.getEntityName();
 				GSPlayerCacheEntry entry = new GSPlayerCacheEntry(name);
 				// Note: refCount immediately incremented in #incRef(...)
 				return new GSPlayerCacheEntryRef(0, entry);
+			}
+			// Alternatively, the cache entry might exist in the header.
+			if (header != null && header.getCreatedByUUID().equals(playerUUID)) {
+				GSPlayerCacheEntry entry = header.getCreatedByCacheEntry();
+				if (entry != null)
+					return new GSPlayerCacheEntryRef(0, entry);
 			}
 			return null;
 		}

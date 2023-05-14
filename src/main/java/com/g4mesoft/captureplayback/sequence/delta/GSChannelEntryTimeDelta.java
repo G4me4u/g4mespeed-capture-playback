@@ -38,7 +38,13 @@ public class GSChannelEntryTimeDelta extends GSChannelEntryDelta {
 
 		GSChannelEntry entry = getEntry(sequence);
 		checkEntryTimespan(entry, oldStartTime, oldEndTime);
-		entry.setTimespan(newStartTime, newEndTime);
+		try {
+			entry.setTimespan(newStartTime, newEndTime);
+		} catch (IllegalArgumentException e) {
+			// Note: unlikely, and mostly for performance that we
+			// use the exception for detecting overlapping entries.
+			throw new GSDeltaException(e);
+		}
 	}
 	
 	@Override
