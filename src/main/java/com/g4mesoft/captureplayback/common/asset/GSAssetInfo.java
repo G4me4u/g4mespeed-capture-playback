@@ -27,17 +27,27 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	private long lastModifiedTimestamp;
 	private final UUID createdByUUID;
 	private UUID ownerUUID;
-	private final Set<UUID> permUUIDs;
+	private final Set<UUID> collabUUIDs;
 
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, UUID createdByUUID, UUID ownerUUID) {
-		this(type, assetUUID, handle, assetName, createdTimestamp, createdTimestamp, createdByUUID, ownerUUID);
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle,
+	                   String assetName, long createdTimestamp, UUID createdByUUID,
+	                   UUID ownerUUID) {
+		this(type, assetUUID, handle, assetName, createdTimestamp,
+		     createdTimestamp, createdByUUID, ownerUUID);
 	}
 
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID createdByUUID, UUID ownerUUID) {
-		this(type, assetUUID, handle, assetName, createdTimestamp, lastModifiedTimestamp, createdByUUID, ownerUUID, null);
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle,
+	                   String assetName, long createdTimestamp,
+	                   long lastModifiedTimestamp, UUID createdByUUID,
+	                   UUID ownerUUID) {
+		this(type, assetUUID, handle, assetName, createdTimestamp,
+		     lastModifiedTimestamp, createdByUUID, ownerUUID, null);
 	}
 	
-	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle, String assetName, long createdTimestamp, long lastModifiedTimestamp, UUID createdByUUID, UUID ownerUUID, Set<UUID> permUUIDs) {
+	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle,
+	                   String assetName, long createdTimestamp,
+	                   long lastModifiedTimestamp, UUID createdByUUID,
+	                   UUID ownerUUID, Set<UUID> collabUUIDs) {
 		this.type = type;
 		this.assetUUID = assetUUID;
 		this.handle = handle;
@@ -48,7 +58,8 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		this.lastModifiedTimestamp = lastModifiedTimestamp;
 		this.createdByUUID = createdByUUID;
 		this.ownerUUID = ownerUUID;
-		this.permUUIDs = (permUUIDs != null) ? new LinkedHashSet<>(permUUIDs) : new LinkedHashSet<>();
+		this.collabUUIDs = (collabUUIDs != null) ?
+				new LinkedHashSet<>(collabUUIDs) : new LinkedHashSet<>();
 	}
 
 	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetInfo refInfo) {
@@ -62,7 +73,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		lastModifiedTimestamp = 0L;
 		createdByUUID = null;
 		ownerUUID = null;
-		permUUIDs = null;
+		collabUUIDs = null;
 		// derived assets do not have a handle.
 		handle = null;
 	}
@@ -78,7 +89,8 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		lastModifiedTimestamp = other.lastModifiedTimestamp;
 		createdByUUID = other.createdByUUID;
 		ownerUUID = other.ownerUUID;
-		permUUIDs = new LinkedHashSet<>(other.permUUIDs);
+		collabUUIDs = (other.collabUUIDs != null) ?
+				new LinkedHashSet<>(other.collabUUIDs) : null;
 	}
 
 	public GSEAssetType getType() {
@@ -97,6 +109,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		return isDerived() ? refInfo.getAssetName() : assetName;
 	}
 
+	/* Visible for GSAssetHistory */
 	void setAssetName(String assetName) {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
@@ -111,6 +124,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		return isDerived() ? refInfo.getLastModifiedTimestamp() : lastModifiedTimestamp;
 	}
 	
+	/* Visible for GSAssetHistory */
 	void setLastModifiedTimestamp(long timestamp) {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
@@ -125,26 +139,46 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		return isDerived() ? refInfo.getOwnerUUID() : ownerUUID;
 	}
 
+	/*
+	 * Whether the player has *extended* permissions. I.e. can add
+	 * collaborators and delete the asset.
+	 */
+	public boolean hasExtendedPermission(PlayerEntity player) {
+		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+			// OP players have access to all assets.
+			return true;
+		}
+		return getOwnerUUID().equals(player.getUuid());
+	}
+
+	/* Visible for GSAssetHistory */
 	void setOwnerUUID(UUID ownerUUID) {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
 		this.ownerUUID = ownerUUID;
 	}
 	
-	public Set<UUID> getPermissionUUIDs() {
-		return isDerived() ? refInfo.getPermissionUUIDs() : Collections.unmodifiableSet(permUUIDs);
+	public Set<UUID> getCollaboratorUUIDs() {
+		return isDerived() ? refInfo.getCollaboratorUUIDs() :
+			Collections.unmodifiableSet(collabUUIDs);
 	}
 
-	void addPermission(UUID playerUUID) {
+	public boolean isCollaborator(UUID collabUUID) {
+		return collabUUIDs.contains(collabUUID);
+	}
+	
+	/* Visible for GSAssetHistory */
+	void addCollaborator(UUID collabUUID) {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
-		permUUIDs.add(playerUUID);
+		collabUUIDs.add(collabUUID);
 	}
 
-	void removePermission(UUID playerUUID) {
+	/* Visible for GSAssetHistory */
+	void removeCollaborator(UUID collabUUID) {
 		if (isDerived())
 			throw new IllegalStateException("Unable to modify derived asset info");
-		permUUIDs.remove(playerUUID);
+		collabUUIDs.remove(collabUUID);
 	}
 	
 	public boolean hasPermission(PlayerEntity player) {
@@ -162,7 +196,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			return true;
 		}
 		// Last more expensive permission check
-		return permUUIDs.contains(player.getUuid());
+		return collabUUIDs.contains(player.getUuid());
 	}
 	
 	public boolean isDerived() {
@@ -241,7 +275,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		long lastModifiedTimestamp = buf.readLong();
 		UUID createdByUUID = buf.readUUID();
 		UUID ownerUUID = buf.readUUID();
-		int permUUIDCount = buf.readInt();
+		int collabUUIDCount = buf.readInt();
 		GSAssetInfo info = new GSAssetInfo(
 			type,
 			assetUUID,
@@ -252,8 +286,8 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			createdByUUID,
 			ownerUUID
 		);
-		while (permUUIDCount-- > 0)
-			info.addPermission(buf.readUUID());
+		while (collabUUIDCount-- > 0)
+			info.addCollaborator(buf.readUUID());
 		return info;
 	}
 	
@@ -268,9 +302,9 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		buf.writeLong(info.getLastModifiedTimestamp());
 		buf.writeUUID(info.getCreatedByUUID());
 		buf.writeUUID(info.getOwnerUUID());
-		Set<UUID> permUUIDs = info.getPermissionUUIDs();
-		buf.writeInt(permUUIDs.size());
-		for (UUID permUUID : permUUIDs)
-			buf.writeUUID(permUUID);
+		Set<UUID> collabUUIDs = info.getCollaboratorUUIDs();
+		buf.writeInt(collabUUIDs.size());
+		for (UUID collabUUID : collabUUIDs)
+			buf.writeUUID(collabUUID);
 	}
 }

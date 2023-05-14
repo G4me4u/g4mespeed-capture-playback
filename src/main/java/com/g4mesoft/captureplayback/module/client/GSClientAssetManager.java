@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.g4mesoft.captureplayback.common.GSIDelta;
+import com.g4mesoft.captureplayback.common.asset.GSAssetCollaboratorPacket;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHistory;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
@@ -93,7 +94,7 @@ public class GSClientAssetManager implements GSISessionListener {
 	}
 	
 	public void deleteAsset(UUID assetUUID) {
-		if (hasPermission(assetUUID))
+		if (hasExtendedPermission(assetUUID))
 			manager.sendPacket(new GSDeleteAssetPacket(assetUUID));
 	}
 	
@@ -113,10 +114,34 @@ public class GSClientAssetManager implements GSISessionListener {
 		}
 	}
 	
+	public void addCollaborator(UUID assetUUID, UUID collabUUID) {
+		if (hasExtendedPermission(assetUUID)) {
+			// Ensure the collabUUID does not already exist
+			GSAssetInfo info = history.get(assetUUID);
+			if (!info.getCollaboratorUUIDs().contains(collabUUID))
+				manager.sendPacket(new GSAssetCollaboratorPacket(assetUUID, collabUUID, false));
+		}
+	}
+
+	public void removeCollaborator(UUID assetUUID, UUID collabUUID) {
+		if (hasExtendedPermission(assetUUID)) {
+			// Ensure the collabUUID actually exists
+			GSAssetInfo info = history.get(assetUUID);
+			if (info.getCollaboratorUUIDs().contains(collabUUID))
+				manager.sendPacket(new GSAssetCollaboratorPacket(assetUUID, collabUUID, true));
+		}
+	}
+	
 	public boolean hasPermission(UUID assetUUID) {
 		GSAssetInfo info = history.get(assetUUID);
 		PlayerEntity player = GSClientController.getInstance().getPlayer();
 		return info != null && info.hasPermission(player);
+	}
+
+	public boolean hasExtendedPermission(UUID assetUUID) {
+		GSAssetInfo info = history.get(assetUUID);
+		PlayerEntity player = GSClientController.getInstance().getPlayer();
+		return info != null && info.hasExtendedPermission(player);
 	}
 	
 	public void onSessionStart(GSSession session) {
