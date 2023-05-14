@@ -131,6 +131,9 @@ public class GSAssetCommand {
 	}
 
 	public static String toNameString(GSAssetInfo info) {
-		return "'" + info.getAssetName() + "' (" + info.getHandle() + ")";
+		// Note: Users can 'inject' chat formatting into the
+		//       asset name. Reset here to handle that case,
+		//       so it looks intentional...
+		return "'" + info.getAssetName() + "§r' (" + info.getHandle() + ")";
 	}
 }
