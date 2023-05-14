@@ -164,6 +164,26 @@ public class GSAssetHistory implements GSIAssetHistory {
 		}
 	}
 	
+	public boolean addCollaborator(UUID assetUUID, UUID collabUUID) {
+		GSAssetInfo info = get(assetUUID);
+		if (info != null && !info.isCollaborator(collabUUID)) {
+			info.addCollaborator(collabUUID);
+			dispatchHistoryChanged(assetUUID);
+			return true;
+		}
+		return false;
+	}
+
+	public boolean removeCollaborator(UUID assetUUID, UUID collabUUID) {
+		GSAssetInfo info = get(assetUUID);
+		if (info != null && info.isCollaborator(collabUUID)) {
+			info.removeCollaborator(collabUUID);
+			dispatchHistoryChanged(assetUUID);
+			return true;
+		}
+		return false;
+	}
+	
 	@Override
 	public int size() {
 		return infoSet.size();

@@ -6,11 +6,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.g4mesoft.ui.util.GSTextUtil;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
+import net.minecraft.text.Text;
+
+/* Used on the client and sending cache by packet (s2c) */
 public class GSPlayerCache extends GSAbstractPlayerCache {
 
+	public static final Text UNKNOWN_OWNER_NAME =
+			GSTextUtil.translatable("gui.tab.capture-playback.unknownOwner");
+	
 	private final Map<UUID, GSPlayerCacheEntry> entries;
 	
 	public GSPlayerCache() {
@@ -38,6 +45,14 @@ public class GSPlayerCache extends GSAbstractPlayerCache {
 		return Collections.unmodifiableSet(entries.keySet());
 	}
 
+	public Text getNameText(UUID playerUUID) {
+		if (playerUUID.equals(GSAssetInfo.UNKNOWN_OWNER_UUID))
+			return UNKNOWN_OWNER_NAME;
+		GSPlayerCacheEntry entry = get(playerUUID);
+		return GSTextUtil.literal((entry != null) ?
+				entry.getName() : playerUUID.toString());
+	}
+	
 	/* Visible for GSPlayerCachePacket */
 	void set(GSIPlayerCache playerCache) {
 		entries.clear();
