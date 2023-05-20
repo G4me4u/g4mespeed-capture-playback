@@ -446,12 +446,16 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		// Disable buttons if there is no selection
 		GSAssetInfo info = (handle != null) ?
 				history.getFromHandle(handle) : null;
-		boolean enableButtons = (info != null &&
+		
+		boolean enableAccessButtons = (info != null &&
 				assetManager.hasPermission(info.getAssetUUID()));
-		exportButton.setEnabled(enableButtons);
-		editButton.setEnabled(enableButtons);
-		duplicateButton.setEnabled(enableButtons);
-		deleteButton.setEnabled(enableButtons);
+		exportButton.setEnabled(enableAccessButtons);
+		editButton.setEnabled(enableAccessButtons);
+		duplicateButton.setEnabled(enableAccessButtons);
+
+		boolean enableDeleteButton = (info != null &&
+				assetManager.hasExtendedPermission(info.getAssetUUID()));
+		deleteButton.setEnabled(enableDeleteButton);
 		
 		assetPermPanel.setInfo(info);
 	}
