@@ -30,6 +30,8 @@ import com.g4mesoft.ui.panel.GSIcon;
 import com.g4mesoft.ui.panel.GSParentPanel;
 import com.g4mesoft.ui.panel.GSTexturedIcon;
 import com.g4mesoft.ui.panel.button.GSButton;
+import com.g4mesoft.ui.panel.dialog.GSConfirmDialog;
+import com.g4mesoft.ui.panel.dialog.GSConfirmOption;
 import com.g4mesoft.ui.panel.dialog.GSFileDialog;
 import com.g4mesoft.ui.panel.dialog.GSFileExtensionFilter;
 import com.g4mesoft.ui.panel.dialog.GSIFileNameFilter;
@@ -77,6 +79,8 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final Text EDIT_TEXT      = translatable("edit");
 	private static final Text DUPLICATE_TEXT = translatable("duplicate");
 	private static final Text DELETE_TEXT    = translatable("delete");
+	
+	private static final Text CONFIRM_DESCRIPTION = translatable("confirmDesc");
 	
 	private static final GSIFileNameFilter GSA_FILE_NAME_FILTER =
 			new GSFileExtensionFilter(new String[] { "gsa" });
@@ -341,7 +345,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		deleteButton.addActionListener(() -> {
 			GSAssetInfo info = history.getFromHandle(selectedHandle);
 			if (info != null)
-				assetManager.deleteAsset(info.getAssetUUID());
+				confirmDeletion(info);
 		});
 		searchField.addChangeListener(this::updateTableModel);
 		searchButton.addActionListener(this::updateTableModel);
@@ -387,6 +391,22 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		GSAssetInfo info = history.getFromHandle(selectedHandle);
 		if (info != null)
 			assetManager.requestSession(GSESessionRequestType.REQUEST_START, info.getAssetUUID());
+	}
+	
+	private void confirmDeletion(GSAssetInfo info) {
+		Text title = translatable("confirmDelete", info.getAssetName());
+		GSConfirmDialog dialog = GSConfirmDialog.showDialog(null,
+				title, GSConfirmDialog.YES_CANCEL_OPTIONS);
+		GSTextLabel content = new GSTextLabel(CONFIRM_DESCRIPTION);
+		content.setTextAlignment(GSETextAlignment.LEFT);
+		dialog.setContent(content);
+		dialog.addActionListener(() -> {
+			if (dialog.hasSelection()) {
+				GSConfirmOption option = dialog.getSelectedOption();
+				if (option == GSConfirmOption.YES)
+					assetManager.deleteAsset(info.getAssetUUID());
+			}
+		});
 	}
 
 	@Override
