@@ -33,8 +33,8 @@ import com.g4mesoft.ui.panel.table.GSITableColumn;
 import com.g4mesoft.ui.panel.table.GSITableModel;
 import com.g4mesoft.ui.panel.table.GSTablePanel;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
+import com.g4mesoft.ui.util.GSTextUtil;
 
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 
 public class GSAssetPermissionPanel extends GSParentPanel {
@@ -72,9 +72,9 @@ public class GSAssetPermissionPanel extends GSParentPanel {
 		this.assetManager = assetManager;
 		playerCache = assetManager.getPlayerCache();
 		
-		ownerField = new GSTextLabel(LiteralText.EMPTY);
+		ownerField = new GSTextLabel(GSTextUtil.EMPTY);
 		ownerField.setTextAlignment(GSETextAlignment.LEFT);
-		createdByField = new GSTextLabel(LiteralText.EMPTY);
+		createdByField = new GSTextLabel(GSTextUtil.EMPTY);
 		createdByField.setTextAlignment(GSETextAlignment.LEFT);
 		
 		collabTable = new GSTablePanel();
@@ -243,7 +243,7 @@ public class GSAssetPermissionPanel extends GSParentPanel {
 	private void onInfoChanged() {
 		Text ownerText, createdByText;
 		if (info == null) {
-			ownerText = createdByText = LiteralText.EMPTY;
+			ownerText = createdByText = GSTextUtil.EMPTY;
 		} else {
 			ownerText = playerCache.getNameText(info.getOwnerUUID());
 			createdByText = playerCache.getNameText(info.getCreatedByUUID());
