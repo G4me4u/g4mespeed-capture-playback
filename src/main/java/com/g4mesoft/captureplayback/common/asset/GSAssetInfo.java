@@ -164,7 +164,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	}
 
 	public boolean isCollaborator(UUID collabUUID) {
-		return collabUUIDs.contains(collabUUID);
+		return getCollaboratorUUIDs().contains(collabUUID);
 	}
 	
 	/* Visible for GSAssetHistory */
@@ -196,7 +196,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			return true;
 		}
 		// Last more expensive permission check
-		return collabUUIDs.contains(player.getUuid());
+		return getCollaboratorUUIDs().contains(player.getUuid());
 	}
 	
 	public boolean isDerived() {
