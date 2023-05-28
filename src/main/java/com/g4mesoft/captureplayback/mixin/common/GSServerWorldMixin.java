@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import com.g4mesoft.G4mespeedMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.access.GSIWorldAccess;
@@ -37,6 +38,7 @@ import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPoweredState;
 import com.g4mesoft.captureplayback.stream.handler.GSServerWorldSignalEventContext;
+import com.g4mesoft.core.compat.GSICarpetTickrateManager;
 import com.g4mesoft.core.server.GSServerController;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -100,9 +102,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		at = @At("HEAD")
 	)
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-		if (gcp_playbackStreams.isEmpty()) {
-			gcp_signalFrame = GSISignalFrame.EMPTY;
-		} else {
+		// Make sure carpet is not doing tick freeze
+		GSICarpetTickrateManager tickrateManager = G4mespeedMod.getCarpetCompat().getClientTickrateManager();
+		if (!gcp_playbackStreams.isEmpty() && tickrateManager != null && tickrateManager.runsNormally()) {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
 			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.values().iterator();
@@ -116,6 +118,8 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 			}
 			
 			gcp_signalFrame = mergedFrame;
+		} else {
+			gcp_signalFrame = GSISignalFrame.EMPTY;
 		}
 		
 		// Clean up closed capture streams

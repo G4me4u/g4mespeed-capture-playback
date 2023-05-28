@@ -24,6 +24,10 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 	public static Text translatable(String key) {
 		return GSTextUtil.translatable("gui.tab.capture-playback." + key);
 	}
+
+	public static Text translatable(String key, Object... args) {
+		return GSTextUtil.translatable("gui.tab.capture-playback." + key, args);
+	}
 	
 	private final GSAssetPermissionPanel assetPermPanel;
 	private final GSAssetHistoryPanel assetHistoryPanel;
