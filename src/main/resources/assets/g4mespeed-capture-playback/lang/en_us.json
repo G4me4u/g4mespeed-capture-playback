@@ -22,6 +22,9 @@
 	"gui.tab.capture-playback.duplicate": "Duplicate",
 	"gui.tab.capture-playback.delete": "Delete",
 
+	"gui.tab.capture-playback.confirmDelete": "Do you wish to delete %s?",
+	"gui.tab.capture-playback.confirmDesc": "This can not be undone",
+
 	"gui.tab.capture-playback.permissionTitle": "Asset Permissions",
 	"gui.tab.capture-playback.owner": "Owned By:",
 	"gui.tab.capture-playback.createdBy": "Created By:",
