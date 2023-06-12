@@ -5,6 +5,7 @@
   "mixins": [
     "common.GSServerWorldMixin",
     "common.GSWorldMixin",
+    "common.GSRedstoneViewMixin",
     
     "common.GSPistonBlockMixin",
     "common.GSNoteBlockMixin",

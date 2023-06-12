@@ -72,7 +72,7 @@ public class GSAssetCommand {
 
 		assetManager.createAsset(assetType, namespace, assetName, player.getUuid());
 
-		source.sendFeedback(GSTextUtil.literal("Asset '" + assetName + "' created successfully."), false);
+		source.sendFeedback(() -> GSTextUtil.literal("Asset '" + assetName + "' created successfully."), false);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -86,7 +86,7 @@ public class GSAssetCommand {
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
 		if (info != null && info.getType() == assetType && module.onSessionRequest(player, GSESessionRequestType.REQUEST_START, info.getAssetUUID())) {
-			source.sendFeedback(GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
+			source.sendFeedback(() -> GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
 		} else {
 			source.sendError(GSTextUtil.literal("Failed to edit asset."));
 		}
@@ -101,7 +101,7 @@ public class GSAssetCommand {
 		Text hintText = GSTextUtil.literal("Edit " + assetType.getName());
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
 			if (info.getType() == assetType) {
-				source.sendFeedback(Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
+				source.sendFeedback(() -> Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
 					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getHandle()))
 							.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hintText))
 							.withColor(Formatting.GREEN);
