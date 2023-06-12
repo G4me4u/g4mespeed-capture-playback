@@ -30,7 +30,7 @@
 
   "depends": {
   	"minecraft": "1.17.x",
-  	"g4mespeed": ">=1.4.3",
+  	"g4mespeed": ">=1.4.4",
   	"g4mespeed-ui": ">=0.9.8"
   }
 }
