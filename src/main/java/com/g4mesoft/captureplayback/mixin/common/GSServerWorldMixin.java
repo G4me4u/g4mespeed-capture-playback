@@ -104,7 +104,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
 		// Make sure carpet is not doing tick freeze
 		GSICarpetTickrateManager tickrateManager = G4mespeedMod.getCarpetCompat().getClientTickrateManager();
-		if (!gcp_playbackStreams.isEmpty() && tickrateManager != null && tickrateManager.runsNormally()) {
+		if (!gcp_playbackStreams.isEmpty() && tickrateManager.runsNormally()) {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
 			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.values().iterator();
