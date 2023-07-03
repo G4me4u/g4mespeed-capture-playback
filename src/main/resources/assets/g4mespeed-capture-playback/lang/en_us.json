@@ -24,6 +24,9 @@
 
 	"gui.tab.capture-playback.confirmDelete": "Do you wish to delete %s?",
 	"gui.tab.capture-playback.confirmDesc": "This can not be undone",
+	"gui.tab.capture-playback.importFailed": "Import error: unable to read asset file",
+	"gui.tab.capture-playback.exportFailed": "Export error: asset does not exist",
+	"gui.tab.capture-playback.exportDenied": "Export error: insufficient permission",
 
 	"gui.tab.capture-playback.permissionTitle": "Asset Permissions",
 	"gui.tab.capture-playback.owner": "Owned By:",
