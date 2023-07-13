@@ -48,6 +48,7 @@ public class GSPlaylist {
 		this.playlistUUID = playlistUUID;
 		this.name = name;
 		
+		//assert(trigger != null)
 		this.trigger = trigger;
 		entries = new GSMutableLinkedHashMap<>();
 		

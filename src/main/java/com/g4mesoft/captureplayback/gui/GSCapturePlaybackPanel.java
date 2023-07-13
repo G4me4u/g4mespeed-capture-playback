@@ -38,7 +38,7 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 	public GSCapturePlaybackPanel(GSClientAssetManager assetManager) {
 		assetPermPanel = new GSAssetPermissionPanel(assetManager);
 		assetHistoryPanel = new GSAssetHistoryPanel(assetManager, assetPermPanel);
-		playlistOverviewPanel = new GSPlaylistOverviewPanel();
+		playlistOverviewPanel = new GSPlaylistOverviewPanel(assetManager);
 
 		// Force scroll panel to allocate exactly its own width to
 		// us (note that #isScrollableWidthFilled() returns true).

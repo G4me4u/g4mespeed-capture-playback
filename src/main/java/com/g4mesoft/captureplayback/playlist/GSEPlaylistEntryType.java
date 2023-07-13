@@ -2,7 +2,8 @@ package com.g4mesoft.captureplayback.playlist;
 
 public enum GSEPlaylistEntryType implements GSIPlaylistEntryType {
 
-	START_PLAYBACK("startPlayback", 0, GSAssetPlaylistData.class);
+	START_PLAYBACK("startPlayback", 0, GSAssetPlaylistData.class),
+	DELAY("delay", 0, GSDelayPlaylistData.class);
 	
 	private final String name;
 	private final int index;

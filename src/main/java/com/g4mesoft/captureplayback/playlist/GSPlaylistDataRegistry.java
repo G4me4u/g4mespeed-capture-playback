@@ -24,6 +24,7 @@ public final class GSPlaylistDataRegistry {
 		register(0, GSUnspecifiedPlaylistData.class, GSUnspecifiedPlaylistData::read, GSUnspecifiedPlaylistData::write);
 		register(1, GSHotkeyPlaylistData.class, GSHotkeyPlaylistData::read, GSHotkeyPlaylistData::write);
 		register(2, GSAssetPlaylistData.class, GSAssetPlaylistData::read, GSAssetPlaylistData::write);
+		register(3, GSDelayPlaylistData.class, GSDelayPlaylistData::read, GSDelayPlaylistData::write);
 	}
 	
 	private GSPlaylistDataRegistry() {
