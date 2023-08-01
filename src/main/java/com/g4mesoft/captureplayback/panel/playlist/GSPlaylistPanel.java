@@ -124,9 +124,10 @@ public class GSPlaylistPanel extends GSParentPanel implements GSIPlaylistListene
 	
 	@Override
 	public void render(GSIRenderer2D renderer) {
+		// TODO: change the color...
+		renderer.fillRect(0, 0, width, height, 0xFFFF00FF);
+		
 		super.render(renderer);
-
-		System.out.println("hi!");
 	}
 	
 	@Override
