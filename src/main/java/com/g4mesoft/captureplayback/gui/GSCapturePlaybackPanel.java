@@ -17,7 +17,7 @@ import net.minecraft.util.Identifier;
 public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollable {
 
 	/* Icon sheet used for Capture & Playback UI elements. */
-	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed-capture-playback", "textures/icons.png");
+	private static final Identifier ICONS_IDENTIFIER = Identifier.of("g4mespeed-capture-playback", "textures/icons.png");
 	public static final GSTexture ICONS_SHEET = new GSTexture(ICONS_IDENTIFIER, 128, 128);
 
 	/* Helper method for getting translatable text. */

@@ -17,7 +17,7 @@ import net.minecraft.util.Identifier;
 
 public class GSSequencePreviewScrollBar extends GSScrollBar {
 
-	private static final Identifier TEXTURE_IDENTIFIER = new Identifier("g4mespeed-capture-playback", "textures/scroll_bar_preview.png");
+	private static final Identifier TEXTURE_IDENTIFIER = Identifier.of("g4mespeed-capture-playback", "textures/scroll_bar_preview.png");
 	private static final GSTexture SCROLL_BUTTON_TEXTURE = new GSTexture(TEXTURE_IDENTIFIER, 30, 54);
 	
 	private static final int PREVIEW_BACKGROUND = 0xFF171717;
