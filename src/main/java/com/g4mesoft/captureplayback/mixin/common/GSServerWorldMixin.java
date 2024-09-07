@@ -55,7 +55,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
@@ -87,10 +86,9 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private int gcp_blockEventCount = 0;
 	private int gcp_microtick = -1;
 	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
-			RegistryEntry<DimensionType> registryEntry, Supplier<Profiler> profiler, boolean isClient,
-			boolean debugWorld, long seed) {
-		super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
+	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryKey,
+			DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
+		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
 	}
 	
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
@@ -245,13 +243,13 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Inject(
 		method = "processSyncedBlockEvents",
-		allow = 1,
 		at = @At(
 			value = "INVOKE",
-			shift = Shift.AFTER,
+			shift = Shift.BEFORE,
 			target =
-				"Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;removeFirst(" +
-				")Ljava/lang/Object;"
+				"Lnet/minecraft/server/world/ServerWorld;processBlockEvent(" +
+					"Lnet/minecraft/server/world/BlockEvent;" +
+				")Z"
 		)
 	)
 	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
@@ -270,14 +268,14 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		)
 	)
 	public void onProcessSyncedBlockEventsSuccess(CallbackInfo ci, BlockEvent blockEvent) {
-		if (gcp_isCapturePosition(blockEvent.pos())) {
-			Block block = blockEvent.block();
+		if (gcp_isCapturePosition(blockEvent.getPos())) {
+			Block block = blockEvent.getBlock();
 			
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
-				GSESignalEdge edge = (blockEvent.type() == 0) ? GSESignalEdge.RISING_EDGE :
-				                                                GSESignalEdge.FALLING_EDGE;
-				gcp_handleCaptureEvent(edge, blockEvent.pos());
+				GSESignalEdge edge = (blockEvent.getType() == 0) ? GSESignalEdge.RISING_EDGE :
+				                                                   GSESignalEdge.FALLING_EDGE;
+				gcp_handleCaptureEvent(edge, blockEvent.getPos());
 			}
 		}
 	}
