@@ -1,5 +1,11 @@
 package com.g4mesoft.captureplayback.access;
 
-public interface GSIWorldAccess extends GSIRedstoneViewAccess {
+import net.minecraft.util.math.BlockPos;
 
+public interface GSIWorldAccess {
+
+	public void gcp_requestPlaybackPower(int callCount);
+
+	public boolean gcp_isPoweredByPlayback(BlockPos pos);
+	
 }

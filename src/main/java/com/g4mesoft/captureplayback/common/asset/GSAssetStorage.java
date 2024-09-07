@@ -579,7 +579,7 @@ public class GSAssetStorage {
 		                                          GSAssetFileHeader header) {
 			ServerPlayerEntity player = storage.manager.getPlayer(playerUUID);
 			if (player != null) {
-				String name = player.getNameForScoreboard();
+				String name = player.getEntityName();
 				GSPlayerCacheEntry entry = new GSPlayerCacheEntry(name);
 				// Note: refCount immediately incremented in #incRef(...)
 				return new GSPlayerCacheEntryRef(0, entry);

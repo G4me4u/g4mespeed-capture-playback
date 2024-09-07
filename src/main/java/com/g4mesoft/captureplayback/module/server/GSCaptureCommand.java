@@ -80,7 +80,7 @@ public final class GSCaptureCommand {
 		stream.addCloseListener(ref::release);
 		((GSIServerWorldAccess)world).gcp_addCaptureStream(info.getAssetUUID(), stream);
 
-		source.sendFeedback(() -> GSTextUtil.literal("Capture of " + GSAssetCommand.toNameString(info) + " started."), true);
+		source.sendFeedback(GSTextUtil.literal("Capture of " + GSAssetCommand.toNameString(info) + " started."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -104,7 +104,7 @@ public final class GSCaptureCommand {
 		}
 		
 		stream.close();
-		source.sendFeedback(() -> GSTextUtil.literal("Capture of " + GSAssetCommand.toNameString(info) + " stopped."), true);
+		source.sendFeedback(GSTextUtil.literal("Capture of " + GSAssetCommand.toNameString(info) + " stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -115,7 +115,7 @@ public final class GSCaptureCommand {
 		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getCaptureStreams().forEach(GSICaptureStream::close);
 		
-		source.sendFeedback(() -> GSTextUtil.literal("All captures stopped."), true);
+		source.sendFeedback(GSTextUtil.literal("All captures stopped."), true);
 
 		return Command.SINGLE_SUCCESS;
 	}

@@ -264,7 +264,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		
 		private GSIcon getIcon(PlayerListEntry value) {
 			// See PlayerListHud#render(...) for magic constants.
-			GSTexture texture = new GSTexture(value.getSkinTextures().texture(), 64, 64);
+			GSTexture texture = new GSTexture(value.getSkinTexture(), 64, 64);
 			return new GSTexturedIcon(texture.getRegion(8, 8, 8, 8));
 		}
 	}
