@@ -116,7 +116,7 @@ public final class GSPlaybackCommand {
 		
 		startPlaybackImpl(world, ref, delay, repeatCount, true);
 		
-		source.sendFeedback(GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
+		source.sendFeedback(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -164,7 +164,7 @@ public final class GSPlaybackCommand {
 		}
 		
 		stream.close();
-		source.sendFeedback(GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
+		source.sendFeedback(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
@@ -175,7 +175,7 @@ public final class GSPlaybackCommand {
 		ServerWorld world = source.getWorld();
 		((GSIServerWorldAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
-		source.sendFeedback(GSTextUtil.literal("All playbacks stopped."), true);
+		source.sendFeedback(() -> GSTextUtil.literal("All playbacks stopped."), true);
 
 		return Command.SINGLE_SUCCESS;
 	}

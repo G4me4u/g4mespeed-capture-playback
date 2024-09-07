@@ -21,7 +21,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
-import com.g4mesoft.G4mespeedMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
 import com.g4mesoft.captureplayback.access.GSIWorldAccess;
@@ -38,7 +37,6 @@ import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPoweredState;
 import com.g4mesoft.captureplayback.stream.handler.GSServerWorldSignalEventContext;
-import com.g4mesoft.core.compat.GSICarpetTickrateManager;
 import com.g4mesoft.core.server.GSServerController;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
@@ -46,8 +44,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.PistonBlock;
-import net.minecraft.network.Packet;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.world.BlockEvent;
@@ -55,7 +56,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -86,9 +86,12 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private int gcp_blockEventCount = 0;
 	private int gcp_microtick = -1;
 	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryKey,
-			DimensionType dimensionType, Supplier<Profiler> supplier, boolean bl, boolean bl2, long l) {
-		super(properties, registryKey, dimensionType, supplier, bl, bl2, l);
+	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
+			DynamicRegistryManager registryManager, RegistryEntry<DimensionType> dimensionEntry,
+			Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long biomeAccess,
+			int maxChainedNeighborUpdates) {
+		super(properties, registryRef, registryManager, dimensionEntry, profiler, isClient, debugWorld, biomeAccess,
+				maxChainedNeighborUpdates);
 	}
 	
 	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
@@ -100,9 +103,8 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		at = @At("HEAD")
 	)
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-		// Make sure carpet is not doing tick freeze
-		GSICarpetTickrateManager tickrateManager = G4mespeedMod.getCarpetCompat().getServerTickrateManager();
-		if (!gcp_playbackStreams.isEmpty() && tickrateManager.runsNormally()) {
+		// Make sure we are not doing tick freeze
+		if (!gcp_playbackStreams.isEmpty() && server.getTickManager().shouldTick()) {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
 			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.values().iterator();
@@ -240,13 +242,13 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Inject(
 		method = "processSyncedBlockEvents",
+		allow = 1,
 		at = @At(
 			value = "INVOKE",
-			shift = Shift.BEFORE,
+			shift = Shift.AFTER,
 			target =
-				"Lnet/minecraft/server/world/ServerWorld;processBlockEvent(" +
-					"Lnet/minecraft/server/world/BlockEvent;" +
-				")Z"
+				"Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;removeFirst(" +
+				")Ljava/lang/Object;"
 		)
 	)
 	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
@@ -265,14 +267,14 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		)
 	)
 	public void onProcessSyncedBlockEventsSuccess(CallbackInfo ci, BlockEvent blockEvent) {
-		if (gcp_isCapturePosition(blockEvent.getPos())) {
-			Block block = blockEvent.getBlock();
+		if (gcp_isCapturePosition(blockEvent.pos())) {
+			Block block = blockEvent.block();
 			
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
-				GSESignalEdge edge = (blockEvent.getType() == 0) ? GSESignalEdge.RISING_EDGE :
-				                                                   GSESignalEdge.FALLING_EDGE;
-				gcp_handleCaptureEvent(edge, blockEvent.getPos());
+				GSESignalEdge edge = (blockEvent.type() == 0) ? GSESignalEdge.RISING_EDGE :
+				                                                GSESignalEdge.FALLING_EDGE;
+				gcp_handleCaptureEvent(edge, blockEvent.pos());
 			}
 		}
 	}

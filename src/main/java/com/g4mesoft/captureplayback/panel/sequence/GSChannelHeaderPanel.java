@@ -33,6 +33,7 @@ import com.g4mesoft.ui.panel.field.GSTextField;
 import com.g4mesoft.ui.panel.scroll.GSIScrollable;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 
 public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable, GSISequenceListener, 
@@ -338,7 +339,7 @@ public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable
 			moveButton.setHoveredBackgroundColor(0);
 			moveButton.setDisabledBackgroundColor(0);
 			moveButton.setBorderWidth(0);
-			moveButton.setClickSound(null);
+			moveButton.setClickSound((SoundEvent)null);
 			moveButton.addMouseEventListener(new GSIMouseListener() {
 				@Override
 				public void mousePressed(GSMouseEvent event) {
