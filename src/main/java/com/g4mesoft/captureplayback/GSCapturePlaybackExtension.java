@@ -84,9 +84,6 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		addSignalEventHandler(Blocks.DARK_OAK_DOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.CRIMSON_DOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.WARPED_DOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.CHERRY_DOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.MANGROVE_DOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.BAMBOO_DOOR, generalBlockHandler);
 		// Add trap-doors
 		addSignalEventHandler(Blocks.IRON_TRAPDOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.OAK_TRAPDOOR, generalBlockHandler);
@@ -97,9 +94,6 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		addSignalEventHandler(Blocks.DARK_OAK_TRAPDOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.CRIMSON_TRAPDOOR, generalBlockHandler);
 		addSignalEventHandler(Blocks.WARPED_TRAPDOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.CHERRY_TRAPDOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.MANGROVE_TRAPDOOR, generalBlockHandler);
-		addSignalEventHandler(Blocks.BAMBOO_TRAPDOOR, generalBlockHandler);
 		// Add fence gates
 		addSignalEventHandler(Blocks.OAK_FENCE_GATE, generalBlockHandler);
 		addSignalEventHandler(Blocks.SPRUCE_FENCE_GATE, generalBlockHandler);
@@ -109,9 +103,6 @@ public class GSCapturePlaybackExtension implements GSIExtension {
 		addSignalEventHandler(Blocks.DARK_OAK_FENCE_GATE, generalBlockHandler);
 		addSignalEventHandler(Blocks.CRIMSON_FENCE_GATE, generalBlockHandler);
 		addSignalEventHandler(Blocks.WARPED_FENCE_GATE, generalBlockHandler);
-		addSignalEventHandler(Blocks.CHERRY_FENCE_GATE, generalBlockHandler);
-		addSignalEventHandler(Blocks.MANGROVE_FENCE_GATE, generalBlockHandler);
-		addSignalEventHandler(Blocks.BAMBOO_FENCE_GATE, generalBlockHandler);
 	}
 	
 	private void addSignalEventHandler(Block block, GSISignalEventHandler handler) {
