@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "com.g4mesoft.captureplayback.mixin",
-  "compatibilityLevel": "JAVA_16",
+  "compatibilityLevel": "JAVA_8",
   "mixins": [
     "common.GSServerWorldMixin",
     "common.GSWorldMixin",
