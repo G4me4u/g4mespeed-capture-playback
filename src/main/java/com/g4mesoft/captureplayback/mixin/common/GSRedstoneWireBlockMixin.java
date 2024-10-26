@@ -16,7 +16,7 @@ import net.minecraft.world.World;
 public class GSRedstoneWireBlockMixin {
 
 	@Inject(
-		method = "getReceivedRedstonePower",
+		method = "getStrongPower",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
@@ -27,7 +27,7 @@ public class GSRedstoneWireBlockMixin {
 				")I"
 		)
 	)
-	private void onGetReceivedRedstonePowerBeforePowerCheck(World world, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
+	private void onGetStrongPowerBeforePowerCheck(World world, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
 		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

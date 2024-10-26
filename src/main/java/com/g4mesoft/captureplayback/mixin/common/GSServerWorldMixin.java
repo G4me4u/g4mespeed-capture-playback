@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -55,15 +54,25 @@ import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.profiler.Profiler;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
+import net.minecraft.world.block.WireOrientation;
 import net.minecraft.world.dimension.DimensionType;
 
 @Mixin(ServerWorld.class)
 public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSIWorldAccess {
 
+	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
+			DynamicRegistryManager registryManager, RegistryEntry<DimensionType> dimensionEntry, boolean isClient,
+			boolean debugWorld, long seed, int maxChainedNeighborUpdates) {
+		super(properties, registryRef, registryManager, dimensionEntry, isClient, debugWorld, seed, maxChainedNeighborUpdates);
+	}
+
 	@Shadow @Final private MinecraftServer server;
+
+	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
+	
+	@Override @Shadow public abstract void addSyncedBlockEvent(BlockPos pos, Block block, int type, int data);
 	
 	@Unique
 	private final GSCapturePlaybackExtension gcp_extension = GSCapturePlaybackExtension.getInstance();
@@ -85,18 +94,6 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	private GSETickPhase gcp_phase = GSETickPhase.BLOCK_EVENTS;
 	private int gcp_blockEventCount = 0;
 	private int gcp_microtick = -1;
-	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
-			DynamicRegistryManager registryManager, RegistryEntry<DimensionType> dimensionEntry,
-			Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long biomeAccess,
-			int maxChainedNeighborUpdates) {
-		super(properties, registryRef, registryManager, dimensionEntry, profiler, isClient, debugWorld, biomeAccess,
-				maxChainedNeighborUpdates);
-	}
-	
-	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
-
-	@Override @Shadow public abstract void addSyncedBlockEvent(BlockPos pos, Block block, int type, int data);
 	
 	@Inject(
 		method = "tick",
@@ -423,7 +420,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Override
 	public void gcp_dispatchNeighborUpdate(BlockPos pos, Block fromBlock, Direction fromDir) {
-		updateNeighbor(pos, fromBlock, pos.offset(fromDir));
+		updateNeighbor(pos, fromBlock, WireOrientation.of(Direction.UP, fromDir, WireOrientation.SideBias.LEFT));
 	}
 	
 	@Override

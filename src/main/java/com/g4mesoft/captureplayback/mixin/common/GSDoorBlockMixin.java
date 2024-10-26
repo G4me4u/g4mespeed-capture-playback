@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.mixin.common;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
@@ -15,6 +16,7 @@ import net.minecraft.block.DoorBlock;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.block.WireOrientation;
 
 @Mixin(DoorBlock.class)
 public class GSDoorBlockMixin {
@@ -50,7 +52,7 @@ public class GSDoorBlockMixin {
 				")Z"
 		)
 	)
-	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
+	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify, CallbackInfo ci) {
 		// Only get power from play-back during first power check.
 		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}

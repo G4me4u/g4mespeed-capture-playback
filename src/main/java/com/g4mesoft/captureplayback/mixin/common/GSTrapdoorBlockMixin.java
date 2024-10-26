@@ -1,5 +1,6 @@
 package com.g4mesoft.captureplayback.mixin.common;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,6 +16,7 @@ import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.block.WireOrientation;
 
 @Mixin(TrapdoorBlock.class)
 public class GSTrapdoorBlockMixin {
@@ -31,7 +33,7 @@ public class GSTrapdoorBlockMixin {
 				")Z"
 		)
 	)
-	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
+	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify, CallbackInfo ci) {
 		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
 	}
 
