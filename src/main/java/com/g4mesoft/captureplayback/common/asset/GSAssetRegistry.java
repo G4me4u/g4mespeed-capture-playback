@@ -20,7 +20,6 @@ public final class GSAssetRegistry {
 		
 		register(GSEAssetType.COMPOSITION, GSCompositionAsset::read, GSCompositionAsset::write, GSCompositionAsset::new);
 		register(GSEAssetType.SEQUENCE, GSSequenceAsset::read, GSSequenceAsset::write, GSSequenceAsset::new);
-		register(GSEAssetType.PLAYLIST, GSPlaylistAsset::read, GSPlaylistAsset::write, GSPlaylistAsset::new);
 	}
 	
 	private GSAssetRegistry() {
