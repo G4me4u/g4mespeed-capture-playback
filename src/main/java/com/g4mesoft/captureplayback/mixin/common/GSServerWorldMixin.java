@@ -54,6 +54,7 @@ import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.block.WireOrientation;
@@ -417,7 +418,12 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Override
 	public void gcp_dispatchNeighborUpdate(BlockPos pos, Block fromBlock, Direction fromDir) {
-		updateNeighbor(pos, fromBlock, WireOrientation.of(Direction.UP, fromDir, WireOrientation.SideBias.LEFT));
+		if (fromDir.getAxis() == Axis.Y) {
+			// Note: up vector can not be on the same axis as fromDir.
+			updateNeighbor(pos, fromBlock, WireOrientation.of(Direction.NORTH, fromDir, WireOrientation.SideBias.LEFT));
+		} else {
+			updateNeighbor(pos, fromBlock, WireOrientation.of(Direction.UP, fromDir, WireOrientation.SideBias.LEFT));
+		}
 	}
 	
 	@Override
