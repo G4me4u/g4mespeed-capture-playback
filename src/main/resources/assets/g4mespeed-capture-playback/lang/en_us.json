@@ -8,6 +8,7 @@
 	"gui.tab.capture-playback.modified": "Last Modified",
 	"gui.tab.capture-playback.created": "Created",
 	"gui.tab.capture-playback.type": "Type",
+	"gui.tab.capture-playback.type.unknown": "Unknown",
 	"gui.tab.capture-playback.type.composition": "Composition",
 	"gui.tab.capture-playback.type.sequence": "Sequence",
 	"gui.tab.capture-playback.type.playlist": "Playlist",
@@ -27,6 +28,9 @@
 	"gui.tab.capture-playback.importFailed": "Import error: unable to read asset file",
 	"gui.tab.capture-playback.exportFailed": "Export error: asset does not exist",
 	"gui.tab.capture-playback.exportDenied": "Export error: insufficient permission",
+	"gui.tab.capture-playback.duplicateFailed": "Duplicate error: unknown asset type",
+	"gui.tab.capture-playback.deleteFailed": "Delete error: asset does not exist",
+	"gui.tab.capture-playback.editFailed": "Edit error: unknown asset type",
 
 	"gui.tab.capture-playback.permissionTitle": "Asset Permissions",
 	"gui.tab.capture-playback.owner": "Owned By:",

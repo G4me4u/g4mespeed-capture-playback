@@ -66,6 +66,8 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final int[] TABLE_WIDTHS;
 	/* Text shown in place of each of the asset types */
 	static final Text[] TYPE_TEXTS;
+	/* Unknown type text */
+	static final Text UNKNOWN_TYPE_TEXT = translatable("type.unknown");
 	/* Text shown in place of each of the asset namespaces */
 	static final Text[] NAMESPACE_TEXTS;
 	
@@ -80,10 +82,13 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final Text DUPLICATE_TEXT = translatable("duplicate");
 	private static final Text DELETE_TEXT    = translatable("delete");
 	
-	private static final Text CONFIRM_DESCRIPTION = translatable("confirmDesc");
-	private static final Text IMPORT_FAILED_TEXT  = translatable("importFailed");
-	private static final Text EXPORT_FAILED_TEXT  = translatable("exportFailed");
-	private static final Text EXPORT_DENIED_TEXT  = translatable("exportDenied");
+	private static final Text CONFIRM_DESCRIPTION   = translatable("confirmDesc");
+	private static final Text IMPORT_FAILED_TEXT    = translatable("importFailed");
+	private static final Text EXPORT_FAILED_TEXT    = translatable("exportFailed");
+	private static final Text EXPORT_DENIED_TEXT    = translatable("exportDenied");
+	private static final Text DUPLICATE_FAILED_TEXT = translatable("duplicateFailed");
+	private static final Text DELETE_FAILED_TEXT    = translatable("deleteFailed");
+	private static final Text EDIT_FAILED_TEXT      = translatable("editFailed");
 	
 	private static final GSIFileNameFilter GSA_FILE_NAME_FILTER =
 			new GSFileExtensionFilter(new String[] { "gsa" });
@@ -217,7 +222,11 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 			model.setCellValue(MODIFIED_COLUMN_INDEX, r, Instant.ofEpochMilli(info.getLastModifiedTimestamp()));
 			model.setCellValue(NAMESPACE_COLUMN_INDEX, r, NAMESPACE_TEXTS[namespace.getIndex()]);
 			model.setCellValue(HANDLE_COLUMN_INDEX, r, info.getHandle().toString());
-			model.setCellValue(TYPE_COLUMN_INDEX, r, TYPE_TEXTS[info.getType().getIndex()]);
+			if (info.getTypeIndex() >= TYPE_TEXTS.length) {
+				model.setCellValue(TYPE_COLUMN_INDEX, r, UNKNOWN_TYPE_TEXT);
+			} else {
+				model.setCellValue(TYPE_COLUMN_INDEX, r, TYPE_TEXTS[info.getTypeIndex()]);
+			}
 			r++;
 		}
 		
@@ -342,13 +351,19 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		editButton.addActionListener(this::editSelection);
 		duplicateButton.addActionListener(() -> {
 			GSAssetInfo info = history.getFromHandle(selectedHandle);
-			if (info != null)
+			if (info != null && info.getType() != null) {
 				GSCreateAssetPanel.show(null, assetManager, info);
+			} else {
+				GSConfirmDialog.showOkDialog(null, DUPLICATE_FAILED_TEXT);
+			}
 		});
 		deleteButton.addActionListener(() -> {
 			GSAssetInfo info = history.getFromHandle(selectedHandle);
-			if (info != null)
+			if (info != null) {
 				confirmDeletion(info);
+			} else {
+				GSConfirmDialog.showOkDialog(null, DELETE_FAILED_TEXT);
+			}
 		});
 		searchField.addChangeListener(this::updateTableModel);
 		searchButton.addActionListener(this::updateTableModel);
@@ -393,8 +408,11 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	
 	private void editSelection() {
 		GSAssetInfo info = history.getFromHandle(selectedHandle);
-		if (info != null)
+		if (info != null && info.getType() != null) {
 			assetManager.requestSession(GSESessionRequestType.REQUEST_START, info.getAssetUUID());
+		} else {
+			GSConfirmDialog.showOkDialog(null, EDIT_FAILED_TEXT);
+		}
 	}
 	
 	private void confirmDeletion(GSAssetInfo info) {
@@ -510,7 +528,8 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 
 		@Override
 		protected int matchCost(GSAssetInfo info) {
-			if (pattern.equals(info.getType().getName())) {
+			GSEAssetType type = info.getType();
+			if (type != null && pattern.equals(type.getName())) {
 				// Indication that the user searches for
 				// that specific type.
 				return 0;

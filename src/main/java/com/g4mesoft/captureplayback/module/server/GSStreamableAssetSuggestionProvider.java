@@ -33,7 +33,7 @@ public class GSStreamableAssetSuggestionProvider implements SuggestionProvider<S
 			GSSession session = itr.next();
 			UUID assetUUID = session.get(GSSession.ASSET_UUID);
 			GSAssetInfo info = storedHistory.get(assetUUID);
-			if (info != null && info.getType().isStreamable())
+			if (info != null && info.getType() != null && info.getType().isStreamable())
 				builder.suggest(info.getHandle().toString(), new LiteralMessage(info.getAssetName()));
 		}
 		return builder.buildFuture();

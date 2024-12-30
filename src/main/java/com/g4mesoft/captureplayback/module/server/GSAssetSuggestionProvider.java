@@ -33,7 +33,7 @@ public class GSAssetSuggestionProvider implements SuggestionProvider<ServerComma
 		GSCapturePlaybackExtension extension = GSCapturePlaybackExtension.getInstance();
 		GSCapturePlaybackServerModule module = extension.getServerModule();
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
-			if (info.hasPermission(player) && (assetType == null || info.getType() == assetType))
+			if (info.hasPermission(player) && (assetType == null || info.getTypeIndex() == assetType.getIndex()))
 				builder.suggest(info.getHandle().toString(), new LiteralMessage(info.getAssetName()));
 		}
 		return builder.buildFuture();

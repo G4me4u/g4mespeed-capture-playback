@@ -95,6 +95,10 @@ public class GSCreateAssetPanel extends GSParentPanel {
 		titleLabel.setText((originalInfo != null) ? DUPLICATE_TITLE : CREATE_TITLE);
 		
 		if (originalInfo != null) {
+			if (originalInfo.getType() == null) {
+				// We can not duplicate an unknown asset.
+				throw new IllegalArgumentException("Unknown asset type!");
+			}
 			nameField.setText(copyOfName(originalInfo.getAssetName()));
 			typeField.setSelectedIndex(originalInfo.getType().getIndex());
 			namespaceField.setSelectedIndex(originalInfo.getHandle().getNamespace().getIndex());
