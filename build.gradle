@@ -6,7 +6,7 @@ plugins {
 repositories {
 	maven {
 		name = 'G4me4u Maven'
-		url = 'https://maven.g4mesoft.com/snapshots'
+		url = 'https://maven.g4mesoft.com/releases'
 	}
 }
 
@@ -30,13 +30,8 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
-	modImplementation "com.g4mesoft:g4mespeed:${project.g4mespeed_core_version}-mc${project.minecraft_version}-SNAPSHOT"
-	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}-SNAPSHOT"
-}
-
-configurations.all {
-	// Ensure we redownload G4mespeed core SNAPSHOT
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+	modImplementation "com.g4mesoft:g4mespeed:${project.g4mespeed_core_version}-mc${project.minecraft_version}"
+	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}"
 }
 
 processResources {
