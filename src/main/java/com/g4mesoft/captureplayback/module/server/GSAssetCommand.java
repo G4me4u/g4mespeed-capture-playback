@@ -85,7 +85,7 @@ public class GSAssetCommand {
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
-		if (info != null && info.getType() == assetType && module.onSessionRequest(player, GSESessionRequestType.REQUEST_START, info.getAssetUUID())) {
+		if (info != null && info.getTypeIndex() == assetType.getIndex() && module.onSessionRequest(player, GSESessionRequestType.REQUEST_START, info.getAssetUUID())) {
 			source.sendFeedback(() -> GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
 		} else {
 			source.sendError(GSTextUtil.literal("Failed to edit asset."));
@@ -100,7 +100,7 @@ public class GSAssetCommand {
 		String commandPrefix = "/" + assetType.getName() + " edit ";
 		Text hintText = GSTextUtil.literal("Edit " + assetType.getName());
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
-			if (info.getType() == assetType) {
+			if (info.getTypeIndex() == assetType.getIndex()) {
 				source.sendFeedback(() -> Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
 					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getHandle()))
 							.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hintText))

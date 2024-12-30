@@ -126,7 +126,8 @@ public class GSAssetStorage {
 		if (isLoaded(assetUUID))
 			return true;
 		GSAssetInfo info = storedHistory.get(assetUUID);
-		if (info != null) {
+		// Note: ensure that we know the asset type.
+		if (info != null && info.getType() != null) {
 			GSDecodedAssetFile assetFile;
 			try {
 				assetFile = GSFileUtil.readFile(getAssetFile(info), GSDecodedAssetFile::read);
@@ -150,7 +151,7 @@ public class GSAssetStorage {
 	}
 	
 	private void checkCorrespondingInfo(GSAssetInfo info, GSAbstractAsset asset) {
-		if (!info.getType().equals(asset.getType()))
+		if (info.getTypeIndex() != asset.getType().getIndex())
 			throw new IllegalArgumentException("Asset type does not match asset info");
 		if (!info.getAssetUUID().equals(asset.getUUID()))
 			throw new IllegalArgumentException("Asset UUID does not match asset info");
@@ -167,7 +168,10 @@ public class GSAssetStorage {
 	}
 
 	public void createAsset(GSAssetInfo info) {
-		createAsset(info, null, GSAssetRegistry.getConstr(info.getType()).apply(info));
+		GSEAssetType type = info.getType();
+		if (type == null)
+			throw new IllegalArgumentException("Unknown asset type!");
+		createAsset(info, null, GSAssetRegistry.getConstr(type).apply(info));
 	}
 	
 	public void createDuplicateAsset(GSAssetInfo info, GSAbstractAsset originalAsset) {

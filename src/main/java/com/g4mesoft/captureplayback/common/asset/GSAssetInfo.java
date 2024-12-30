@@ -17,7 +17,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 
 	public static final UUID UNKNOWN_OWNER_UUID = new UUID(0L, 0L);
 	
-	private final GSEAssetType type;
+	private final int typeIndex;
 	private final UUID assetUUID;
 	private final GSAssetHandle handle;
 	private final GSAssetInfo refInfo;
@@ -43,12 +43,20 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		this(type, assetUUID, handle, assetName, createdTimestamp,
 		     lastModifiedTimestamp, createdByUUID, ownerUUID, null);
 	}
-	
+
 	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetHandle handle,
 	                   String assetName, long createdTimestamp,
 	                   long lastModifiedTimestamp, UUID createdByUUID,
 	                   UUID ownerUUID, Set<UUID> collabUUIDs) {
-		this.type = type;
+		this(type.getIndex(), assetUUID, handle, assetName, createdTimestamp,
+		     lastModifiedTimestamp, createdByUUID, ownerUUID, null);
+	}
+	
+	public GSAssetInfo(int typeIndex, UUID assetUUID, GSAssetHandle handle,
+	                   String assetName, long createdTimestamp,
+	                   long lastModifiedTimestamp, UUID createdByUUID,
+	                   UUID ownerUUID, Set<UUID> collabUUIDs) {
+		this.typeIndex = typeIndex;
 		this.assetUUID = assetUUID;
 		this.handle = handle;
 		refInfo = null;
@@ -61,9 +69,9 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		this.collabUUIDs = (collabUUIDs != null) ?
 				new LinkedHashSet<>(collabUUIDs) : new LinkedHashSet<>();
 	}
-
+	
 	public GSAssetInfo(GSEAssetType type, UUID assetUUID, GSAssetInfo refInfo) {
-		this.type = type;
+		this.typeIndex = type.getIndex();
 		this.assetUUID = assetUUID;
 		this.refInfo = refInfo;
 		// The following parameters are derived from the
@@ -79,7 +87,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	}
 
 	public GSAssetInfo(GSAssetInfo other) {
-		type = other.type;
+		typeIndex = other.typeIndex;
 		assetUUID = other.assetUUID;
 		handle = other.handle;
 		refInfo = other.refInfo;
@@ -94,7 +102,11 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	}
 
 	public GSEAssetType getType() {
-		return type;
+		return GSEAssetType.fromIndex(typeIndex);
+	}
+	
+	public int getTypeIndex() {
+		return typeIndex;
 	}
 	
 	public UUID getAssetUUID() {
@@ -206,7 +218,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	@Override
 	public int hashCode() {
 		int hash = 0;
-		hash = 31 * hash + type.hashCode();
+		hash = 31 * hash + Integer.hashCode(typeIndex);
 		hash = 31 * hash + assetUUID.hashCode();
 		hash = 31 * hash + Objects.hashCode(handle);
 		hash = 31 * hash + Long.hashCode(createdTimestamp);
@@ -220,7 +232,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			return true;
 		if (obj instanceof GSAssetInfo) {
 			GSAssetInfo other = (GSAssetInfo)obj;
-			if (type != other.type)
+			if (typeIndex != other.typeIndex)
 				return false;
 			if (!assetUUID.equals(other.assetUUID))
 				return false;
@@ -250,8 +262,8 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		long createdDelta = createdTimestamp - other.createdTimestamp;
 		if (createdDelta != 0L)
 			return createdDelta > 0L ? -1 : 1;
-		if (type != other.type)
-			return type.getIndex() < other.type.getIndex() ? -1 : 1;
+		if (typeIndex != other.typeIndex)
+			return typeIndex < other.typeIndex ? -1 : 1;
 		if (!Objects.equals(handle, other.handle)) {
 			// Non-null handles first
 			if (other.handle == null)
@@ -265,9 +277,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	}
 	
 	public static GSAssetInfo read(GSDecodeBuffer buf) throws IOException {
-		GSEAssetType type = GSEAssetType.fromIndex(buf.readUnsignedByte());
-		if (type == null)
-			throw new IOException("Unknown asset type");
+		int typeIndex = (int)buf.readUnsignedByte();
 		UUID assetUUID = buf.readUUID();
 		GSAssetHandle handle = GSAssetHandle.read(buf);
 		String assetName = buf.readString();
@@ -277,14 +287,15 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		UUID ownerUUID = buf.readUUID();
 		int collabUUIDCount = buf.readInt();
 		GSAssetInfo info = new GSAssetInfo(
-			type,
+			typeIndex,
 			assetUUID,
 			handle,
 			assetName,
 			createdTimestamp,
 			lastModifiedTimestamp,
 			createdByUUID,
-			ownerUUID
+			ownerUUID,
+			null
 		);
 		while (collabUUIDCount-- > 0)
 			info.addCollaborator(buf.readUUID());
@@ -294,7 +305,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	public static void write(GSEncodeBuffer buf, GSAssetInfo info) throws IOException {
 		if (info.isDerived())
 			throw new IOException("Writing derived asset info is unsupported");
-		buf.writeUnsignedByte((short)info.getType().getIndex());
+		buf.writeUnsignedByte((short)info.getTypeIndex());
 		buf.writeUUID(info.getAssetUUID());
 		GSAssetHandle.write(buf, info.getHandle());
 		buf.writeString(info.getAssetName());
