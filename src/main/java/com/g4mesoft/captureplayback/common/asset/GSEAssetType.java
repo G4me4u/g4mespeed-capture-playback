@@ -3,8 +3,7 @@ package com.g4mesoft.captureplayback.common.asset;
 public enum GSEAssetType {
 
 	COMPOSITION("composition", true, 0),
-	SEQUENCE("sequence", true, 1),
-	PLAYLIST("playlist", false, 2);
+	SEQUENCE("sequence", true, 1);
 	
 	private static final GSEAssetType[] TYPES;
 	

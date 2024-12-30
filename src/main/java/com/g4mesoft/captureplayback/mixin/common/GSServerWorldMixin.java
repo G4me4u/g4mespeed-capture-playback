@@ -217,27 +217,24 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 		)
 	)
 	public boolean onProcessSyncedBlockEventsLoop(ObjectLinkedOpenHashSet<BlockEvent> blockEventQueue) {
-		if (gcp_blockEventCount == 0) {
+		// Always handle signal events before block events, i.e.
+		// the start of every breadth (gcp_blockEventCount == 0).
+		while (gcp_blockEventCount == 0) {
 			gcp_blockEventCount = blockEventQueue.size();
-			gcp_microtick++;
-		}
-
-		if (gcp_signalFrame.hasNext()) {
-			// No more block events from external sources,
-			// so we have to skip a few microticks.
-			if (gcp_blockEventCount == 0) {
-				do {
-					gcp_microtick = gcp_signalFrame.peek().getMicrotick();
-					handleReadySignalEvents();
-					// Check if we had new events added to the queue
-					gcp_blockEventCount = blockEventQueue.size();
-				} while (gcp_signalFrame.hasNext() && gcp_blockEventCount == 0);
+			if (gcp_blockEventCount != 0) {
+				gcp_microtick++;
+			} else if (gcp_signalFrame.hasNext()) {
+				// No more block events in queue, so we have to skip a few
+				// microticks if there are any signal events.
+				gcp_microtick = gcp_signalFrame.peek().getMicrotick();
 			} else {
-				handleReadySignalEvents();
+				// Block event queue and signal frame is empty.
+				return true;
 			}
+			handleReadySignalEvents();
 		}
-		
-		return (gcp_blockEventCount == 0);
+		// This line implies (gcp_blockEventCount != 0).
+		return false;
 	}
 	
 	@Inject(

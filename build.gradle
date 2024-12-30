@@ -34,11 +34,6 @@ dependencies {
 	includeMod "com.g4mesoft.ui:g4mespeed-ui:${project.g4mespeed_ui_version}-mc${project.minecraft_version}"
 }
 
-configurations.all {
-	// Ensure we redownload G4mespeed core SNAPSHOT
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
-
 processResources {
 	inputs.property "version", project.version
 

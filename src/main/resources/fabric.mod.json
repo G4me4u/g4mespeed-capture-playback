@@ -30,7 +30,13 @@
 
   "depends": {
   	"minecraft": "1.21.x",
-  	"g4mespeed": ">=1.4.4",
+  	"g4mespeed": ">=1.4.5",
   	"g4mespeed-ui": ">=0.9.8"
+  },
+
+  "custom": {
+    "lithium:options": {
+      "mixin.block.redstone_wire": false
+    }
   }
 }

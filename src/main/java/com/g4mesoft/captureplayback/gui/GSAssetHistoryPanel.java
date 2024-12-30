@@ -81,6 +81,9 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final Text DELETE_TEXT    = translatable("delete");
 	
 	private static final Text CONFIRM_DESCRIPTION = translatable("confirmDesc");
+	private static final Text IMPORT_FAILED_TEXT  = translatable("importFailed");
+	private static final Text EXPORT_FAILED_TEXT  = translatable("exportFailed");
+	private static final Text EXPORT_DENIED_TEXT  = translatable("exportDenied");
 	
 	private static final GSIFileNameFilter GSA_FILE_NAME_FILTER =
 			new GSFileExtensionFilter(new String[] { "gsa" });
@@ -363,7 +366,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		if (assetFile != null) {
 			GSCreateAssetPanel.show(null, assetManager, assetFile);
 		} else {
-			// TODO: show failure popup
+			GSConfirmDialog.showOkDialog(null, IMPORT_FAILED_TEXT);
 		}
 	}
 
@@ -371,19 +374,20 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		GSAssetInfo info = history.getFromHandle(selectedHandle);
 		if (info != null) {
 			assetManager.requestAsset(info.getAssetUUID(), (assetFile) -> {
-				if (assetFile == null) {
-					// TODO: show failure popup (access denied)
-				} else {
+				if (assetFile != null) {
 					try {
 						GSFileUtil.writeFile(path.toFile(), assetFile, GSDecodedAssetFile::write);
 					} catch (IOException e) {
 						CapturePlaybackMod.GSCP_LOGGER.warn("Unable to export asset ({})",
 								assetFile.getAsset().getUUID(), e);
 					}
+				} else {
+					// Note: caused by insufficient permission
+					GSConfirmDialog.showOkDialog(null, EXPORT_DENIED_TEXT);
 				}
 			});
 		} else {
-			// TODO: Show failure popup
+			GSConfirmDialog.showOkDialog(null, EXPORT_FAILED_TEXT);
 		}
 	}
 	
