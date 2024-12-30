@@ -12,6 +12,7 @@ import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
 import com.g4mesoft.captureplayback.common.asset.GSAssetRef;
 import com.g4mesoft.captureplayback.common.asset.GSCompositionAsset;
 import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
+import com.g4mesoft.captureplayback.common.asset.GSPlaylistAsset;
 import com.g4mesoft.captureplayback.common.asset.GSSequenceAsset;
 import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSESessionType;
@@ -62,6 +63,8 @@ public class GSSessionTracker implements GSISessionListener {
 			return GSESessionType.COMPOSITION;
 		case SEQUENCE:
 			return GSESessionType.SEQUENCE;
+		case PLAYLIST:
+			return GSESessionType.PLAYLIST;
 		}
 		throw new IllegalStateException("Unknown asset type");
 	}
@@ -93,6 +96,9 @@ public class GSSessionTracker implements GSISessionListener {
 			break;
 		case SEQUENCE:
 			session.set(GSSession.SEQUENCE, ((GSSequenceAsset)ref.get()).getSequence());
+			break;
+		case PLAYLIST:
+			session.set(GSSession.PLAYLIST, ((GSPlaylistAsset)ref.get()).getPlaylist());
 			break;
 		}
 		session.setSide(GSSessionSide.SERVER_SIDE);

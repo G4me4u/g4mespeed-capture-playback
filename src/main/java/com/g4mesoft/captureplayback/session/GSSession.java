@@ -15,6 +15,7 @@ import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.composition.GSComposition;
 import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
+import com.g4mesoft.captureplayback.playlist.GSPlaylist;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
@@ -30,6 +31,7 @@ public class GSSession {
 	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(GSDecodeBuffer::readUUID, GSEncodeBuffer::writeUUID);
 	private static final GSISessionFieldCodec<GSAssetHandle>     ASSET_HANDLE_CODEC      = new GSBasicSessionFieldCodec<>(GSAssetHandle::read, GSAssetHandle::write);
 	private static final GSISessionFieldCodec<GSUndoRedoHistory> UNDO_REDO_HISTORY_CODEC = new GSBasicSessionFieldCodec<>(GSUndoRedoHistory::read, GSUndoRedoHistory::write);
+	private static final GSISessionFieldCodec<GSPlaylist>        PLAYLIST_CODEC          = new GSBasicSessionFieldCodec<>(GSPlaylist::read, GSPlaylist::write);
 	
 	public static final GSSessionFieldType<UUID>              ASSET_UUID;
 	public static final GSSessionFieldType<GSAssetHandle>     ASSET_HANDLE;
@@ -43,6 +45,7 @@ public class GSSession {
 	public static final GSSessionFieldType<UUID>              SELECTED_CHANNEL;
 	public static final GSSessionFieldType<Integer>           MIN_EXPANDED_COLUMN;
 	public static final GSSessionFieldType<Integer>           MAX_EXPANDED_COLUMN;
+	public static final GSSessionFieldType<GSPlaylist>        PLAYLIST;
 
 	private static final Map<String, GSSessionFieldType<?>> nameToType;
 	private static final Map<GSESessionType, Set<GSSessionFieldType<?>>> sessionFieldTypes;
@@ -61,6 +64,7 @@ public class GSSession {
 				.noSync()
 				.session(GSESessionType.COMPOSITION)
 				.session(GSESessionType.SEQUENCE)
+				.session(GSESessionType.PLAYLIST)
 				.build();
 		ASSET_HANDLE = builder.<GSAssetHandle>cast()
 				.name("assetHandle")
@@ -70,6 +74,7 @@ public class GSSession {
 				.noSync()
 				.session(GSESessionType.COMPOSITION)
 				.session(GSESessionType.SEQUENCE)
+				.session(GSESessionType.PLAYLIST)
 				.build();
 		X_OFFSET = builder.<Float>cast()
 				.name("xOffset")
@@ -145,6 +150,16 @@ public class GSSession {
 				.def(-1)
 				.codec(INTEGER_CODEC)
 				.session(GSESessionType.SEQUENCE)
+				.build();
+		PLAYLIST = builder.<GSPlaylist>cast()
+				.name("playlist")
+				.constr(GSPlaylistSessionField::new)
+				.nullable()
+				.assignOnce()
+				.codec(PLAYLIST_CODEC)
+				.noCache()
+				.noSync()
+				.session(GSESessionType.PLAYLIST)
 				.build();
 	}
 	

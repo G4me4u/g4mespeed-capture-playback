@@ -31,12 +31,14 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 	
 	private final GSAssetPermissionPanel assetPermPanel;
 	private final GSAssetHistoryPanel assetHistoryPanel;
+	private final GSPlaylistOverviewPanel playlistOverviewPanel;
 	
 	private boolean compactView;
 	
 	public GSCapturePlaybackPanel(GSClientAssetManager assetManager) {
 		assetPermPanel = new GSAssetPermissionPanel(assetManager);
 		assetHistoryPanel = new GSAssetHistoryPanel(assetManager, assetPermPanel);
+		playlistOverviewPanel = new GSPlaylistOverviewPanel(assetManager);
 
 		// Force scroll panel to allocate exactly its own width to
 		// us (note that #isScrollableWidthFilled() returns true).
@@ -67,6 +69,17 @@ public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollab
 		add(assetPermPanel);
 		// Default is compact view disabled.
 		compactView = false;
+		
+		// Note: we leave 1 grid-cell above playlist overview
+		//       in the case where we want to move the asset
+		//       backup panel there.
+		playlistOverviewPanel.getLayout()
+			.set(GSGridLayoutManager.GRID_X, 0)
+			.set(GSGridLayoutManager.GRID_Y, 2)
+			.set(GSGridLayoutManager.GRID_WIDTH, 2)
+			.set(GSGridLayoutManager.WEIGHT_Y, 2.0f)
+			.set(GSGridLayoutManager.FILL, GSEFill.BOTH);
+		add(playlistOverviewPanel);
 	}
 	
 	@Override

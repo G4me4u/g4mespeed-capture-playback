@@ -3,7 +3,8 @@ package com.g4mesoft.captureplayback.session;
 public enum GSESessionType {
 
 	COMPOSITION("composition", 0),
-	SEQUENCE("sequence", 1);
+	SEQUENCE("sequence", 1),
+	PLAYLIST("playlist", 2);
 	
 	private static final GSESessionType[] TYPES;
 	

@@ -165,6 +165,9 @@ public class GSClientAssetManager implements GSISessionListener {
 		case SEQUENCE:
 			openSessionPanel(session.getType(), new GSSequenceEditPanel(session));
 			break;
+		case PLAYLIST:
+			// TODO: update the playlist ui
+			break;
 		}
 	}
 
