@@ -6,6 +6,7 @@ import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
 import com.g4mesoft.captureplayback.common.asset.GSAssetManager;
 import com.g4mesoft.captureplayback.common.asset.GSAssetRef;
+import com.g4mesoft.captureplayback.common.asset.GSEAssetType;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.ui.util.GSTextUtil;
 import com.mojang.brigadier.Command;
@@ -59,7 +60,13 @@ public final class GSCaptureCommand {
 			return 0;
 		}
 		
-		if (!info.getType().isStreamable()) {
+		GSEAssetType type = info.getType();
+		if (type == null) {
+			source.sendError(GSTextUtil.literal("Unknown asset type."));
+			return 0;
+		}
+		
+		if (!type.isStreamable()) {
 			source.sendError(GSTextUtil.literal("Asset is not streamable."));
 			return 0;
 		}

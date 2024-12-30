@@ -48,7 +48,11 @@ public class GSSessionTracker implements GSISessionListener {
 		this.info = info;
 		this.ref = ref;
 		this.cacheDir = cacheDir;
-		sessionType = toSessionType(info.getType());
+		GSEAssetType assetType = info.getType();
+		if (assetType == null) {
+			throw new IllegalArgumentException("Unknown asset type (null)!");
+		}
+		sessionType = toSessionType(assetType);
 	
 		playerUUIDToSession = new HashMap<>();
 		sessionToPlayerUUID = new IdentityHashMap<>();

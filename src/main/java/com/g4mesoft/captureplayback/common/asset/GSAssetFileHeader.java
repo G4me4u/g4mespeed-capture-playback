@@ -24,6 +24,7 @@ public class GSAssetFileHeader {
 	private final GSPlayerCacheEntry createdByCacheEntry;
 
 	public GSAssetFileHeader(GSAssetInfo info, GSIPlayerCache playerCache) {
+		// Note: unknown type (null) is caught in below constructor.
 		this(LATEST_FORMAT_VERSION, info.getType(), info.getCreatedTimestamp(),
 				info.getCreatedByUUID(), playerCache.get(info.getCreatedByUUID()));
 	}
