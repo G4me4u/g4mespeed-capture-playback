@@ -21,7 +21,7 @@ public class GSPistonSignalEventHandler implements GSISignalEventHandler {
 			// the piston should be extended when receiving an event for retraction.
 			if (edge != GSESignalEdge.FALLING_EDGE || state.get(PistonBlock.EXTENDED)) {
 				int type = (edge == GSESignalEdge.RISING_EDGE) ? 0 : 1;
-				int data = state.get(Properties.FACING).getId();
+				int data = state.get(Properties.FACING).getIndex();
 				
 				context.dispatchBlockEvent(event.getPos(), block, type, data);
 			}

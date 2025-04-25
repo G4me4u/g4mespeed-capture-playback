@@ -14,11 +14,11 @@ import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.ui.renderer.GSERenderPhase;
 import com.g4mesoft.ui.renderer.GSIRenderable3D;
 import com.g4mesoft.ui.renderer.GSIRenderer3D;
+import com.g4mesoft.ui.renderer.GSRenderLayers;
 import com.g4mesoft.ui.util.GSColorUtil;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
@@ -49,12 +49,10 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			
 			switch(module.cChannelRenderingType.get()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
-				renderCubes(renderer, session, sequence);
+				renderCubes(renderer, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_NO_DEPTH:
-				RenderSystem.disableDepthTest();
-				renderCubes(renderer, session, sequence);
-				RenderSystem.enableDepthTest();
+				renderCubes(renderer, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS_NO_DEPTH);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_DISABLED:
 			default:
@@ -64,10 +62,10 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		}
 	}
 	
-	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence) {
+	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence, RenderLayer renderLayer) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
-		float viewDistance = client.gameRenderer.getViewDistance();
+		float viewDistance = client.gameRenderer.getViewDistanceBlocks();
 		
 		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
 		
@@ -93,7 +91,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			return Float.compare(c1.dist, c0.dist);
 		});
 		
-		renderer.build(GSIRenderer3D.QUADS, VertexFormats.POSITION_COLOR);
+		renderer.build(renderLayer);
 
 		for (GSCubeEntry cube : cubes) {
 			// Render cube relative to camera position

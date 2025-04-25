@@ -102,8 +102,8 @@ public class GSAssetCommand {
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
 			if (info.getTypeIndex() == assetType.getIndex()) {
 				source.sendFeedback(() -> Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
-					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getHandle()))
-							.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hintText))
+					return style.withClickEvent(new ClickEvent.SuggestCommand(commandPrefix + info.getHandle()))
+							.withHoverEvent(new HoverEvent.ShowText(hintText))
 							.withColor(Formatting.GREEN);
 				})), false);
 			}
