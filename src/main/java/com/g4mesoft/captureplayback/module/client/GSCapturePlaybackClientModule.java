@@ -6,6 +6,7 @@ import org.lwjgl.glfw.GLFW;
 
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
+import com.g4mesoft.captureplayback.panel.GSEEditorOpacity;
 import com.g4mesoft.captureplayback.sequence.GSChannel;
 import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
@@ -45,12 +46,15 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	private final GSDefaultChannelProvider channelProvider;
 	
 	public final GSIntegerSetting cChannelRenderingType;
+	public final GSIntegerSetting cEditorOpacity;
 	
 	public GSCapturePlaybackClientModule() {
 		assetManager = null;
 		channelProvider = new GSDefaultChannelProvider();
 		
 		cChannelRenderingType = new GSIntegerSetting("channelRenderingType", RENDERING_DISABLED, 0, 2);
+		cEditorOpacity = new GSIntegerSetting("editorOpacity", GSEEditorOpacity.FULLY_OPAQUE.getIndex(),
+				0, GSEEditorOpacity.OPACITIES.length - 1);
 	}
 	
 	@Override
@@ -196,6 +200,7 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	@Override
 	public void registerClientSettings(GSSettingManager settings) {
 		settings.registerSetting(CAPTURE_PLAYBACK_CATEGORY, cChannelRenderingType);
+		settings.registerSetting(CAPTURE_PLAYBACK_CATEGORY, cEditorOpacity);
 	}
 
 	@Override
@@ -205,5 +210,13 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 
 	public GSClientAssetManager getAssetManager() {
 		return assetManager;
+	}
+
+	public GSEEditorOpacity getEditorOpacity() {
+		return GSEEditorOpacity.fromIndex(cEditorOpacity.get());
+	}
+	
+	public void setEditorOpacity(GSEEditorOpacity opacity) {
+		cEditorOpacity.set(opacity.getIndex());
 	}
 }

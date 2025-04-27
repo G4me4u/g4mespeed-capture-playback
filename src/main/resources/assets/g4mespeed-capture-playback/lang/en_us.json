@@ -86,5 +86,33 @@
 	"panel.edit.channel.title": "Edit Channel",
 	"panel.edit.channel.name": "Name:",
 	"panel.edit.channel.color": "Color:",
-	"panel.edit.channel.positions": "Positions:"
+	"panel.edit.channel.positions": "Positions:",
+	
+	"hotkey.capture-playback.title": "Capture & Playback",
+	
+	"hotkey.capture-playback.channelRenderingType": "Toggle Channel Rendering",
+	"hotkey.capture-playback.newChannel": "Create New Channel",
+	"hotkey.capture-playback.extendChannel": "Add Channel Position",
+	"hotkey.capture-playback.unextendChannel": "Remove Channel Position",
+	"hotkey.capture-playback.selectChannel": "Select Channel",
+	"hotkey.capture-playback.pasteChannelColor": "Paste Channel Color",
+	"hotkey.capture-playback.brightenChannelColor": "Brighten Channel Color",
+	"hotkey.capture-playback.darkenChannelColor": "Darken Channel Color",
+	"hotkey.capture-playback.randomizeChannelColor": "Randomize Channel Color",
+	
+	"setting.capture-playback": "Capture & Playback",
+	
+	"setting.capture-playback.channelRenderingType": "Channel Rendering",
+	"setting.capture-playback.channelRenderingType.desc": "The type of rendering that should be used when drawing channel positions in-game.",
+	"setting.capture-playback.channelRenderingType.0": "Disabled",
+	"setting.capture-playback.channelRenderingType.1": "Depth",
+	"setting.capture-playback.channelRenderingType.2": "No Depth",
+	
+	"setting.capture-playback.editorOpacity": "Editor Opacity",
+	"setting.capture-playback.editorOpacity.desc": "The opacity of the composition and sequence editors.",
+	"setting.capture-playback.editorOpacity.0": "25%% Opaque",
+	"setting.capture-playback.editorOpacity.1": "50%% Opaque",
+	"setting.capture-playback.editorOpacity.2": "75%% Opaque",
+	"setting.capture-playback.editorOpacity.3": "90%% Opaque",
+	"setting.capture-playback.editorOpacity.4": "Fully Opaque"
 }

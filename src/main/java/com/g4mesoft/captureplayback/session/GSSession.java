@@ -14,7 +14,6 @@ import com.g4mesoft.captureplayback.common.GSDeltaException;
 import com.g4mesoft.captureplayback.common.GSIDelta;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.composition.GSComposition;
-import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
@@ -24,7 +23,6 @@ public class GSSession {
 	private static final GSISessionFieldCodec<Integer>           INTEGER_CODEC           = new GSIntegerSessionFieldCodec();
 	private static final GSISessionFieldCodec<Float>             FLOAT_CODEC             = new GSFloatSessionFieldCodec();
 	private static final GSISessionFieldCodec<Double>            DOUBLE_CODEC            = new GSDoubleSessionFieldCodec();
-	private static final GSISessionFieldCodec<GSEContentOpacity> OPACITY_CODEC           = new GSOpacitySessionFieldCodec();
 	private static final GSISessionFieldCodec<GSComposition>     COMPOSITION_CODEC       = new GSBasicSessionFieldCodec<>(GSComposition::read, GSComposition::write);
 	private static final GSISessionFieldCodec<GSSequence>        SEQUENCE_CODEC          = new GSBasicSessionFieldCodec<>(GSSequence::read, GSSequence::write);
 	private static final GSISessionFieldCodec<UUID>              UUID_CODEC              = new GSBasicSessionFieldCodec<>(GSDecodeBuffer::readUUID, GSEncodeBuffer::writeUUID);
@@ -35,7 +33,6 @@ public class GSSession {
 	public static final GSSessionFieldType<GSAssetHandle>     ASSET_HANDLE;
 	public static final GSSessionFieldType<Float>             X_OFFSET;
 	public static final GSSessionFieldType<Float>             Y_OFFSET;
-	public static final GSSessionFieldType<GSEContentOpacity> OPACITY;
 	public static final GSSessionFieldType<GSUndoRedoHistory> UNDO_REDO_HISTORY;
 	public static final GSSessionFieldType<GSComposition>     COMPOSITION;
 	public static final GSSessionFieldType<Double>            GAMETICK_WIDTH;
@@ -82,13 +79,6 @@ public class GSSession {
 				.name("yOffset")
 				.def(0.0f)
 				.codec(FLOAT_CODEC)
-				.session(GSESessionType.COMPOSITION)
-				.session(GSESessionType.SEQUENCE)
-				.build();
-		OPACITY  = builder.<GSEContentOpacity>cast()
-				.name("opacity")
-				.def(GSEContentOpacity.FULLY_OPAQUE)
-				.codec(OPACITY_CODEC)
 				.session(GSESessionType.COMPOSITION)
 				.session(GSESessionType.SEQUENCE)
 				.build();

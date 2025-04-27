@@ -1,7 +1,9 @@
 package com.g4mesoft.captureplayback.gui;
 
+import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
-import com.g4mesoft.captureplayback.panel.GSEContentOpacity;
+import com.g4mesoft.captureplayback.module.client.GSCapturePlaybackClientModule;
+import com.g4mesoft.captureplayback.panel.GSEEditorOpacity;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.client.GSClientController;
@@ -56,6 +58,8 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	
 	protected final GSSession session;
 	
+	protected final GSCapturePlaybackClientModule module;
+	
 	protected final GSButton backButton;
 	protected final GSTextField nameField;
 	protected final GSTextField handleField;
@@ -65,8 +69,6 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	private final GSContentEventHandler columnHeaderHandler;
 	private final GSContentEventHandler rowHeaderHandler;
 	
-	private GSEContentOpacity opacity;
-	
 	private boolean editable;
 	
 	public GSAbstractEditPanel(GSSession session, GSESessionType type) {
@@ -74,6 +76,8 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 			throw new IllegalArgumentException("Session is not of type '" + type.getName() + "'");
 		
 		this.session = session;
+		
+		module = GSCapturePlaybackExtension.getInstance().getClientModule();
 		
 		backButton = new GSButton(BACK_ICON, BACK_TEXT);
 		backButton.setHoveredIcon(HOVERED_BACK_ICON);
@@ -111,9 +115,8 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		columnHeaderHandler = new GSContentEventHandler(true, false);
 		rowHeaderHandler = new GSContentEventHandler(false, true);
 		
-		setContentOpacity(GSEContentOpacity.FULLY_OPAQUE);
 		onHorizontalScrollBarChanged(scrollPanel.getHorizontalScrollBar());
-		
+
 		initLayout();
 		initEventListeners();
 		
@@ -249,6 +252,8 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 		GSPanel content = scrollPanel.getContent();
 		if (content != null)
 			content.requestFocus();
+		
+		updateEditorOpacity();
 	}
 	
 	@Override
@@ -259,15 +264,17 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	}
 
 	protected void retrieveSessionFields() {
-		setContentOpacity(session.get(GSSession.OPACITY));
 		setXOffset(session.get(GSSession.X_OFFSET));
 		setYOffset(session.get(GSSession.Y_OFFSET));
 	}
 
 	protected void offerSessionFields() {
-		session.set(GSSession.OPACITY, getContentOpacity());
 		session.set(GSSession.X_OFFSET, getXOffset());
 		session.set(GSSession.Y_OFFSET, getYOffset());
+	}
+	
+	protected void updateEditorOpacity() {
+		scrollPanel.setOpacity(module.getEditorOpacity().getOpacity());
 	}
 	
 	@Override
@@ -285,26 +292,16 @@ public abstract class GSAbstractEditPanel extends GSParentPanel {
 	@Override
 	public void populateRightClickMenu(GSDropdown dropdown, int x, int y) {
 		GSDropdown opacityMenu = new GSDropdown();
-		for (GSEContentOpacity opacity : GSEContentOpacity.OPACITIES) {
-			GSIcon icon = (this.opacity == opacity) ? OPACITY_SELECTED_ICON : null;
+		GSEEditorOpacity currentOpacity = module.getEditorOpacity();
+		for (GSEEditorOpacity opacity : GSEEditorOpacity.OPACITIES) {
+			GSIcon icon = (currentOpacity == opacity) ? OPACITY_SELECTED_ICON : null;
 			Text text = GSTextUtil.translatable(opacity.getName());
 			opacityMenu.addItem(new GSDropdownAction(icon, text, () -> {
-				setContentOpacity(opacity);
+				module.setEditorOpacity(opacity);
+				updateEditorOpacity();
 			}));
 		}
 		dropdown.addItem(new GSDropdownSubMenu(OPACITY_TEXT, opacityMenu));
-	}
-	
-	public GSEContentOpacity getContentOpacity() {
-		return opacity;
-	}
-
-	public void setContentOpacity(GSEContentOpacity opacity) {
-		if (opacity == null)
-			throw new IllegalArgumentException("opacity is null");
-		
-		this.opacity = opacity;
-		scrollPanel.setOpacity(opacity.getOpacity());
 	}
 	
 	public float getXOffset() {
