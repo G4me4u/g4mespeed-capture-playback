@@ -134,6 +134,6 @@ public class GSAssetCommand {
 		// Note: Users can 'inject' chat formatting into the
 		//       asset name. Reset here to handle that case,
 		//       so it looks intentional...
-		return "'" + info.getAssetName() + "§r' (" + info.getHandle() + ")";
+		return "'" + info.getAssetName() + "\u00A7r' (" + info.getHandle() + ")";
 	}
 }

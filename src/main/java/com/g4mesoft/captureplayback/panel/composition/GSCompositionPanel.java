@@ -28,7 +28,6 @@ import com.g4mesoft.ui.util.GSColorUtil;
 import com.g4mesoft.ui.util.GSMathUtil;
 
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.util.Util;
 
 public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSIKeyListener,
@@ -135,10 +134,8 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		
 		GSRectangle bounds = renderer.getClipBounds().intersection(0, 0, width, height);
 		
-		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderBackground(renderer, bounds);
 		renderTimeIndicators(renderer, bounds);
-		renderer.finish();
 		
 		for (GSTrack track : composition.getTracks())
 			renderTrack(renderer, track, bounds);
@@ -214,7 +211,6 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		int darkColor = GSColorUtil.darker(color);
 		int previewBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(darkColor), ENTRY_PREVIEW_BG_ALPHA);
 		
-		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
 		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, previewBgColor);
 
 		// The width of a zero tick (use double game-tick width to have a uniform width).
@@ -258,8 +254,6 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 				}
 			}
 		}
-		
-		renderer.finish();
 	}
 	
 	private void renderSelection(GSIRenderer2D renderer, GSRectangle bounds) {
