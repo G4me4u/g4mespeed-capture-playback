@@ -27,7 +27,7 @@ import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.util.GSColorUtil;
 import com.g4mesoft.ui.util.GSMathUtil;
 
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.input.SystemKeycodes;
 import net.minecraft.util.Util;
 
 public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSIKeyListener,
@@ -302,7 +302,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 					leftClickCount = 1;
 				}
 				
-				boolean additiveSelection = Screen.hasControlDown();
+				boolean additiveSelection = event.isModifierHeld(SystemKeycodes.CTRL_MOD);
 				if (additiveSelection || clickedEntry == null) {
 					selectingEntries = true;
 					selectionStartGametick = modelView.getGametickExactFromX(event.getX());
@@ -394,7 +394,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		} else if (selectingEntries) {
 			selectionEndX = event.getX();
 			selectionEndY = event.getY();
-			updateSelection(Screen.hasControlDown());
+			updateSelection(event.isModifierHeld(SystemKeycodes.CTRL_MOD));
 			event.consume();
 		}
 	}
@@ -474,9 +474,9 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	@Override
 	public void mouseScrolled(GSMouseEvent event) {
-		if (!event.isConsumed() && Screen.hasControlDown() && isValid()) {
-			double zoomSpeed = Screen.hasAltDown() ? SLOW_ZOOM_SPEED : NORMAL_ZOOM_SPEED;
-			double scroll = Screen.hasShiftDown() ? event.getScrollX() : event.getScrollY();
+		if (!event.isConsumed() && event.isModifierHeld(SystemKeycodes.CTRL_MOD) && isValid()) {
+			double zoomSpeed = event.isModifierHeld(GSEvent.MODIFIER_ALT) ? SLOW_ZOOM_SPEED : NORMAL_ZOOM_SPEED;
+			double scroll = event.isModifierHeld(GSEvent.MODIFIER_SHIFT) ? event.getScrollX() : event.getScrollY();
 			zoomToCenter(Math.pow(zoomSpeed, scroll), event.getX());
 			event.consume();
 		}

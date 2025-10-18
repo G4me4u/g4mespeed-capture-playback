@@ -157,7 +157,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 			GSITableModel model = playerTable.getModel();
 			PlayerListEntry entry = (PlayerListEntry)model.getCellValue(0, sr);
 			//assert(selectedEntry != null)
-			selectedPlayerUUID = entry.getProfile().getId();
+			selectedPlayerUUID = entry.getProfile().id();
 			canceled = false;
 			hide();
 			dispatchActionPerformed();
@@ -180,8 +180,8 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		}
 		List<PlayerListEntry> entries = new ArrayList<>(networkHandler.getPlayerList());
 		Collections.sort(entries, (lhs, rhs) -> {
-			String n0 = lhs.getProfile().getName();
-			String n1 = rhs.getProfile().getName();
+			String n0 = lhs.getProfile().name();
+			String n1 = rhs.getProfile().name();
 			return n0.compareToIgnoreCase(n1);
 		});
 		GSITableModel model = new GSBasicTableModel(1, entries.size());
@@ -259,12 +259,12 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 			Text displayText = value.getDisplayName();
 			if (displayText != null)
 				return displayText;
-			return GSTextUtil.literal(value.getProfile().getName());
+			return GSTextUtil.literal(value.getProfile().name());
 		}
 		
 		private GSIcon getIcon(PlayerListEntry value) {
 			// See PlayerListHud#render(...) for magic constants.
-			GSTexture texture = new GSTexture(value.getSkinTextures().texture(), 64, 64);
+			GSTexture texture = new GSTexture(value.getSkinTextures().body().texturePath(), 64, 64);
 			return new GSTexturedIcon(texture.getRegion(8, 8, 8, 8));
 		}
 	}
