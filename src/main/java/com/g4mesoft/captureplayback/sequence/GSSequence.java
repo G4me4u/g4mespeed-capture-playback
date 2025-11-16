@@ -298,4 +298,15 @@ public class GSSequence {
 		
 		return new GSBlockRegion(x0, y0, z0, x1, y1, z1);
 	}
+
+	public BlockPos getOrigin() {
+		return getBlockRegion().getPos0();
+	}
+
+	public void offsetOrigin(int dx, int dy, int dz) {
+		if (dx != 0 || dy != 0 || dz != 0) {
+			for (GSChannel channel : getChannels())
+				channel.setInfo(channel.getInfo().withOffsetPositions(dx, dy, dz));
+		}
+	}
 }

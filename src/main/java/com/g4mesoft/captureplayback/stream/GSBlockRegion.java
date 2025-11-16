@@ -89,7 +89,15 @@ public final class GSBlockRegion {
 	public int getZ1() {
 		return z1;
 	}
-	
+
+	public BlockPos getPos0() {
+		return new BlockPos(x0, y0, z0);
+	}
+
+	public BlockPos getPos1() {
+		return new BlockPos(x1, y1, z1);
+	}
+
 	@Override
 	public int hashCode() {
 		int hash = 0;

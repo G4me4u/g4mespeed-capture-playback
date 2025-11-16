@@ -12,6 +12,8 @@ import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
+import net.minecraft.util.math.BlockPos;
+
 public class GSCompositionAsset extends GSAbstractAsset implements GSICompositionListener {
 
 	private final GSComposition composition;
@@ -91,6 +93,16 @@ public class GSCompositionAsset extends GSAbstractAsset implements GSICompositio
 		if (track != null)
 			return new GSSequenceAsset(track.getSequence());
 		return null;
+	}
+
+	@Override
+	public BlockPos getOrigin() {
+		return composition.getOrigin();
+	}
+
+	@Override
+	public void offsetOrigin(int dx, int dy, int dz) {
+		composition.offsetOrigin(dx, dy, dz);
 	}
 	
 	@Override
