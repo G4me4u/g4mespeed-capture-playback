@@ -20,6 +20,8 @@ import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
+import net.minecraft.util.math.BlockPos;
+
 public class GSComposition {
 
 	private final UUID compositionUUID;
@@ -364,5 +366,16 @@ public class GSComposition {
 		}
 		
 		return new GSBlockRegion(x0, y0, z0, x1, y1, z1);
+	}
+
+	public BlockPos getOrigin() {
+		return getBlockRegion().getPos0();
+	}
+
+	public void offsetOrigin(int dx, int dy, int dz) {
+		if (dx != 0 || dy != 0 || dz != 0) {
+			for (GSTrack track : getTracks())
+				track.getSequence().offsetOrigin(dx, dy, dz);
+		}
 	}
 }

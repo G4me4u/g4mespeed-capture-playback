@@ -12,6 +12,8 @@ import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
+import net.minecraft.util.math.BlockPos;
+
 public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListener {
 
 	private final GSSequence sequence;
@@ -87,6 +89,16 @@ public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListe
 	@Override
 	public GSAbstractAsset getDerivedAsset(UUID assetUUID) {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public BlockPos getOrigin() {
+		return sequence.getOrigin();
+	}
+
+	@Override
+	public void offsetOrigin(int dx, int dy, int dz) {
+		sequence.offsetOrigin(dx, dy, dz);
 	}
 	
 	@Override
