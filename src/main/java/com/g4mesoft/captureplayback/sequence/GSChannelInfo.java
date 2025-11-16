@@ -82,6 +82,14 @@ public final class GSChannelInfo {
 		return new GSChannelInfo(name, color, positions, true);
 	}
 	
+	public GSChannelInfo withOffsetPositions(int dx, int dy, int dz) {
+		Set<BlockPos> positions = new LinkedHashSet<>();
+		for (BlockPos pos : this.positions) {
+			positions.add(pos.add(dx, dy, dz));
+		}
+		return new GSChannelInfo(name, color, positions, true);
+	}
+	
 	public boolean equals(GSChannelInfo other) {
 		if (other == null)
 			return false;

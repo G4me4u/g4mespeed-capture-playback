@@ -2,8 +2,8 @@ package com.g4mesoft.captureplayback.common.asset;
 
 public enum GSEAssetType {
 
-	COMPOSITION("composition", true, 0),
-	SEQUENCE("sequence", true, 1);
+	COMPOSITION("composition", true, true, 0),
+	SEQUENCE("sequence", true, true, 1);
 	
 	private static final GSEAssetType[] TYPES;
 	
@@ -15,11 +15,13 @@ public enum GSEAssetType {
 	
 	private final String name;
 	private final boolean streamable;
+	private final boolean origin;
 	private final int index;
 	
-	private GSEAssetType(String name, boolean streamable, int index) {
+	private GSEAssetType(String name, boolean streamable, boolean origin, int index) {
 		this.name = name;
 		this.streamable = streamable;
+		this.origin = origin;
 		this.index = index;
 	}
 	
@@ -29,6 +31,10 @@ public enum GSEAssetType {
 	
 	public boolean isStreamable() {
 		return streamable;
+	}
+	
+	public boolean hasOrigin() {
+		return origin;
 	}
 	
 	public int getIndex() {

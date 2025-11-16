@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.panel;
 
-public enum GSEContentOpacity {
+public enum GSEEditorOpacity {
 
 	OPACITY_25(0, "panel.opacity25", 0.25f),
 	OPACITY_50(1, "panel.opacity50", 0.50f),
@@ -8,11 +8,11 @@ public enum GSEContentOpacity {
 	OPACITY_90(3, "panel.opacity90", 0.90f),
 	FULLY_OPAQUE(4, "panel.opacity100", 1.0f);
 	
-	public static final GSEContentOpacity[] OPACITIES;
+	public static final GSEEditorOpacity[] OPACITIES;
 	
 	static {
-		OPACITIES = new GSEContentOpacity[values().length];
-		for (GSEContentOpacity opacity : values()) {
+		OPACITIES = new GSEEditorOpacity[values().length];
+		for (GSEEditorOpacity opacity : values()) {
 			if (OPACITIES[opacity.index] != null)
 				throw new ExceptionInInitializerError("Duplicate opacity index");
 			OPACITIES[opacity.index] = opacity;
@@ -23,7 +23,7 @@ public enum GSEContentOpacity {
 	private final String name;
 	private final float opacity;
 	
-	private GSEContentOpacity(int index, String name, float opacity) {
+	private GSEEditorOpacity(int index, String name, float opacity) {
 		this.index = index;
 		this.name = name;
 		this.opacity = opacity;
@@ -41,7 +41,7 @@ public enum GSEContentOpacity {
 		return opacity;
 	}
 	
-	public static GSEContentOpacity fromIndex(int index) {
+	public static GSEEditorOpacity fromIndex(int index) {
 		if (index < 0 || index >= OPACITIES.length)
 			return null;
 		return OPACITIES[index];

@@ -219,7 +219,7 @@ public class GSChannel {
 	public Collection<GSChannelEntry> getEntries() {
 		return Collections.unmodifiableCollection(entries.values());
 	}
-	
+
 	private void dispatchChannelInfoChanged(GSChannel channel, GSChannelInfo oldInfo) {
 		if (parent != null) {
 			for (GSISequenceListener listener : parent.getListeners())

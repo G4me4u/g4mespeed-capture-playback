@@ -8,6 +8,8 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 
+import net.minecraft.util.math.BlockPos;
+
 public abstract class GSAbstractAsset {
 
 	private final GSEAssetType type;
@@ -82,5 +84,9 @@ public abstract class GSAbstractAsset {
 	public abstract Iterator<UUID> getDerivedIterator();
 	
 	public abstract GSAbstractAsset getDerivedAsset(UUID assetUUID);
+	
+	public abstract BlockPos getOrigin();
+	
+	public abstract void offsetOrigin(int dx, int dy, int dz);
 	
 }
