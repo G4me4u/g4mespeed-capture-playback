@@ -230,7 +230,7 @@ public class GSAssetCommand {
 	}
 	
 	public static boolean hasPermission(ServerCommandSource source, GSAssetHandle handle) throws CommandSyntaxException {
-		if (source.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+		if (source.getPermissions().hasPermission(GSServerController.OP_PERMISSION)) {
 			// Contexts regarding OP players or command blocks etc. have access to all assets
 			return true;
 		}

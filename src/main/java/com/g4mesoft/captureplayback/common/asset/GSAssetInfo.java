@@ -156,7 +156,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	 * collaborators and delete the asset.
 	 */
 	public boolean hasExtendedPermission(PlayerEntity player) {
-		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+		if (player.getPermissions().hasPermission(GSServerController.OP_PERMISSION)) {
 			// OP players have access to all assets.
 			return true;
 		}
@@ -194,7 +194,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	}
 	
 	public boolean hasPermission(PlayerEntity player) {
-		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+		if (player.getPermissions().hasPermission(GSServerController.OP_PERMISSION)) {
 			// OP players have access to all assets.
 			return true;
 		}
