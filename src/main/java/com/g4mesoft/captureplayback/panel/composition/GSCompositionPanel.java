@@ -26,10 +26,10 @@ import com.g4mesoft.ui.panel.scroll.GSIScrollable;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.util.GSColorUtil;
 import com.g4mesoft.ui.util.GSMathUtil;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
+import net.minecraft.client.gui.screens.Screen;
 
 public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSIKeyListener,
                                                            GSIFocusEventListener, GSIScrollable,
@@ -125,7 +125,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		
 		selectingEntries = false;
 		
-		leftClickTime = Util.getMeasuringTimeMs();
+		leftClickTime = Util.getMillis();
 		leftClickCount = 0;
 	}
 	
@@ -135,7 +135,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		
 		GSRectangle bounds = renderer.getClipBounds().intersection(0, 0, width, height);
 		
-		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
+		renderer.build(GSIRenderer2D.QUADS, DefaultVertexFormat.POSITION_COLOR);
 		renderBackground(renderer, bounds);
 		renderTimeIndicators(renderer, bounds);
 		renderer.finish();
@@ -214,7 +214,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		int darkColor = GSColorUtil.darker(color);
 		int previewBgColor = GSColorUtil.withAlpha(GSColorUtil.darker(darkColor), ENTRY_PREVIEW_BG_ALPHA);
 		
-		renderer.build(GSIRenderer2D.QUADS, VertexFormats.POSITION_COLOR);
+		renderer.build(GSIRenderer2D.QUADS, DefaultVertexFormat.POSITION_COLOR);
 		renderer.fillRect(bounds.x, bounds.y, bounds.width, bounds.height, previewBgColor);
 
 		// The width of a zero tick (use double game-tick width to have a uniform width).
@@ -294,7 +294,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	public void mousePressed(GSMouseEvent event) {
 		if (!event.isConsumed() && !selectingEntries && !draggingEntry) {
 			if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
-				long now = Util.getMeasuringTimeMs();
+				long now = Util.getMillis();
 				long dt = now - leftClickTime;
 				leftClickTime = now;
 
@@ -351,7 +351,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		draggingEntry = selectingEntries = false;
 		
 		if (!event.isConsumed() && editable) {
-			long deltaMs = Util.getMeasuringTimeMs() - leftClickTime;
+			long deltaMs = Util.getMillis() - leftClickTime;
 			if (leftClickCount == 2 && deltaMs <= ADD_DELETE_ENTRY_CLICK_TIME) {
 				GSTrack track = modelView.getTrackFromY(event.getY());
 				if (track != null && track == clickedTrack) {

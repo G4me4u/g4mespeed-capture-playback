@@ -2,12 +2,11 @@ package com.g4mesoft.captureplayback.mixin.common;
 
 import org.spongepowered.asm.mixin.Mixin;
 
-import com.g4mesoft.captureplayback.access.GSIWorldAccess;
+import com.g4mesoft.captureplayback.access.GSILevelAccess;
+import net.minecraft.world.level.Level;
 
-import net.minecraft.world.World;
-
-@Mixin(World.class)
-public abstract class GSWorldMixin implements GSIWorldAccess {
+@Mixin(Level.class)
+public abstract class GSLevelMixin implements GSILevelAccess {
 
 	private int gcp_powerRequests;
 	

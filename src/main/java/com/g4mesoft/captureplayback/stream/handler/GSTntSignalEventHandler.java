@@ -3,9 +3,9 @@ package com.g4mesoft.captureplayback.stream.handler;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.stream.GSSignalEvent;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class GSTntSignalEventHandler implements GSISignalEventHandler {
 

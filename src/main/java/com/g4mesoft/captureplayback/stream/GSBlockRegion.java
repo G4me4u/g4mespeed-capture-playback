@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.stream;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public final class GSBlockRegion {
 

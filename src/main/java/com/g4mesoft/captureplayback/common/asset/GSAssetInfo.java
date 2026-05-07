@@ -11,7 +11,7 @@ import com.g4mesoft.core.server.GSServerController;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class GSAssetInfo implements Comparable<GSAssetInfo> {
 
@@ -155,12 +155,12 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 	 * Whether the player has *extended* permissions. I.e. can add
 	 * collaborators and delete the asset.
 	 */
-	public boolean hasExtendedPermission(PlayerEntity player) {
-		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+	public boolean hasExtendedPermission(Player player) {
+		if (player.hasPermissions(GSServerController.OP_PERMISSION_LEVEL)) {
 			// OP players have access to all assets.
 			return true;
 		}
-		return getOwnerUUID().equals(player.getUuid());
+		return getOwnerUUID().equals(player.getUUID());
 	}
 
 	/* Visible for GSAssetHistory */
@@ -193,13 +193,13 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 		collabUUIDs.remove(collabUUID);
 	}
 	
-	public boolean hasPermission(PlayerEntity player) {
-		if (player.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+	public boolean hasPermission(Player player) {
+		if (player.hasPermissions(GSServerController.OP_PERMISSION_LEVEL)) {
 			// OP players have access to all assets.
 			return true;
 		}
 		UUID ownerUUID = getOwnerUUID();
-		if (ownerUUID.equals(player.getUuid())) {
+		if (ownerUUID.equals(player.getUUID())) {
 			// Direct permission
 			return true;
 		}
@@ -208,7 +208,7 @@ public class GSAssetInfo implements Comparable<GSAssetInfo> {
 			return true;
 		}
 		// Last more expensive permission check
-		return getCollaboratorUUIDs().contains(player.getUuid());
+		return getCollaboratorUUIDs().contains(player.getUUID());
 	}
 	
 	public boolean isDerived() {

@@ -16,11 +16,11 @@ import com.g4mesoft.ui.renderer.GSIRenderable3D;
 import com.g4mesoft.ui.renderer.GSIRenderer3D;
 import com.g4mesoft.ui.util.GSColorUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 public class GSSequencePositionRenderable implements GSIRenderable3D {
 
@@ -65,9 +65,9 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	}
 	
 	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		Vec3d cameraPos = client.gameRenderer.getCamera().getPos();
-		float viewDistance = client.gameRenderer.getViewDistance();
+		Minecraft client = Minecraft.getInstance();
+		Vec3 cameraPos = client.gameRenderer.getMainCamera().getPosition();
+		float viewDistance = client.gameRenderer.getRenderDistance();
 		
 		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
 		
@@ -78,9 +78,9 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			
 			for (BlockPos position : info.getPositions()) {
 				// Distance measured relative to center of block
-				double dx = position.getX() - cameraPos.getX() + 0.5;
-				double dy = position.getY() - cameraPos.getY() + 0.5;
-				double dz = position.getZ() - cameraPos.getZ() + 0.5;
+				double dx = position.getX() - cameraPos.x() + 0.5;
+				double dy = position.getY() - cameraPos.y() + 0.5;
+				double dz = position.getZ() - cameraPos.z() + 0.5;
 				
 				float dist = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
 				if (dist <= viewDistance)
@@ -93,13 +93,13 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			return Float.compare(c1.dist, c0.dist);
 		});
 		
-		renderer.build(GSIRenderer3D.QUADS, VertexFormats.POSITION_COLOR);
+		renderer.build(GSIRenderer3D.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
 		for (GSCubeEntry cube : cubes) {
 			// Render cube relative to camera position
-			float rx = (float)(cube.position.getX() - cameraPos.getX());
-			float ry = (float)(cube.position.getY() - cameraPos.getY());
-			float rz = (float)(cube.position.getZ() - cameraPos.getZ());
+			float rx = (float)(cube.position.getX() - cameraPos.x());
+			float ry = (float)(cube.position.getY() - cameraPos.y());
+			float rz = (float)(cube.position.getZ() - cameraPos.z());
 			
 			// Offset edges to fix issues with z-fighting
 			float offset = Math.max(MINIMUM_SURFACE_OFFSET, cube.dist * UNIT_SURFACE_OFFSET);

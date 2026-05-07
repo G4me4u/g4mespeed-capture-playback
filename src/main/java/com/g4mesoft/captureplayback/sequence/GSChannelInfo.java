@@ -9,7 +9,7 @@ import java.util.Set;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public final class GSChannelInfo {
 
@@ -41,7 +41,7 @@ public final class GSChannelInfo {
 		} else {
 			this.positions = new LinkedHashSet<>();
 			for (BlockPos position : positions)
-				this.positions.add(position.toImmutable());
+				this.positions.add(position.immutable());
 		}
 	}
 
@@ -72,7 +72,7 @@ public final class GSChannelInfo {
 
 	public GSChannelInfo addPosition(BlockPos position) {
 		Set<BlockPos> positions = new LinkedHashSet<>(this.positions);
-		positions.add(position.toImmutable());
+		positions.add(position.immutable());
 		return new GSChannelInfo(name, color, positions, true);
 	}
 	
@@ -85,7 +85,7 @@ public final class GSChannelInfo {
 	public GSChannelInfo withOffsetPositions(int dx, int dy, int dz) {
 		Set<BlockPos> positions = new LinkedHashSet<>();
 		for (BlockPos pos : this.positions) {
-			positions.add(pos.add(dx, dy, dz));
+			positions.add(pos.offset(dx, dy, dz));
 		}
 		return new GSChannelInfo(name, color, positions, true);
 	}

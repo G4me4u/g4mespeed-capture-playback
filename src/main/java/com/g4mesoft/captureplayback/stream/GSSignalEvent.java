@@ -3,7 +3,7 @@ package com.g4mesoft.captureplayback.stream;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public final class GSSignalEvent implements Comparable<GSSignalEvent> {
 

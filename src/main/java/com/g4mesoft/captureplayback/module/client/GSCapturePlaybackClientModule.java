@@ -26,10 +26,10 @@ import com.g4mesoft.ui.util.GSColorUtil;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 @Environment(EnvType.CLIENT)
 public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessionListener {
@@ -189,12 +189,12 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	}
 
 	public static BlockPos getCrosshairTarget() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.crosshairTarget == null)
+		Minecraft client = Minecraft.getInstance();
+		if (client.hitResult == null)
 			return null;
-		if (client.crosshairTarget.getType() != HitResult.Type.BLOCK)
+		if (client.hitResult.getType() != HitResult.Type.BLOCK)
 			return null;
-		return ((BlockHitResult)client.crosshairTarget).getBlockPos();
+		return ((BlockHitResult)client.hitResult).getBlockPos();
 	}
 	
 	@Override

@@ -36,8 +36,8 @@ import com.g4mesoft.registry.GSSupplierRegistry;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 public class GSCapturePlaybackExtension implements GSIExtension {
 

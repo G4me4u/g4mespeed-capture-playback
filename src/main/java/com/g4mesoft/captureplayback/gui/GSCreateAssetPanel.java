@@ -27,22 +27,22 @@ import com.g4mesoft.ui.panel.field.GSTextField;
 import com.g4mesoft.ui.panel.field.GSTextLabel;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class GSCreateAssetPanel extends GSParentPanel {
 
 	private static final int BACKGROUND_COLOR = 0xFF252526;
 	
-	private static final Text CREATE_TITLE    = translatable("popup.createTitle");
-	private static final Text DUPLICATE_TITLE = translatable("popup.duplicateTitle");
-	private static final Text IMPORT_TITLE    = translatable("popup.importTitle");
+	private static final Component CREATE_TITLE    = translatable("popup.createTitle");
+	private static final Component DUPLICATE_TITLE = translatable("popup.duplicateTitle");
+	private static final Component IMPORT_TITLE    = translatable("popup.importTitle");
 	
-	private static final Text NAME_TEXT       = translatable("popup.name");
-	private static final Text TYPE_TEXT       = translatable("popup.type");
-	private static final Text NAMESPACE_TEXT  = translatable("popup.namespace");
-	private static final Text HANDLE_TEXT     = translatable("popup.handle");
-	private static final Text CREATE_TEXT     = translatable("create");
-	private static final Text CANCEL_TEXT     = translatable("cancel");
+	private static final Component NAME_TEXT       = translatable("popup.name");
+	private static final Component TYPE_TEXT       = translatable("popup.type");
+	private static final Component NAMESPACE_TEXT  = translatable("popup.namespace");
+	private static final Component HANDLE_TEXT     = translatable("popup.handle");
+	private static final Component CREATE_TEXT     = translatable("create");
+	private static final Component CANCEL_TEXT     = translatable("cancel");
 	
 	private static final int OUTER_MARGIN  = 10;
 	private static final int TITLE_MARGIN  = 10;
@@ -61,8 +61,8 @@ public class GSCreateAssetPanel extends GSParentPanel {
 	
 	private final GSTextLabel titleLabel;
 	private final GSTextField nameField;
-	private final GSDropdownList<Text> typeField;
-	private final GSDropdownList<Text> namespaceField;
+	private final GSDropdownList<Component> typeField;
+	private final GSDropdownList<Component> namespaceField;
 	private final GSTextField handleField;
 	private final GSButton createButton;
 	private final GSButton cancelButton;

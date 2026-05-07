@@ -8,7 +8,7 @@ import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.ui.panel.GSPanelContext;
 import com.g4mesoft.ui.util.GSColorUtil;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public class GSDefaultChannelProvider implements GSIChannelProvider {
 
@@ -20,7 +20,7 @@ public class GSDefaultChannelProvider implements GSIChannelProvider {
 	@Override
 	public GSChannelInfo createChannelInfo(GSSequence sequence) {
 		BlockPos pos = GSCapturePlaybackClientModule.getCrosshairTarget();
-		return createChannelInfo(sequence, (pos == null) ? BlockPos.ORIGIN : pos);
+		return createChannelInfo(sequence, (pos == null) ? BlockPos.ZERO : pos);
 	}
 
 	public GSChannelInfo createChannelInfo(GSSequence sequence, BlockPos pos) {

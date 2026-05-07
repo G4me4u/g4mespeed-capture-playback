@@ -4,32 +4,30 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.g4mesoft.captureplayback.access.GSILevelAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BellBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.RedStoneWireBlock;
 
-@Mixin(BellBlock.class)
-public class GSBellBlockMixin {
+@Mixin(RedStoneWireBlock.class)
+public class GSRedStoneWireBlockMixin {
 
 	@Inject(
-		method = "neighborChanged",
+		method = "calculateTargetStrength",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+				"Lnet/minecraft/world/level/Level;getBestNeighborSignal(" +
 					"Lnet/minecraft/core/BlockPos;" +
-				")Z"
+				")I"
 		)
 	)
-	private void onNeighborChangedBeforePowerCheck(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
+	private void onCalculateTargetStrengthBeforePowerCheck(Level world, BlockPos pos, CallbackInfoReturnable<Integer> cir) {
 		((GSILevelAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

@@ -12,7 +12,7 @@ import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSCreateAssetPacket implements GSIPacket {
 
@@ -60,16 +60,16 @@ public class GSCreateAssetPacket implements GSIPacket {
 	}
 	
 	@Override
-	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
+	public void handleOnServer(GSServerController controller, ServerPlayer player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		if (module != null) {
 			GSAssetManager assetManager = module.getAssetManager();
 			if (originalAssetUUID != null) {
 				GSAssetInfo originalInfo = assetManager.getInfo(originalAssetUUID);
 				if (originalInfo != null && type == originalInfo.getType() && originalInfo.hasPermission(player))
-					assetManager.createDuplicateAsset(handle, name, player.getUuid(), originalAssetUUID);
+					assetManager.createDuplicateAsset(handle, name, player.getUUID(), originalAssetUUID);
 			} else {
-				assetManager.createAsset(type, handle, name, player.getUuid());
+				assetManager.createAsset(type, handle, name, player.getUUID());
 			}
 		}
 		// TODO: send feedback for asset creation

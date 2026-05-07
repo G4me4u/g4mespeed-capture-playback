@@ -15,15 +15,15 @@ import com.g4mesoft.ui.panel.event.GSKeyEvent;
 import com.g4mesoft.ui.panel.field.GSTextLabel;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public abstract class GSEditorPanel extends GSParentPanel {
 
 	private static final int BACKGROUND_COLOR = 0xFF252526;
 	
-	private static final Text DONE_TEXT   = translatable("done");
-	private static final Text APPLY_TEXT  = translatable("apply");
-	private static final Text CANCEL_TEXT = translatable("cancel");
+	private static final Component DONE_TEXT   = translatable("done");
+	private static final Component APPLY_TEXT  = translatable("apply");
+	private static final Component CANCEL_TEXT = translatable("cancel");
 	
 	private static final int OUTER_MARGIN  = 10;
 	private static final int TITLE_MARGIN  = 10;
@@ -39,7 +39,7 @@ public abstract class GSEditorPanel extends GSParentPanel {
 	public GSEditorPanel() {
 		contentPanel = new GSParentPanel();
 		
-		titleLabel = new GSTextLabel((Text)null);
+		titleLabel = new GSTextLabel((Component)null);
 		doneButton = new GSButton(DONE_TEXT);
 		applyButton = new GSButton(APPLY_TEXT);
 		cancelButton = new GSButton(CANCEL_TEXT);
@@ -130,7 +130,7 @@ public abstract class GSEditorPanel extends GSParentPanel {
 			((GSPopup)parent).hide();
 	}
 	
-	protected void setTitle(Text title) {
+	protected void setTitle(Component title) {
 		titleLabel.setText(title);
 	}
 	
