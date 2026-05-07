@@ -12,7 +12,7 @@ import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public class GSSequenceAsset extends GSAbstractAsset implements GSISequenceListener {
 

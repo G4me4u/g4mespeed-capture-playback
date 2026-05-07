@@ -8,7 +8,7 @@ import java.util.UUID;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSIPlaybackStream;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public abstract class GSAbstractAsset {
 

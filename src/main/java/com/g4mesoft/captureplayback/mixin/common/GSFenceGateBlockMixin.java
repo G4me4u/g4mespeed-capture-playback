@@ -1,6 +1,6 @@
 package com.g4mesoft.captureplayback.mixin.common;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.At.Shift;
@@ -8,48 +8,48 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.g4mesoft.captureplayback.access.GSIWorldAccess;
+import com.g4mesoft.captureplayback.access.GSILevelAccess;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.block.WireOrientation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.redstone.Orientation;
 
 @Mixin(FenceGateBlock.class)
 public class GSFenceGateBlockMixin {
 
 	@Inject(
-		method = "neighborUpdate",
+		method = "neighborChanged",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/World;isReceivingRedstonePower(" +
-					"Lnet/minecraft/util/math/BlockPos;" +
+				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+					"Lnet/minecraft/core/BlockPos;" +
 				")Z"
 		)
 	)
-	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify, CallbackInfo ci) {
-		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
+	private void onNeighborUpdateBeforePowerCheck(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation orientation, boolean notify, CallbackInfo ci) {
+		((GSILevelAccess)world).gcp_requestPlaybackPower(1);
 	}
 
 	@Inject(
-		method = "getPlacementState",
+		method = "getStateForPlacement",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/World;isReceivingRedstonePower(" +
-					"Lnet/minecraft/util/math/BlockPos;" +
+				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+					"Lnet/minecraft/core/BlockPos;" +
 				")Z"
 		)
 	)
-	private void onGetPlacementStateBeforePowerCheck(ItemPlacementContext ctx, CallbackInfoReturnable<BlockState> cir) {
-		((GSIWorldAccess)ctx.getWorld()).gcp_requestPlaybackPower(1);
+	private void onGetStateForPlacementBeforePowerCheck(BlockPlaceContext ctx, CallbackInfoReturnable<BlockState> cir) {
+		((GSILevelAccess)ctx.getLevel()).gcp_requestPlaybackPower(1);
 	}
 }

@@ -35,15 +35,15 @@ import com.g4mesoft.ui.panel.table.GSTablePanel;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.util.GSTextUtil;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class GSAssetPermissionPanel extends GSParentPanel {
 
-	private static final Text TITLE_TEXT = translatable("permissionTitle");
-	private static final Text OWNER_TEXT = translatable("owner");
-	private static final Text CREATED_BY_TEXT = translatable("createdBy");
-	private static final Text COLLABORATORS_TEXT = translatable("collaborators");
-	private static final Text NAME_TEXT = translatable("name");
+	private static final Component TITLE_TEXT = translatable("permissionTitle");
+	private static final Component OWNER_TEXT = translatable("owner");
+	private static final Component CREATED_BY_TEXT = translatable("createdBy");
+	private static final Component COLLABORATORS_TEXT = translatable("collaborators");
+	private static final Component NAME_TEXT = translatable("name");
 	
 	private static final GSIcon ADD_ICON          = new GSTexturedIcon(ICONS_SHEET.getRegion(38,  0, 10, 10));
 	private static final GSIcon HOVERED_ADD_ICON  = new GSTexturedIcon(ICONS_SHEET.getRegion(38, 10, 10, 10));
@@ -241,7 +241,7 @@ public class GSAssetPermissionPanel extends GSParentPanel {
 	}
 	
 	private void onInfoChanged() {
-		Text ownerText, createdByText;
+		Component ownerText, createdByText;
 		if (info == null) {
 			ownerText = createdByText = GSTextUtil.EMPTY;
 		} else {
@@ -277,9 +277,9 @@ public class GSAssetPermissionPanel extends GSParentPanel {
 	private static class GSCollabEntry {
 		
 		private final UUID playerUUID;
-		private final Text name;
+		private final Component name;
 		
-		public GSCollabEntry(UUID playerUUID, Text name) {
+		public GSCollabEntry(UUID playerUUID, Component name) {
 			this.playerUUID = playerUUID;
 			this.name = name;
 		}
@@ -288,7 +288,7 @@ public class GSAssetPermissionPanel extends GSParentPanel {
 			return playerUUID;
 		}
 		
-		public Text getName() {
+		public Component getName() {
 			return name;
 		}
 	}

@@ -20,7 +20,7 @@ import com.g4mesoft.captureplayback.util.GSUUIDUtil;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public class GSComposition {
 

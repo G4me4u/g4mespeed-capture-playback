@@ -1,8 +1,8 @@
 package com.g4mesoft.captureplayback.access;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
-public interface GSIRedstoneViewAccess {
+public interface GSISignalGetterAccess {
 
 	public void gcp_requestPlaybackPower(int callCount);
 	

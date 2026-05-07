@@ -13,11 +13,11 @@ import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.renderer.GSTexture;
 import com.g4mesoft.ui.util.GSColorUtil;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 public class GSSequencePreviewScrollBar extends GSScrollBar {
 
-	private static final Identifier TEXTURE_IDENTIFIER = Identifier.of("g4mespeed-capture-playback", "textures/scroll_bar_preview.png");
+	private static final Identifier TEXTURE_IDENTIFIER = Identifier.fromNamespaceAndPath("g4mespeed-capture-playback", "textures/scroll_bar_preview.png");
 	private static final GSTexture SCROLL_BUTTON_TEXTURE = new GSTexture(TEXTURE_IDENTIFIER, 30, 54);
 	
 	private static final int PREVIEW_BACKGROUND = 0xFF171717;

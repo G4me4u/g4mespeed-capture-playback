@@ -7,9 +7,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 
-import net.minecraft.command.argument.IdentifierArgumentType;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.Identifier;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.IdentifierArgument;
+import net.minecraft.resources.Identifier;
 
 public class GSAssetHandleArgumentType {
 
@@ -19,8 +19,8 @@ public class GSAssetHandleArgumentType {
 	private GSAssetHandleArgumentType() {
 	}
 	
-	public static GSAssetHandle getHandle(CommandContext<ServerCommandSource> context, String name) throws CommandSyntaxException {
-		Identifier id = IdentifierArgumentType.getIdentifier(context, name);
+	public static GSAssetHandle getHandle(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
+		Identifier id = IdentifierArgument.getId(context, name);
 		// Convert into asset namespace
 		GSEAssetNamespace namespace = null;
 		if (id.getNamespace().length() == 1) {
@@ -37,7 +37,7 @@ public class GSAssetHandleArgumentType {
 		throw INVALID_HANDLE.create();
 	}
 
-	public static IdentifierArgumentType handle() {
-		return IdentifierArgumentType.identifier();
+	public static IdentifierArgument handle() {
+		return IdentifierArgument.id();
 	}
 }

@@ -39,16 +39,16 @@ import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.renderer.GSTexture;
 import com.g4mesoft.ui.util.GSTextUtil;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 
 public class GSPlayerPickerPanel extends GSParentPanel {
 
-	private static final Text TITLE_TEXT = translatable("playerPickerTitle");
-	private static final Text CHOOSE_TEXT = translatable("choose");
-	private static final Text CANCEL_TEXT = translatable("cancel");
+	private static final Component TITLE_TEXT = translatable("playerPickerTitle");
+	private static final Component CHOOSE_TEXT = translatable("choose");
+	private static final Component CANCEL_TEXT = translatable("cancel");
 	
 	private static final GSMargin OUTER_MARGIN = new GSMargin(10);
 	private static final int TITLE_MARGIN = 10;
@@ -70,7 +70,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		playerTable.setRowHeaderResizePolicy(GSEHeaderResizePolicy.RESIZE_OFF);
 		playerTable.setColumnSelectionPolicy(GSEHeaderSelectionPolicy.DISABLED);
 		playerTable.setRowSelectionPolicy(GSEHeaderSelectionPolicy.SINGLE_SELECTION);
-		playerTable.setCellRenderer(PlayerListEntry.class, GSPlayerListEntryCellRenderer.INSTANCE);
+		playerTable.setCellRenderer(PlayerInfo.class, GSPlayerListEntryCellRenderer.INSTANCE);
 		playerTable.setPreferredRowCount(6);
 		playerTable.setMinimumRowHeight(16);
 		
@@ -155,7 +155,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		int sr = playerTable.getRowSelectionModel().getIntervalMin();
 		if (sr != GSIHeaderSelectionModel.INVALID_SELECTION) {
 			GSITableModel model = playerTable.getModel();
-			PlayerListEntry entry = (PlayerListEntry)model.getCellValue(0, sr);
+			PlayerInfo entry = (PlayerInfo)model.getCellValue(0, sr);
 			//assert(selectedEntry != null)
 			selectedPlayerUUID = entry.getProfile().id();
 			canceled = false;
@@ -172,13 +172,13 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 	}
 	
 	private GSITableModel createTableModel() {
-		ClientPlayNetworkHandler networkHandler =
-				MinecraftClient.getInstance().getNetworkHandler();
+		ClientPacketListener networkHandler =
+				Minecraft.getInstance().getConnection();
 		if (networkHandler == null) {
 			// We are not currently in a world.
 			return new GSBasicTableModel(0, 0);
 		}
-		List<PlayerListEntry> entries = new ArrayList<>(networkHandler.getPlayerList());
+		List<PlayerInfo> entries = new ArrayList<>(networkHandler.getOnlinePlayers());
 		Collections.sort(entries, (lhs, rhs) -> {
 			String n0 = lhs.getProfile().name();
 			String n1 = rhs.getProfile().name();
@@ -189,7 +189,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		model.setColumnHeaderHidden(true);
 		model.setRowHeaderHidden(true);
 		int r = 0;
-		for (PlayerListEntry entry : entries)
+		for (PlayerInfo entry : entries)
 			model.setCellValue(0, r++, entry);
 		return model;
 	}
@@ -231,7 +231,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 			((GSPopup)parent).hide();
 	}
 	
-	private static class GSPlayerListEntryCellRenderer implements GSICellRenderer<PlayerListEntry> {
+	private static class GSPlayerListEntryCellRenderer implements GSICellRenderer<PlayerInfo> {
 
 		private static final int ICON_SPACING = 5;
 		private static final int OUTER_MARGIN = 2;
@@ -242,7 +242,7 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		}
 		
 		@Override
-		public void render(GSIRenderer2D renderer, PlayerListEntry value, GSCellContext context) {
+		public void render(GSIRenderer2D renderer, PlayerInfo value, GSCellContext context) {
 			// Shrink bounds to allow outer margin.
 			context.bounds.x += OUTER_MARGIN;
 			context.bounds.width -= 2 * OUTER_MARGIN;
@@ -251,20 +251,20 @@ public class GSPlayerPickerPanel extends GSParentPanel {
 		}
 
 		@Override
-		public GSDimension getMinimumSize(PlayerListEntry value) {
+		public GSDimension getMinimumSize(PlayerInfo value) {
 			return GSPanelUtil.labelPreferredSize(getIcon(value), getNameAsText(value), ICON_SPACING);
 		}
 		
-		private Text getNameAsText(PlayerListEntry value) {
-			Text displayText = value.getDisplayName();
+		private Component getNameAsText(PlayerInfo value) {
+			Component displayText = value.getTabListDisplayName();
 			if (displayText != null)
 				return displayText;
 			return GSTextUtil.literal(value.getProfile().name());
 		}
 		
-		private GSIcon getIcon(PlayerListEntry value) {
+		private GSIcon getIcon(PlayerInfo value) {
 			// See PlayerListHud#render(...) for magic constants.
-			GSTexture texture = new GSTexture(value.getSkinTextures().body().texturePath(), 64, 64);
+			GSTexture texture = new GSTexture(value.getSkin().body().texturePath(), 64, 64);
 			return new GSTexturedIcon(texture.getRegion(8, 8, 8, 8));
 		}
 	}

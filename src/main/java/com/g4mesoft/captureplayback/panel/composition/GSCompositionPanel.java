@@ -27,7 +27,7 @@ import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.util.GSColorUtil;
 import com.g4mesoft.ui.util.GSMathUtil;
 
-import net.minecraft.client.input.SystemKeycodes;
+import net.minecraft.client.input.InputQuirks;
 import net.minecraft.util.Util;
 
 public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSIKeyListener,
@@ -124,7 +124,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		
 		selectingEntries = false;
 		
-		leftClickTime = Util.getMeasuringTimeMs();
+		leftClickTime = Util.getMillis();
 		leftClickCount = 0;
 	}
 	
@@ -288,7 +288,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	public void mousePressed(GSMouseEvent event) {
 		if (!event.isConsumed() && !selectingEntries && !draggingEntry) {
 			if (event.getButton() == GSMouseEvent.BUTTON_LEFT) {
-				long now = Util.getMeasuringTimeMs();
+				long now = Util.getMillis();
 				long dt = now - leftClickTime;
 				leftClickTime = now;
 
@@ -301,8 +301,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 				} else {
 					leftClickCount = 1;
 				}
-				
-				boolean additiveSelection = event.isModifierHeld(SystemKeycodes.CTRL_MOD);
+				boolean additiveSelection = event.isModifierHeld(InputQuirks.EDIT_SHORTCUT_KEY_MODIFIER);
 				if (additiveSelection || clickedEntry == null) {
 					selectingEntries = true;
 					selectionStartGametick = modelView.getGametickExactFromX(event.getX());
@@ -345,7 +344,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		draggingEntry = selectingEntries = false;
 		
 		if (!event.isConsumed() && editable) {
-			long deltaMs = Util.getMeasuringTimeMs() - leftClickTime;
+			long deltaMs = Util.getMillis() - leftClickTime;
 			if (leftClickCount == 2 && deltaMs <= ADD_DELETE_ENTRY_CLICK_TIME) {
 				GSTrack track = modelView.getTrackFromY(event.getY());
 				if (track != null && track == clickedTrack) {
@@ -394,7 +393,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 		} else if (selectingEntries) {
 			selectionEndX = event.getX();
 			selectionEndY = event.getY();
-			updateSelection(event.isModifierHeld(SystemKeycodes.CTRL_MOD));
+			updateSelection(event.isModifierHeld(InputQuirks.EDIT_SHORTCUT_KEY_MODIFIER));
 			event.consume();
 		}
 	}
@@ -474,7 +473,7 @@ public class GSCompositionPanel extends GSPanel implements GSIMouseListener, GSI
 	
 	@Override
 	public void mouseScrolled(GSMouseEvent event) {
-		if (!event.isConsumed() && event.isModifierHeld(SystemKeycodes.CTRL_MOD) && isValid()) {
+		if (!event.isConsumed() && event.isModifierHeld(InputQuirks.EDIT_SHORTCUT_KEY_MODIFIER) && isValid()) {
 			double zoomSpeed = event.isModifierHeld(GSEvent.MODIFIER_ALT) ? SLOW_ZOOM_SPEED : NORMAL_ZOOM_SPEED;
 			double scroll = event.isModifierHeld(GSEvent.MODIFIER_SHIFT) ? event.getScrollX() : event.getScrollY();
 			zoomToCenter(Math.pow(zoomSpeed, scroll), event.getX());

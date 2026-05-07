@@ -47,11 +47,11 @@ import com.g4mesoft.ui.panel.table.GSITableModel;
 import com.g4mesoft.ui.panel.table.GSTablePanel;
 import com.g4mesoft.util.GSFileUtil;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistoryListener {
 
-	private static final Text ASSET_HISTORY_TITLE = translatable("historyTitle");
+	private static final Component ASSET_HISTORY_TITLE = translatable("historyTitle");
 	/* Indices pointing to the column of each of the titles */
 	private static final int NAME_COLUMN_INDEX;
 	private static final int OWNER_UUID_COLUMN_INDEX;
@@ -61,34 +61,34 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	private static final int HANDLE_COLUMN_INDEX;
 	private static final int TYPE_COLUMN_INDEX;
 	/* Titles for the elements shown in the history table */
-	private static final Text[] TABLE_TITLES;
+	private static final Component[] TABLE_TITLES;
 	/* Minimum sizes of each of the columns in the history table */
 	private static final int[] TABLE_WIDTHS;
 	/* Text shown in place of each of the asset types */
-	static final Text[] TYPE_TEXTS;
+	static final Component[] TYPE_TEXTS;
 	/* Unknown type text */
-	static final Text UNKNOWN_TYPE_TEXT = translatable("type.unknown");
+	static final Component UNKNOWN_TYPE_TEXT = translatable("type.unknown");
 	/* Text shown in place of each of the asset namespaces */
-	static final Text[] NAMESPACE_TEXTS;
+	static final Component[] NAMESPACE_TEXTS;
 	
 	private static final GSIcon SEARCH_ICON          = new GSTexturedIcon(ICONS_SHEET.getRegion(27,  0, 11, 11));
 	private static final GSIcon HOVERED_SEARCH_ICON  = new GSTexturedIcon(ICONS_SHEET.getRegion(27, 11, 11, 11));
 	private static final GSIcon DISABLED_SEARCH_ICON = new GSTexturedIcon(ICONS_SHEET.getRegion(27, 22, 11, 11));
 	
-	private static final Text IMPORT_TEXT    = translatable("import");
-	private static final Text EXPORT_TEXT    = translatable("export");
-	private static final Text NEW_TEXT       = translatable("new");
-	private static final Text EDIT_TEXT      = translatable("edit");
-	private static final Text DUPLICATE_TEXT = translatable("duplicate");
-	private static final Text DELETE_TEXT    = translatable("delete");
+	private static final Component IMPORT_TEXT    = translatable("import");
+	private static final Component EXPORT_TEXT    = translatable("export");
+	private static final Component NEW_TEXT       = translatable("new");
+	private static final Component EDIT_TEXT      = translatable("edit");
+	private static final Component DUPLICATE_TEXT = translatable("duplicate");
+	private static final Component DELETE_TEXT    = translatable("delete");
 	
-	private static final Text CONFIRM_DESCRIPTION   = translatable("confirmDesc");
-	private static final Text IMPORT_FAILED_TEXT    = translatable("importFailed");
-	private static final Text EXPORT_FAILED_TEXT    = translatable("exportFailed");
-	private static final Text EXPORT_DENIED_TEXT    = translatable("exportDenied");
-	private static final Text DUPLICATE_FAILED_TEXT = translatable("duplicateFailed");
-	private static final Text DELETE_FAILED_TEXT    = translatable("deleteFailed");
-	private static final Text EDIT_FAILED_TEXT      = translatable("editFailed");
+	private static final Component CONFIRM_DESCRIPTION   = translatable("confirmDesc");
+	private static final Component IMPORT_FAILED_TEXT    = translatable("importFailed");
+	private static final Component EXPORT_FAILED_TEXT    = translatable("exportFailed");
+	private static final Component EXPORT_DENIED_TEXT    = translatable("exportDenied");
+	private static final Component DUPLICATE_FAILED_TEXT = translatable("duplicateFailed");
+	private static final Component DELETE_FAILED_TEXT    = translatable("deleteFailed");
+	private static final Component EDIT_FAILED_TEXT      = translatable("editFailed");
 	
 	private static final GSIFileNameFilter GSA_FILE_NAME_FILTER =
 			new GSFileExtensionFilter(new String[] { "gsa" });
@@ -108,7 +108,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		CREATED_COLUMN_INDEX    = titleCount++;
 		NAMESPACE_COLUMN_INDEX  = titleCount++;
 		// Compute array with table titles
-		TABLE_TITLES = new Text[titleCount];
+		TABLE_TITLES = new Component[titleCount];
 		TABLE_TITLES[NAME_COLUMN_INDEX]       = translatable("name");
 		TABLE_TITLES[OWNER_UUID_COLUMN_INDEX] = translatable("ownerUUID");
 		TABLE_TITLES[MODIFIED_COLUMN_INDEX]   = translatable("modified");
@@ -127,12 +127,12 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 		TABLE_WIDTHS[TYPE_COLUMN_INDEX]       = 70;
 		// Asset type value text
 		GSEAssetType[] assetTypes = GSEAssetType.values();
-		TYPE_TEXTS = new Text[assetTypes.length];
+		TYPE_TEXTS = new Component[assetTypes.length];
 		for (GSEAssetType type : assetTypes)
 			TYPE_TEXTS[type.getIndex()] = translatable("type." + type.getName());
 		// Asset namespaces value text
 		GSEAssetNamespace[] namespaces = GSEAssetNamespace.values();
-		NAMESPACE_TEXTS = new Text[namespaces.length];
+		NAMESPACE_TEXTS = new Component[namespaces.length];
 		for (GSEAssetNamespace namespace : namespaces)
 			NAMESPACE_TEXTS[namespace.getIndex()] = translatable("namespace." + namespace.getName());
 	}
@@ -416,7 +416,7 @@ public class GSAssetHistoryPanel extends GSParentPanel implements GSIAssetHistor
 	}
 	
 	private void confirmDeletion(GSAssetInfo info) {
-		Text title = translatable("confirmDelete", info.getAssetName());
+		Component title = translatable("confirmDelete", info.getAssetName());
 		GSConfirmDialog dialog = GSConfirmDialog.showDialog(null,
 				title, GSConfirmDialog.YES_CANCEL_OPTIONS);
 		GSTextLabel content = new GSTextLabel(CONFIRM_DESCRIPTION);

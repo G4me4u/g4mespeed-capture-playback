@@ -10,12 +10,12 @@ import com.g4mesoft.ui.util.GSTextUtil;
 import com.g4mesoft.util.GSDecodeBuffer;
 import com.g4mesoft.util.GSEncodeBuffer;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 /* Used on the client and sending cache by packet (s2c) */
 public class GSPlayerCache extends GSAbstractPlayerCache {
 
-	public static final Text UNKNOWN_OWNER_NAME =
+	public static final Component UNKNOWN_OWNER_NAME =
 			GSTextUtil.translatable("gui.tab.capture-playback.unknownOwner");
 	
 	private final Map<UUID, GSPlayerCacheEntry> entries;
@@ -45,7 +45,7 @@ public class GSPlayerCache extends GSAbstractPlayerCache {
 		return Collections.unmodifiableSet(entries.keySet());
 	}
 
-	public Text getNameText(UUID playerUUID) {
+	public Component getNameText(UUID playerUUID) {
 		if (playerUUID.equals(GSAssetInfo.UNKNOWN_OWNER_UUID))
 			return UNKNOWN_OWNER_NAME;
 		GSPlayerCacheEntry entry = get(playerUUID);

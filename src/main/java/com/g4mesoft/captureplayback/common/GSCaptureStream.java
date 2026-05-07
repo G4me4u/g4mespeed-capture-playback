@@ -13,7 +13,7 @@ import com.g4mesoft.captureplayback.stream.GSICaptureStream;
 import com.g4mesoft.captureplayback.stream.GSSignalEvent;
 import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public abstract class GSCaptureStream extends GSAbstractStream implements GSICaptureStream {
 

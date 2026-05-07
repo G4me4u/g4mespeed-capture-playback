@@ -27,8 +27,8 @@ import com.g4mesoft.core.server.GSIServerModuleManager;
 import com.g4mesoft.packet.GSIPacket;
 import com.mojang.brigadier.CommandDispatcher;
 
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSCapturePlaybackServerModule implements GSIServerModule, GSIAssetHistoryListener,
                                                       GSIPlayerCacheListener {
@@ -75,7 +75,7 @@ public class GSCapturePlaybackServerModule implements GSIServerModule, GSIAssetH
 	}
 
 	@Override
-	public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
+	public void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
 		GSAssetCommand.registerCommand(dispatcher, GSEAssetType.COMPOSITION);
 		GSAssetCommand.registerCommand(dispatcher, GSEAssetType.SEQUENCE);
 		GSPlaybackCommand.registerCommand(dispatcher);
@@ -83,21 +83,21 @@ public class GSCapturePlaybackServerModule implements GSIServerModule, GSIAssetH
 	}
 	
 	@Override
-	public void onG4mespeedClientJoin(ServerPlayerEntity player, GSExtensionInfo coreInfo) {
+	public void onG4mespeedClientJoin(ServerPlayer player, GSExtensionInfo coreInfo) {
 		manager.sendPacket(new GSAssetHistoryPacket(assetHistory), player, ASSET_STORAGE_VERSION);
 		manager.sendPacket(new GSPlayerCachePacket(playerCache), player, ASSET_STORAGE_VERSION);
 	}
 	
 	@Override
-	public void onPlayerLeave(ServerPlayerEntity player) {
+	public void onPlayerLeave(ServerPlayer player) {
 		sessionManager.stopAll(player);
 	}
 	
-	public boolean onSessionRequest(ServerPlayerEntity player, GSESessionRequestType requestType, UUID assetUUID) {
+	public boolean onSessionRequest(ServerPlayer player, GSESessionRequestType requestType, UUID assetUUID) {
 		return sessionManager.onRequest(player, requestType, assetUUID);
 	}
 
-	public void onSessionDeltasReceived(ServerPlayerEntity player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+	public void onSessionDeltasReceived(ServerPlayer player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
 		sessionManager.onDeltasReceived(player, assetUUID, deltas);
 	}
 	

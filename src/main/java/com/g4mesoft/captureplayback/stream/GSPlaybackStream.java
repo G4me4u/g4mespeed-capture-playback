@@ -14,7 +14,7 @@ import com.g4mesoft.captureplayback.sequence.GSEChannelEntryType;
 import com.g4mesoft.captureplayback.stream.frame.GSBasicSignalFrame;
 import com.g4mesoft.captureplayback.stream.frame.GSISignalFrame;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public abstract class GSPlaybackStream extends GSAbstractStream implements GSIPlaybackStream {
 	

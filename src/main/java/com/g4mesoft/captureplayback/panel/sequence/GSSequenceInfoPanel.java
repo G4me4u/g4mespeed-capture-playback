@@ -14,7 +14,7 @@ import com.g4mesoft.ui.panel.button.GSButton;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 import com.g4mesoft.ui.util.GSTextUtil;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoListener {
 
@@ -25,8 +25,8 @@ public class GSSequenceInfoPanel extends GSParentPanel implements GSIUndoRedoLis
 	private static final GSIcon HOVERED_REDO_ICON  = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(9, 36, 9, 9));
 	private static final GSIcon DISABLED_REDO_ICON = new GSTexturedIcon(GSCapturePlaybackPanel.ICONS_SHEET.getRegion(9, 45, 9, 9));
 	
-	private static final Text UNDO_TEXT = GSTextUtil.translatable("panel.edit.undo");
-	private static final Text REDO_TEXT = GSTextUtil.translatable("panel.edit.redo");
+	private static final Component UNDO_TEXT = GSTextUtil.translatable("panel.edit.undo");
+	private static final Component REDO_TEXT = GSTextUtil.translatable("panel.edit.redo");
 	
 	private static final int BUTTON_MARGIN = 2;
 	
