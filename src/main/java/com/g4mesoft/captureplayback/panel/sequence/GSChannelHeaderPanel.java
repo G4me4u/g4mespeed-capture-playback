@@ -33,8 +33,8 @@ import com.g4mesoft.ui.panel.field.GSTextField;
 import com.g4mesoft.ui.panel.scroll.GSIScrollable;
 import com.g4mesoft.ui.renderer.GSIRenderer2D;
 
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvent;
 
 public class GSChannelHeaderPanel extends GSParentPanel implements GSIScrollable, GSISequenceListener, 
                                                                    GSIModelViewListener, GSIMouseListener {

@@ -12,7 +12,7 @@ import com.g4mesoft.util.GSEncodeBuffer;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSRequestAssetPacket implements GSIPacket {
 
@@ -38,7 +38,7 @@ public class GSRequestAssetPacket implements GSIPacket {
 	}
 
 	@Override
-	public void handleOnServer(GSServerController controller, ServerPlayerEntity player) {
+	public void handleOnServer(GSServerController controller, ServerPlayer player) {
 		GSCapturePlaybackServerModule module = controller.getModule(GSCapturePlaybackServerModule.class);
 		
 		GSIPacket packet = null;

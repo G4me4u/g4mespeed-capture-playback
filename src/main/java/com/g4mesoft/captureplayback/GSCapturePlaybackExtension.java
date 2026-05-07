@@ -36,15 +36,15 @@ import com.g4mesoft.registry.GSSupplierRegistry;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 public class GSCapturePlaybackExtension implements GSIExtension {
 
 	public static final String NAME = "Capture & Playback";
 	/* "CAPL" in ASCII as HEX */
 	public static final GSExtensionUID UID = new GSExtensionUID(0x4341504C);
-	public static final GSVersion VERSION = new GSVersion(0, 6, 0);
+	public static final GSVersion VERSION = new GSVersion(0, 7, 0);
 	
 	public static final GSExtensionInfo INFO = new GSExtensionInfo(NAME, UID, VERSION);
 	

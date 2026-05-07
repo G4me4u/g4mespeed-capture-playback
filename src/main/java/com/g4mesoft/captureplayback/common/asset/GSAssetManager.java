@@ -18,7 +18,7 @@ import com.g4mesoft.ui.util.GSPathUtil;
 import com.g4mesoft.util.GSFileUtil;
 import com.google.common.collect.Iterables;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSAssetManager implements GSIAssetStorageListener 	{
 
@@ -218,22 +218,22 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 		return storage != null && storage.isLoaded(assetUUID);
 	}
 	
-	public boolean hasPermission(ServerPlayerEntity player, UUID assetUUID) {
+	public boolean hasPermission(ServerPlayer player, UUID assetUUID) {
 		GSAssetInfo info = getInfo(assetUUID);
 		return info != null && info.hasPermission(player);
 	}
 
-	public boolean hasPermission(ServerPlayerEntity player, GSAssetHandle handle) {
+	public boolean hasPermission(ServerPlayer player, GSAssetHandle handle) {
 		GSAssetInfo info = getInfoFromHandle(handle);
 		return info != null && info.hasPermission(player);
 	}
 
-	public boolean hasExtendedPermission(ServerPlayerEntity player, UUID assetUUID) {
+	public boolean hasExtendedPermission(ServerPlayer player, UUID assetUUID) {
 		GSAssetInfo info = getInfo(assetUUID);
 		return info != null && info.hasExtendedPermission(player);
 	}
 	
-	public boolean hasExtendedPermission(ServerPlayerEntity player, GSAssetHandle handle) {
+	public boolean hasExtendedPermission(ServerPlayer player, GSAssetHandle handle) {
 		GSAssetInfo info = getInfoFromHandle(handle);
 		return info != null && info.hasExtendedPermission(player);
 	}

@@ -21,7 +21,7 @@ import com.g4mesoft.captureplayback.session.GSESessionRequestType;
 import com.g4mesoft.captureplayback.session.GSSession;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSSessionManager implements GSIAssetStorageListener {
 
@@ -56,7 +56,7 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		assetManager.removeListener(this);
 	}
 	
-	public boolean onRequest(ServerPlayerEntity player, GSESessionRequestType requestType, UUID assetUUID) {
+	public boolean onRequest(ServerPlayer player, GSESessionRequestType requestType, UUID assetUUID) {
 		if (assetManager.hasPermission(player, assetUUID)) {
 			GSSessionTracker tracker = getTracker(assetUUID);
 			if (tracker != null && tracker.onRequest(player, requestType)) {
@@ -87,8 +87,8 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		return tracker;
 	}
 	
-	public void stopAll(ServerPlayerEntity player) {
-		Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+	public void stopAll(ServerPlayer player) {
+		Set<UUID> assetUUIDs = playerToAssets.get(player.getUUID());
 		if (assetUUIDs != null) {
 			// Ensure we make a copy to avoid concurrent modification...
 			UUID[] assetUUIDArray = assetUUIDs.toArray(new UUID[0]);
@@ -105,7 +105,7 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		trackers.clear();
 	}
 	
-	public Iterator<GSSession> iterateSessions(ServerPlayerEntity player) {
+	public Iterator<GSSession> iterateSessions(ServerPlayer player) {
 		return new GSPlayerSessionIterator(player);
 	}
 	
@@ -117,7 +117,7 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		tracker.setListener(null);
 	}
 	
-	public void onDeltasReceived(ServerPlayerEntity player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
+	public void onDeltasReceived(ServerPlayer player, UUID assetUUID, GSIDelta<GSSession>[] deltas) {
 		GSSessionTracker tracker = trackers.get(assetUUID);
 		if (tracker != null)
 			tracker.onDeltasReceived(player, deltas);
@@ -137,12 +137,12 @@ public class GSSessionManager implements GSIAssetStorageListener {
 		listeners.remove(listener);
 	}
 	
-	private void dispatchSessionStarted(ServerPlayerEntity player, UUID assetUUID) {
+	private void dispatchSessionStarted(ServerPlayer player, UUID assetUUID) {
 		for (GSISessionStatusListener listener : listeners)
 			listener.sessionStarted(player, assetUUID);
 	}
 
-	private void dispatchSessionStopped(ServerPlayerEntity player, UUID assetUUID) {
+	private void dispatchSessionStopped(ServerPlayer player, UUID assetUUID) {
 		for (GSISessionStatusListener listener : listeners)
 			listener.sessionStopped(player, assetUUID);
 	}
@@ -163,22 +163,22 @@ public class GSSessionManager implements GSIAssetStorageListener {
 	private class GSSessionTrackerListener implements GSISessionStatusListener {
 
 		@Override
-		public void sessionStarted(ServerPlayerEntity player, UUID assetUUID) {
-			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+		public void sessionStarted(ServerPlayer player, UUID assetUUID) {
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUUID());
 			if (assetUUIDs == null) {
 				assetUUIDs = new LinkedHashSet<>();
-				playerToAssets.put(player.getUuid(), assetUUIDs);
+				playerToAssets.put(player.getUUID(), assetUUIDs);
 			}
 			if (assetUUIDs.add(assetUUID))
 				dispatchSessionStarted(player, assetUUID);
 		}
 
 		@Override
-		public void sessionStopped(ServerPlayerEntity player, UUID assetUUID) {
-			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+		public void sessionStopped(ServerPlayer player, UUID assetUUID) {
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUUID());
 			if (assetUUIDs != null && assetUUIDs.remove(assetUUID)) {
 				if (assetUUIDs.isEmpty())
-					playerToAssets.remove(player.getUuid());
+					playerToAssets.remove(player.getUUID());
 				dispatchSessionStopped(player, assetUUID);
 			}
 		}
@@ -186,12 +186,12 @@ public class GSSessionManager implements GSIAssetStorageListener {
 	
 	private class GSPlayerSessionIterator implements Iterator<GSSession> {
 
-		private final ServerPlayerEntity player;
+		private final ServerPlayer player;
 		private final Iterator<UUID> itr;
 		
-		public GSPlayerSessionIterator(ServerPlayerEntity player) {
+		public GSPlayerSessionIterator(ServerPlayer player) {
 			this.player = player;
-			Set<UUID> assetUUIDs = playerToAssets.get(player.getUuid());
+			Set<UUID> assetUUIDs = playerToAssets.get(player.getUUID());
 			itr = (assetUUIDs != null) ? assetUUIDs.iterator() : Collections.emptyIterator();
 		}
 		

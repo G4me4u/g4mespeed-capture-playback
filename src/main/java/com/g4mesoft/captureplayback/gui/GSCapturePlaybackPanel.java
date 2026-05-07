@@ -11,21 +11,21 @@ import com.g4mesoft.ui.panel.scroll.GSIScrollable;
 import com.g4mesoft.ui.renderer.GSTexture;
 import com.g4mesoft.ui.util.GSTextUtil;
 
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public class GSCapturePlaybackPanel extends GSParentPanel implements GSIScrollable {
 
 	/* Icon sheet used for Capture & Playback UI elements. */
-	private static final Identifier ICONS_IDENTIFIER = new Identifier("g4mespeed-capture-playback", "textures/icons.png");
+	private static final ResourceLocation ICONS_IDENTIFIER = new ResourceLocation("g4mespeed-capture-playback", "textures/icons.png");
 	public static final GSTexture ICONS_SHEET = new GSTexture(ICONS_IDENTIFIER, 128, 128);
 
 	/* Helper method for getting translatable text. */
-	public static Text translatable(String key) {
+	public static Component translatable(String key) {
 		return GSTextUtil.translatable("gui.tab.capture-playback." + key);
 	}
 
-	public static Text translatable(String key, Object... args) {
+	public static Component translatable(String key, Object... args) {
 		return GSTextUtil.translatable("gui.tab.capture-playback." + key, args);
 	}
 	

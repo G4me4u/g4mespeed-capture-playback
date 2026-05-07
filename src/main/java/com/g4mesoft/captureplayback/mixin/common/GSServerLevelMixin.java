@@ -22,8 +22,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
-import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
-import com.g4mesoft.captureplayback.access.GSIWorldAccess;
+import com.g4mesoft.captureplayback.access.GSIServerLevelAccess;
+import com.g4mesoft.captureplayback.access.GSILevelAccess;
 import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
 import com.g4mesoft.captureplayback.stream.GSICaptureStream;
@@ -36,32 +36,32 @@ import com.g4mesoft.captureplayback.stream.frame.GSMergedSignalFrame;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventContext;
 import com.g4mesoft.captureplayback.stream.handler.GSISignalEventHandler;
 import com.g4mesoft.captureplayback.stream.handler.GSPoweredState;
-import com.g4mesoft.captureplayback.stream.handler.GSServerWorldSignalEventContext;
+import com.g4mesoft.captureplayback.stream.handler.GSServerLevelSignalEventContext;
 import com.g4mesoft.core.server.GSServerController;
 
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.PistonBlock;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundBlockEventPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
-import net.minecraft.server.world.BlockEvent;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.profiler.Profiler;
-import net.minecraft.world.MutableWorldProperties;
-import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.level.BlockEventData;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.storage.WritableLevelData;
 
-@Mixin(ServerWorld.class)
-public abstract class GSServerWorldMixin extends World implements GSIServerWorldAccess, GSIWorldAccess {
+@Mixin(ServerLevel.class)
+public abstract class GSServerLevelMixin extends Level implements GSIServerLevelAccess, GSILevelAccess {
 
 	@Shadow @Final private MinecraftServer server;
 	
@@ -80,23 +80,23 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	@Unique
 	private Map<BlockPos, GSPoweredState> gcp_poweredStates = new HashMap<>();
 	@Unique
-	private GSISignalEventContext gcp_signalEventContext = new GSServerWorldSignalEventContext((ServerWorld)(Object)this);
+	private GSISignalEventContext gcp_signalEventContext = new GSServerLevelSignalEventContext((ServerLevel)(Object)this);
 	
 	private GSETickPhase gcp_phase = GSETickPhase.BLOCK_EVENTS;
 	private int gcp_blockEventCount = 0;
 	private int gcp_microtick = -1;
 	
-	protected GSServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef,
-			DynamicRegistryManager registryManager, RegistryEntry<DimensionType> dimensionEntry,
-			Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long biomeAccess,
+	protected GSServerLevelMixin(WritableLevelData properties, ResourceKey<Level> registryRef,
+			RegistryAccess registryManager, Holder<DimensionType> dimensionEntry,
+			Supplier<ProfilerFiller> profiler, boolean isClient, boolean debugWorld, long biomeAccess,
 			int maxChainedNeighborUpdates) {
 		super(properties, registryRef, registryManager, dimensionEntry, profiler, isClient, debugWorld, biomeAccess,
 				maxChainedNeighborUpdates);
 	}
 	
-	@Shadow protected abstract boolean processBlockEvent(BlockEvent blockEvent);
+	@Shadow protected abstract boolean doBlockEvent(BlockEventData blockEvent);
 
-	@Override @Shadow public abstract void addSyncedBlockEvent(BlockPos pos, Block block, int type, int data);
+	@Override @Shadow public abstract void blockEvent(BlockPos pos, Block block, int type, int data);
 	
 	@Inject(
 		method = "tick",
@@ -104,7 +104,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	)
 	public void onTickHead(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
 		// Make sure we are not doing tick freeze
-		if (!gcp_playbackStreams.isEmpty() && server.getTickManager().shouldTick()) {
+		if (!gcp_playbackStreams.isEmpty() && server.tickRateManager().runsNormally()) {
 			GSMergedSignalFrame mergedFrame = new GSMergedSignalFrame();
 			
 			Iterator<GSIPlaybackStream> playbackStreamItr = gcp_playbackStreams.values().iterator();
@@ -201,10 +201,10 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 
 	@Inject(
-		method = "processSyncedBlockEvents",
+		method = "runBlockEvents",
 		at = @At("HEAD")
 	)
-	public void onBlockActionHead(CallbackInfo ci) {
+	public void onRunBlockEventsHead(CallbackInfo ci) {
 		gcp_phase = GSETickPhase.BLOCK_EVENTS;
 		
 		gcp_blockEventCount = 0;
@@ -212,14 +212,16 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 
 	@Redirect(
-		method = "processSyncedBlockEvents",
+		method = "runBlockEvents",
 		at = @At(
 			value = "INVOKE",
 			ordinal = 0,
-			target = "Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;isEmpty()Z"
+			target =
+				"Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;isEmpty(" +
+				")Z"
 		)
 	)
-	public boolean onProcessSyncedBlockEventsLoop(ObjectLinkedOpenHashSet<BlockEvent> blockEventQueue) {
+	public boolean onRunBlockEventsLoop(ObjectLinkedOpenHashSet<BlockEventData> blockEventQueue) {
 		// Always handle signal events before block events, i.e.
 		// the start of every breadth (gcp_blockEventCount == 0).
 		while (gcp_blockEventCount == 0) {
@@ -241,7 +243,7 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Inject(
-		method = "processSyncedBlockEvents",
+		method = "runBlockEvents",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
@@ -251,28 +253,28 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 				")Ljava/lang/Object;"
 		)
 	)
-	public void onProcessSyncedBlockEventsProcessing(CallbackInfo ci) {
+	public void onRunBlockEventsProcessing(CallbackInfo ci) {
 		gcp_blockEventCount--;
 	}
 	
 	@Inject(
-		method = "processSyncedBlockEvents",
+		method = "runBlockEvents",
 		locals = LocalCapture.CAPTURE_FAILEXCEPTION,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/server/MinecraftServer;getPlayerManager(" +
-				")Lnet/minecraft/server/PlayerManager;"
+				"Lnet/minecraft/server/MinecraftServer;getPlayerList(" +
+				")Lnet/minecraft/server/players/PlayerList;"
 		)
 	)
-	public void onProcessSyncedBlockEventsSuccess(CallbackInfo ci, BlockEvent blockEvent) {
+	public void onRunBlockEventsSuccess(CallbackInfo ci, BlockEventData blockEvent) {
 		if (gcp_isCapturePosition(blockEvent.pos())) {
 			Block block = blockEvent.block();
 			
 			if (block == Blocks.STICKY_PISTON || block == Blocks.PISTON) {
 				// TODO: move this out of the world mixin
-				GSESignalEdge edge = (blockEvent.type() == 0) ? GSESignalEdge.RISING_EDGE :
+				GSESignalEdge edge = (blockEvent.paramA() == 0) ? GSESignalEdge.RISING_EDGE :
 				                                                GSESignalEdge.FALLING_EDGE;
 				gcp_handleCaptureEvent(edge, blockEvent.pos());
 			}
@@ -280,10 +282,10 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	}
 	
 	@Inject(
-		method = "processSyncedBlockEvents",
+		method = "runBlockEvents",
 		at = @At("RETURN")
 	)
-	public void onProcessSyncedBlockEventsReturn(CallbackInfo ci) {
+	public void onRunBlockEventsReturn(CallbackInfo ci) {
 		// We are done with the block event phase
 		gcp_microtick = -1;
 	}
@@ -397,20 +399,20 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Override
 	public boolean gcp_dispatchBlockEvent(BlockPos pos, Block block, int type, int data) {
-		BlockEvent blockAction = new BlockEvent(pos, block, type, data);
+		BlockEventData blockAction = new BlockEventData(pos, block, type, data);
 
-		if (this.processBlockEvent(blockAction)) {
-			Packet<?> packet = new BlockEventS2CPacket(pos, block, type, data);
+		if (this.doBlockEvent(blockAction)) {
+			Packet<?> packet = new ClientboundBlockEventPacket(pos, block, type, data);
 
 			double dist = 64.0;
-			if (block instanceof PistonBlock) {
+			if (block instanceof PistonBaseBlock) {
 				// This is a g4mespeed specific feature that allows the user
 				// to change the distance at which the block actions are sent.
 				dist = 16.0 * GSServerController.getInstance().getTpsModule().sBlockEventDistance.get();
 			}
 
-			PlayerManager playerManager = server.getPlayerManager();
-			playerManager.sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), dist, getRegistryKey(), packet);
+			PlayerList playerManager = server.getPlayerList();
+			playerManager.broadcast(null, pos.getX(), pos.getY(), pos.getZ(), dist, dimension(), packet);
 
 			return true;
 		}
@@ -420,11 +422,11 @@ public abstract class GSServerWorldMixin extends World implements GSIServerWorld
 	
 	@Override
 	public void gcp_dispatchNeighborUpdate(BlockPos pos, Block fromBlock, Direction fromDir) {
-		updateNeighbor(pos, fromBlock, pos.offset(fromDir));
+		neighborChanged(pos, fromBlock, pos.relative(fromDir));
 	}
 	
 	@Override
 	public boolean gcp_setState(BlockPos pos, BlockState state, int flags) {
-		return setBlockState(pos, state, flags);
+		return setBlock(pos, state, flags);
 	}
 }

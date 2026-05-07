@@ -18,16 +18,16 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Text;
-import net.minecraft.text.Texts;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentUtils;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSAssetCommand {
 
@@ -37,13 +37,13 @@ public class GSAssetCommand {
 	private GSAssetCommand() {
 	}
 	
-	public static void registerCommand(CommandDispatcher<ServerCommandSource> dispatcher, GSEAssetType assetType) {
-		LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal(assetType.getName());
+	public static void registerCommand(CommandDispatcher<CommandSourceStack> dispatcher, GSEAssetType assetType) {
+		LiteralArgumentBuilder<CommandSourceStack> command = Commands.literal(assetType.getName());
 		
-		LiteralArgumentBuilder<ServerCommandSource> newCommand = CommandManager.literal("new");
+		LiteralArgumentBuilder<CommandSourceStack> newCommand = Commands.literal("new");
 		for (GSEAssetNamespace namespace : GSEAssetNamespace.values()) {
-			newCommand.then(CommandManager.literal(namespace.getName())
-				.then(CommandManager.argument("assetName", StringArgumentType.greedyString())
+			newCommand.then(Commands.literal(namespace.getName())
+				.then(Commands.argument("assetName", StringArgumentType.greedyString())
 					.executes(context -> {
 						return createAsset(context.getSource(), assetType, namespace, StringArgumentType.getString(context, "assetName"));
 					})
@@ -52,20 +52,20 @@ public class GSAssetCommand {
 		}
 		command.then(newCommand);
 		
-		command.then(CommandManager.literal("edit")
-			.then(CommandManager.argument("handle", GSAssetHandleArgumentType.handle())
+		command.then(Commands.literal("edit")
+			.then(Commands.argument("handle", GSAssetHandleArgumentType.handle())
 				.suggests(new GSAssetSuggestionProvider(assetType))
 				.executes(context -> {
 					return editAsset(context.getSource(), assetType, GSAssetHandleArgumentType.getHandle(context, "handle"));
 				})
 			)
-		).then(CommandManager.literal("move")
-			.then(CommandManager.argument("handle", GSAssetHandleArgumentType.handle())
+		).then(Commands.literal("move")
+			.then(Commands.argument("handle", GSAssetHandleArgumentType.handle())
 				.suggests(new GSAssetSuggestionProvider(assetType))
-				.then(CommandManager.literal("relative")
-					.then(CommandManager.argument("dx", IntegerArgumentType.integer())
-						.then(CommandManager.argument("dy", IntegerArgumentType.integer())
-							.then(CommandManager.argument("dz", IntegerArgumentType.integer())
+				.then(Commands.literal("relative")
+					.then(Commands.argument("dx", IntegerArgumentType.integer())
+						.then(Commands.argument("dy", IntegerArgumentType.integer())
+							.then(Commands.argument("dz", IntegerArgumentType.integer())
 								.executes(context -> {
 									GSAssetHandle handle = GSAssetHandleArgumentType.getHandle(context, "handle");
 									int dx = IntegerArgumentType.getInteger(context, "dx");
@@ -77,17 +77,17 @@ public class GSAssetCommand {
 						)
 					)
 				)
-				.then(CommandManager.literal("absolute")
-					.then(CommandManager.argument("newOrigin", BlockPosArgumentType.blockPos())
+				.then(Commands.literal("absolute")
+					.then(Commands.argument("newOrigin", BlockPosArgument.blockPos())
 						.executes(context -> {
 							GSAssetHandle handle = GSAssetHandleArgumentType.getHandle(context, "handle");
-							BlockPos newOrigin = BlockPosArgumentType.getBlockPos(context, "newOrigin");
+							BlockPos newOrigin = BlockPosArgument.getBlockPos(context, "newOrigin");
 							return moveAssetAbsolute(context.getSource(), assetType, handle, newOrigin);
 						})
 					)
 				)
 			)
-		).then(CommandManager.literal("list")
+		).then(Commands.literal("list")
 			.executes(context -> {
 				return listAssets(context.getSource(), assetType);
 			})
@@ -96,37 +96,37 @@ public class GSAssetCommand {
 		dispatcher.register(command);
 	}
 	
-	private static int createAsset(ServerCommandSource source, GSEAssetType assetType, GSEAssetNamespace namespace, String assetName) throws CommandSyntaxException {
-		ServerPlayerEntity player = source.getPlayer();
+	private static int createAsset(CommandSourceStack source, GSEAssetType assetType, GSEAssetNamespace namespace, String assetName) throws CommandSyntaxException {
+		ServerPlayer player = source.getPlayer();
 		
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		GSAssetManager assetManager = module.getAssetManager();
 
-		assetManager.createAsset(assetType, namespace, assetName, player.getUuid());
+		assetManager.createAsset(assetType, namespace, assetName, player.getUUID());
 
-		source.sendFeedback(() -> GSTextUtil.literal("Asset '" + assetName + "' created successfully."), false);
+		source.sendSuccess(() -> GSTextUtil.literal("Asset '" + assetName + "' created successfully."), false);
 		
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static int editAsset(ServerCommandSource source, GSEAssetType assetType, GSAssetHandle handle) throws CommandSyntaxException {
+	private static int editAsset(CommandSourceStack source, GSEAssetType assetType, GSAssetHandle handle) throws CommandSyntaxException {
 		checkPermission(source, handle);
 
-		ServerPlayerEntity player = source.getPlayer();
+		ServerPlayer player = source.getPlayer();
 		
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
 		if (info != null && info.getTypeIndex() == assetType.getIndex() && module.onSessionRequest(player, GSESessionRequestType.REQUEST_START, info.getAssetUUID())) {
-			source.sendFeedback(() -> GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
+			source.sendSuccess(() -> GSTextUtil.literal("Session of " + toNameString(info) + " started."), false);
 		} else {
-			source.sendError(GSTextUtil.literal("Failed to edit " + assetType.getName() + "."));
+			source.sendFailure(GSTextUtil.literal("Failed to edit " + assetType.getName() + "."));
 		}
 
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static int moveAssetRelative(ServerCommandSource source, GSEAssetType assetType, GSAssetHandle handle, int dx, int dy, int dz) throws CommandSyntaxException {
+	private static int moveAssetRelative(CommandSourceStack source, GSEAssetType assetType, GSAssetHandle handle, int dx, int dy, int dz) throws CommandSyntaxException {
 		checkPermission(source, handle);
 
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
@@ -134,36 +134,36 @@ public class GSAssetCommand {
 		GSAssetInfo info = assetManager.getInfoFromHandle(handle);
 
 		if (info == null) {
-			source.sendError(GSTextUtil.literal("Asset does not exist."));
+			source.sendFailure(GSTextUtil.literal("Asset does not exist."));
 			return 0;
 		}
 
 		if (info.getTypeIndex() != assetType.getIndex()) {
-			source.sendError(GSTextUtil.literal("Asset is not a " + assetType.getName() + "."));
+			source.sendFailure(GSTextUtil.literal("Asset is not a " + assetType.getName() + "."));
 			return 0;
 		}
 		
 		// Note: info.getType() will never return null due to check above.
 		if (!info.getType().hasOrigin()) {
-			source.sendError(GSTextUtil.literal("Asset is not movable."));
+			source.sendFailure(GSTextUtil.literal("Asset is not movable."));
 			return 0;
 		}
 
 		GSAssetRef ref = assetManager.requestAsset(info.getAssetUUID());
 		if (ref == null) {
-			source.sendError(GSTextUtil.literal("Failed to load asset."));
+			source.sendFailure(GSTextUtil.literal("Failed to load asset."));
 			return 0;
 		}
 		
 		ref.get().offsetOrigin(dx, dy, dz);
 		ref.release();
 
-		source.sendFeedback(() -> GSTextUtil.literal("Moved " + toNameString(info) + " by " + dx + ", " + dy + ", " + dz + " successfully."), false);
+		source.sendSuccess(() -> GSTextUtil.literal("Moved " + toNameString(info) + " by " + dx + ", " + dy + ", " + dz + " successfully."), false);
 		
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static int moveAssetAbsolute(ServerCommandSource source, GSEAssetType assetType, GSAssetHandle handle, BlockPos newOrigin) throws CommandSyntaxException {
+	private static int moveAssetAbsolute(CommandSourceStack source, GSEAssetType assetType, GSAssetHandle handle, BlockPos newOrigin) throws CommandSyntaxException {
 		checkPermission(source, handle);
 
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
@@ -171,24 +171,24 @@ public class GSAssetCommand {
 		GSAssetInfo info = assetManager.getInfoFromHandle(handle);
 
 		if (info == null) {
-			source.sendError(GSTextUtil.literal("Asset does not exist."));
+			source.sendFailure(GSTextUtil.literal("Asset does not exist."));
 			return 0;
 		}
 
 		if (info.getTypeIndex() != assetType.getIndex()) {
-			source.sendError(GSTextUtil.literal("Asset is not a " + assetType.getName() + "."));
+			source.sendFailure(GSTextUtil.literal("Asset is not a " + assetType.getName() + "."));
 			return 0;
 		}
 		
 		// Note: info.getType() will never return null due to check above.
 		if (!info.getType().hasOrigin()) {
-			source.sendError(GSTextUtil.literal("Asset does not have an origin."));
+			source.sendFailure(GSTextUtil.literal("Asset does not have an origin."));
 			return 0;
 		}
 
 		GSAssetRef ref = assetManager.requestAsset(info.getAssetUUID());
 		if (ref == null) {
-			source.sendError(GSTextUtil.literal("Failed to load asset."));
+			source.sendFailure(GSTextUtil.literal("Failed to load asset."));
 			return 0;
 		}
 
@@ -201,22 +201,22 @@ public class GSAssetCommand {
 		ref.release();
 
 		String newOriginStr = "(" + newOrigin.getX() + ", " + newOrigin.getY() + ", " + newOrigin.getZ() + ")";
-		source.sendFeedback(() -> GSTextUtil.literal("Moved " + toNameString(info) + " origin to " + newOriginStr + " successfully."), false);
+		source.sendSuccess(() -> GSTextUtil.literal("Moved " + toNameString(info) + " origin to " + newOriginStr + " successfully."), false);
 
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static int listAssets(ServerCommandSource source, GSEAssetType assetType) {
+	private static int listAssets(CommandSourceStack source, GSEAssetType assetType) {
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		
 		String commandPrefix = "/" + assetType.getName() + " edit ";
-		Text hintText = GSTextUtil.literal("Edit " + assetType.getName());
+		Component hintText = GSTextUtil.literal("Edit " + assetType.getName());
 		for (GSAssetInfo info : module.getAssetManager().getStoredHistory()) {
 			if (info.getTypeIndex() == assetType.getIndex()) {
-				source.sendFeedback(() -> Texts.bracketed(GSTextUtil.literal(info.getAssetName()).styled((style) -> {
+				source.sendSuccess(() -> ComponentUtils.wrapInSquareBrackets(GSTextUtil.literal(info.getAssetName()).withStyle((style) -> {
 					return style.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandPrefix + info.getHandle()))
 							.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hintText))
-							.withColor(Formatting.GREEN);
+							.withColor(ChatFormatting.GREEN);
 				})), false);
 			}
 		}
@@ -224,13 +224,13 @@ public class GSAssetCommand {
 		return Command.SINGLE_SUCCESS;
 	}
 	
-	public static void checkPermission(ServerCommandSource source, GSAssetHandle handle) throws CommandSyntaxException {
+	public static void checkPermission(CommandSourceStack source, GSAssetHandle handle) throws CommandSyntaxException {
 		if (!hasPermission(source, handle))
 			throw INSUFFICIENT_PERMISSION_EXCEPTION.create();
 	}
 	
-	public static boolean hasPermission(ServerCommandSource source, GSAssetHandle handle) throws CommandSyntaxException {
-		if (source.hasPermissionLevel(GSServerController.OP_PERMISSION_LEVEL)) {
+	public static boolean hasPermission(CommandSourceStack source, GSAssetHandle handle) throws CommandSyntaxException {
+		if (source.hasPermission(GSServerController.OP_PERMISSION_LEVEL)) {
 			// Contexts regarding OP players or command blocks etc. have access to all assets
 			return true;
 		}

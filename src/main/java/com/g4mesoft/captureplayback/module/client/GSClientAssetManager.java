@@ -33,7 +33,7 @@ import com.g4mesoft.core.client.GSClientController;
 import com.g4mesoft.core.client.GSIClientModuleManager;
 import com.g4mesoft.ui.panel.GSPanel;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class GSClientAssetManager implements GSISessionListener {
 
@@ -134,13 +134,13 @@ public class GSClientAssetManager implements GSISessionListener {
 	
 	public boolean hasPermission(UUID assetUUID) {
 		GSAssetInfo info = history.get(assetUUID);
-		PlayerEntity player = GSClientController.getInstance().getPlayer();
+		Player player = GSClientController.getInstance().getPlayer();
 		return info != null && info.hasPermission(player);
 	}
 
 	public boolean hasExtendedPermission(UUID assetUUID) {
 		GSAssetInfo info = history.get(assetUUID);
-		PlayerEntity player = GSClientController.getInstance().getPlayer();
+		Player player = GSClientController.getInstance().getPlayer();
 		return info != null && info.hasExtendedPermission(player);
 	}
 	

@@ -2,34 +2,34 @@ package com.g4mesoft.captureplayback.mixin.common;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.At.Shift;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.g4mesoft.captureplayback.access.GSIWorldAccess;
+import com.g4mesoft.captureplayback.access.GSILevelAccess;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.NoteBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(NoteBlock.class)
 public class GSNoteBlockMixin {
 
 	@Inject(
-		method = "neighborUpdate",
+		method = "neighborChanged",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/World;isReceivingRedstonePower(" +
-					"Lnet/minecraft/util/math/BlockPos;" +
+				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+					"Lnet/minecraft/core/BlockPos;" +
 				")Z"
 		)
 	)
-	private void onNeighborUpdateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
-		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
+	private void onNeighborChangedBeforePowerCheck(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean notify, CallbackInfo ci) {
+		((GSILevelAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

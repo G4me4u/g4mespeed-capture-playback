@@ -7,53 +7,53 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.g4mesoft.captureplayback.access.GSIWorldAccess;
+import com.g4mesoft.captureplayback.access.GSILevelAccess;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.PoweredRailBlock;
-import net.minecraft.block.enums.RailShape;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.PoweredRailBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.RailShape;
 
 @Mixin(PoweredRailBlock.class)
 public class GSPoweredRailBlockMixin {
 
 	@Inject(
 		method =
-			"isPoweredByOtherRails(" +
-				"Lnet/minecraft/world/World;" +
-				"Lnet/minecraft/util/math/BlockPos;" +
+			"isSameRailWithPower(" +
+				"Lnet/minecraft/world/level/Level;" +
+				"Lnet/minecraft/core/BlockPos;" +
 				"ZI" +
-				"Lnet/minecraft/block/enums/RailShape;" +
+				"Lnet/minecraft/world/level/block/state/properties/RailShape;" +
 			")Z",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/World;isReceivingRedstonePower(" +
-					"Lnet/minecraft/util/math/BlockPos;" +
+				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+					"Lnet/minecraft/core/BlockPos;" +
 				")Z"
 		)
 	)
-	private void onIsPoweredByOtherRailsBeforePowerCheck(World world, BlockPos pos, boolean bl, int distance, RailShape shape, CallbackInfoReturnable<Boolean> cir) {
-		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
+	private void onIsSameRailWithPowerBeforePowerCheck(Level world, BlockPos pos, boolean bl, int distance, RailShape shape, CallbackInfoReturnable<Boolean> cir) {
+		((GSILevelAccess)world).gcp_requestPlaybackPower(1);
 	}
 
 	@Inject(
-		method = "updateBlockState",
+		method = "updateState",
 		allow = 1,
 		at = @At(
 			value = "INVOKE",
 			shift = Shift.BEFORE,
 			target =
-				"Lnet/minecraft/world/World;isReceivingRedstonePower(" +
-					"Lnet/minecraft/util/math/BlockPos;" +
+				"Lnet/minecraft/world/level/Level;hasNeighborSignal(" +
+					"Lnet/minecraft/core/BlockPos;" +
 				")Z"
 		)
 	)
-	private void onUpdateBlockStateBeforePowerCheck(BlockState state, World world, BlockPos pos, Block neighbor, CallbackInfo ci) {
-		((GSIWorldAccess)world).gcp_requestPlaybackPower(1);
+	private void onUpdateStateBeforePowerCheck(BlockState state, Level world, BlockPos pos, Block neighbor, CallbackInfo ci) {
+		((GSILevelAccess)world).gcp_requestPlaybackPower(1);
 	}
 }

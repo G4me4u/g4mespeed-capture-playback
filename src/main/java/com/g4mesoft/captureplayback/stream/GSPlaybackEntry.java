@@ -4,7 +4,7 @@ import com.g4mesoft.captureplayback.common.GSESignalEdge;
 import com.g4mesoft.captureplayback.common.GSETickPhase;
 import com.g4mesoft.captureplayback.common.GSSignalTime;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public final class GSPlaybackEntry implements Comparable<GSPlaybackEntry> {
 

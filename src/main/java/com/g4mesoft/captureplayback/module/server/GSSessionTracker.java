@@ -24,7 +24,7 @@ import com.g4mesoft.captureplayback.session.GSSessionStopPacket;
 import com.g4mesoft.core.server.GSIServerModuleManager;
 import com.g4mesoft.util.GSFileUtil;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public class GSSessionTracker implements GSISessionListener {
 
@@ -70,7 +70,7 @@ public class GSSessionTracker implements GSISessionListener {
 		throw new IllegalStateException("Unknown asset type");
 	}
 	
-	public boolean onRequest(ServerPlayerEntity player, GSESessionRequestType requestType) {
+	public boolean onRequest(ServerPlayer player, GSESessionRequestType requestType) {
 		switch (requestType) {
 		case REQUEST_START:
 			return onRequestStart(player);
@@ -80,8 +80,8 @@ public class GSSessionTracker implements GSISessionListener {
 		throw new IllegalStateException("Unknown request type");
 	}
 	
-	private boolean onRequestStart(ServerPlayerEntity player) {
-		UUID playerUUID = player.getUuid();
+	private boolean onRequestStart(ServerPlayer player) {
+		UUID playerUUID = player.getUUID();
 		if (playerUUIDToSession.containsKey(playerUUID))
 			onRequestStop(player);
 		GSSession session = readSession(playerUUID);
@@ -108,14 +108,14 @@ public class GSSessionTracker implements GSISessionListener {
 		return true;
 	}
 	
-	private void onSessionStarted(ServerPlayerEntity player, GSSession session) {
+	private void onSessionStarted(ServerPlayer player, GSSession session) {
 		session.addListener(this);
 		manager.sendPacket(new GSSessionStartPacket(session), player);
 		dispatchSessionStarted(player, info.getAssetUUID());
 	}
 
-	private boolean onRequestStop(ServerPlayerEntity player) {
-		GSSession session = playerUUIDToSession.remove(player.getUuid());
+	private boolean onRequestStop(ServerPlayer player) {
+		GSSession session = playerUUIDToSession.remove(player.getUUID());
 		if (session != null) {
 			sessionToPlayerUUID.remove(session);
 			onSessionStopped(player, session);
@@ -124,22 +124,22 @@ public class GSSessionTracker implements GSISessionListener {
 		return false;
 	}
 	
-	private void onSessionStopped(ServerPlayerEntity player, GSSession session) {
-		writeSession(player.getUuid(), session);
+	private void onSessionStopped(ServerPlayer player, GSSession session) {
+		writeSession(player.getUUID(), session);
 		session.removeListener(this);
 		manager.sendPacket(new GSSessionStopPacket(info.getAssetUUID()), player);
 		dispatchSessionStopped(player, info.getAssetUUID());
 	}
 
-	public void onDeltasReceived(ServerPlayerEntity player, GSIDelta<GSSession>[] deltas) {
-		GSSession session = playerUUIDToSession.get(player.getUuid());
+	public void onDeltasReceived(ServerPlayer player, GSIDelta<GSSession>[] deltas) {
+		GSSession session = playerUUIDToSession.get(player.getUUID());
 		if (session != null)
 			session.applySessionDeltas(deltas);
 	}
 	
 	public void stopAll() {
 		for (Map.Entry<UUID, GSSession> entry : playerUUIDToSession.entrySet()) {
-			ServerPlayerEntity player = manager.getPlayer(entry.getKey());
+			ServerPlayer player = manager.getPlayer(entry.getKey());
 			if (player != null)
 				onSessionStopped(player, entry.getValue());
 		}
@@ -147,8 +147,8 @@ public class GSSessionTracker implements GSISessionListener {
 		sessionToPlayerUUID.clear();
 	}
 	
-	public GSSession getSession(ServerPlayerEntity player) {
-		return playerUUIDToSession.get(player.getUuid());
+	public GSSession getSession(ServerPlayer player) {
+		return playerUUIDToSession.get(player.getUUID());
 	}
 	
 	public void setListener(GSISessionStatusListener listener) {
@@ -157,12 +157,12 @@ public class GSSessionTracker implements GSISessionListener {
 		this.listener = listener;
 	}
 
-	private void dispatchSessionStarted(ServerPlayerEntity player, UUID assetUUID) {
+	private void dispatchSessionStarted(ServerPlayer player, UUID assetUUID) {
 		if (listener != null)
 			listener.sessionStarted(player, assetUUID);
 	}
 
-	private void dispatchSessionStopped(ServerPlayerEntity player, UUID assetUUID) {
+	private void dispatchSessionStopped(ServerPlayer player, UUID assetUUID) {
 		if (listener != null)
 			listener.sessionStopped(player, assetUUID);
 	}
@@ -202,7 +202,7 @@ public class GSSessionTracker implements GSISessionListener {
 	public void onSessionDeltas(GSSession session, GSIDelta<GSSession>[] deltas) {
 		UUID playerUUID = sessionToPlayerUUID.get(session);
 		if (playerUUID != null) {
-			ServerPlayerEntity player = manager.getPlayer(playerUUID);
+			ServerPlayer player = manager.getPlayer(playerUUID);
 			if (player != null)
 				manager.sendPacket(new GSSessionDeltasPacket(info.getAssetUUID(), deltas), player);
 		}

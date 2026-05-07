@@ -1,7 +1,7 @@
 package com.g4mesoft.captureplayback.module.server;
 
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
-import com.g4mesoft.captureplayback.access.GSIServerWorldAccess;
+import com.g4mesoft.captureplayback.access.GSIServerLevelAccess;
 import com.g4mesoft.captureplayback.common.asset.GSAbstractAsset;
 import com.g4mesoft.captureplayback.common.asset.GSAssetHandle;
 import com.g4mesoft.captureplayback.common.asset.GSAssetInfo;
@@ -17,9 +17,9 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerLevel;
 
 public final class GSPlaybackCommand {
 
@@ -28,11 +28,11 @@ public final class GSPlaybackCommand {
 	private GSPlaybackCommand() {
 	}
 	
-	public static void registerCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
-		LiteralArgumentBuilder<ServerCommandSource> command = CommandManager.literal("playback");
+	public static void registerCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
+		LiteralArgumentBuilder<CommandSourceStack> command = Commands.literal("playback");
 		
-		command.then(CommandManager.literal("start")
-			.then(CommandManager.argument("handle", GSAssetHandleArgumentType.handle())
+		command.then(Commands.literal("start")
+			.then(Commands.argument("handle", GSAssetHandleArgumentType.handle())
 				.suggests(new GSStreamableAssetSuggestionProvider())
 				.executes(context -> {
 					return startPlayback(
@@ -43,10 +43,10 @@ public final class GSPlaybackCommand {
 					);
 				})
 			)
-		).then(CommandManager.literal("repeat")
-			.then(CommandManager.argument("handle", GSAssetHandleArgumentType.handle())
+		).then(Commands.literal("repeat")
+			.then(Commands.argument("handle", GSAssetHandleArgumentType.handle())
 				.suggests(new GSStreamableAssetSuggestionProvider())
-				.then(CommandManager.argument("delay", IntegerArgumentType.integer(0))
+				.then(Commands.argument("delay", IntegerArgumentType.integer(0))
 					.executes(context -> {
 						return startPlayback(
 							context.getSource(),
@@ -55,7 +55,7 @@ public final class GSPlaybackCommand {
 							REPEAT_FOREVER
 						);
 					})
-					.then(CommandManager.argument("count", IntegerArgumentType.integer(1))
+					.then(Commands.argument("count", IntegerArgumentType.integer(1))
 						.executes(context -> {
 							return startPlayback(
 								context.getSource(),
@@ -67,8 +67,8 @@ public final class GSPlaybackCommand {
 					)
 				)
 			)
-		).then(CommandManager.literal("stop")
-			.then(CommandManager.argument("handle", GSAssetHandleArgumentType.handle())
+		).then(Commands.literal("stop")
+			.then(Commands.argument("handle", GSAssetHandleArgumentType.handle())
 				.suggests(new GSStreamableAssetSuggestionProvider())
 				.executes(context -> {
 					return stopPlayback(
@@ -77,7 +77,7 @@ public final class GSPlaybackCommand {
 					);
 				})
 			)
-		).then(CommandManager.literal("stopAll")
+		).then(Commands.literal("stopAll")
 			.executes(context -> {
 				return stopAllPlaybacks(context.getSource());
 			})
@@ -86,7 +86,7 @@ public final class GSPlaybackCommand {
 		dispatcher.register(command);
 	}
 	
-	private static int startPlayback(ServerCommandSource source, GSAssetHandle handle, int delay, int repeatCount) throws CommandSyntaxException {
+	private static int startPlayback(CommandSourceStack source, GSAssetHandle handle, int delay, int repeatCount) throws CommandSyntaxException {
 		GSAssetCommand.checkPermission(source, handle);
 
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
@@ -94,40 +94,40 @@ public final class GSPlaybackCommand {
 		GSAssetInfo info = assetManager.getInfoFromHandle(handle);
 
 		if (info == null) {
-			source.sendError(GSTextUtil.literal("Asset does not exist."));
+			source.sendFailure(GSTextUtil.literal("Asset does not exist."));
 			return 0;
 		}
 		
 		GSEAssetType type = info.getType();
 		if (type == null) {
-			source.sendError(GSTextUtil.literal("Unknown asset type."));
+			source.sendFailure(GSTextUtil.literal("Unknown asset type."));
 			return 0;
 		}
 		
 		if (!type.isStreamable()) {
-			source.sendError(GSTextUtil.literal("Asset is not streamable."));
+			source.sendFailure(GSTextUtil.literal("Asset is not streamable."));
 			return 0;
 		}
 		
-		ServerWorld world = source.getWorld();
-		if (((GSIServerWorldAccess)world).gcp_hasPlaybackStream(info.getAssetUUID())) {
-			source.sendError(GSTextUtil.literal("Already playing back '" + handle + "'."));
+		ServerLevel world = source.getLevel();
+		if (((GSIServerLevelAccess)world).gcp_hasPlaybackStream(info.getAssetUUID())) {
+			source.sendFailure(GSTextUtil.literal("Already playing back '" + handle + "'."));
 			return 0;
 		}
 		
 		GSAssetRef ref = assetManager.requestAsset(info.getAssetUUID());
 		if (ref == null) {
-			source.sendError(GSTextUtil.literal("Failed to load asset."));
+			source.sendFailure(GSTextUtil.literal("Failed to load asset."));
 			return 0;
 		}
 		
 		startPlaybackImpl(world, ref, delay, repeatCount, true);
 		
-		source.sendFeedback(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
+		source.sendSuccess(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " started."), true);
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private static void startPlaybackImpl(ServerWorld world, GSAssetRef ref, int delay, int repeatCount, boolean first) {
+	private static void startPlaybackImpl(ServerLevel world, GSAssetRef ref, int delay, int repeatCount, boolean first) {
 		if (repeatCount <= 0 && repeatCount != REPEAT_FOREVER) {
 			// Conservative check if we have repeated all
 			ref.release();
@@ -149,40 +149,40 @@ public final class GSPlaybackCommand {
 				}
 			}
 		});
-		((GSIServerWorldAccess)world).gcp_addPlaybackStream(asset.getUUID(), stream);
+		((GSIServerLevelAccess)world).gcp_addPlaybackStream(asset.getUUID(), stream);
 	}
 
-	private static int stopPlayback(ServerCommandSource source, GSAssetHandle handle) throws CommandSyntaxException {
+	private static int stopPlayback(CommandSourceStack source, GSAssetHandle handle) throws CommandSyntaxException {
 		GSAssetCommand.checkPermission(source, handle);
 		
 		GSCapturePlaybackServerModule module = GSCapturePlaybackExtension.getInstance().getServerModule();
 		GSAssetInfo info = module.getAssetManager().getInfoFromHandle(handle);
 		
 		if (info == null) {
-			source.sendError(GSTextUtil.literal("Asset with handle '" + handle + "' does not exist."));
+			source.sendFailure(GSTextUtil.literal("Asset with handle '" + handle + "' does not exist."));
 			return 0;
 		}
 		
-		ServerWorld world = source.getWorld();
-		GSIPlaybackStream stream = ((GSIServerWorldAccess)world).gcp_getPlaybackStream(info.getAssetUUID());
+		ServerLevel world = source.getLevel();
+		GSIPlaybackStream stream = ((GSIServerLevelAccess)world).gcp_getPlaybackStream(info.getAssetUUID());
 		if (stream == null) {
-			source.sendError(GSTextUtil.literal("No active playback found."));
+			source.sendFailure(GSTextUtil.literal("No active playback found."));
 			return 0;
 		}
 		
 		stream.close();
-		source.sendFeedback(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
+		source.sendSuccess(() -> GSTextUtil.literal("Playback of " + GSAssetCommand.toNameString(info) + " stopped."), true);
 		
 		return Command.SINGLE_SUCCESS;
 	}
 	
-	private static int stopAllPlaybacks(ServerCommandSource source) throws CommandSyntaxException {
+	private static int stopAllPlaybacks(CommandSourceStack source) throws CommandSyntaxException {
 		GSAssetCommand.checkPermission(source, null);
 		
-		ServerWorld world = source.getWorld();
-		((GSIServerWorldAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
+		ServerLevel world = source.getLevel();
+		((GSIServerLevelAccess)world).gcp_getPlaybackStreams().forEach(GSIPlaybackStream::close);
 		
-		source.sendFeedback(() -> GSTextUtil.literal("All playbacks stopped."), true);
+		source.sendSuccess(() -> GSTextUtil.literal("All playbacks stopped."), true);
 
 		return Command.SINGLE_SUCCESS;
 	}
