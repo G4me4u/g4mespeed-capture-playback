@@ -63,10 +63,10 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	}
 	
 	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence, RenderType renderType) {
-		Minecraft client = Minecraft.getInstance();
-		Vec3 cameraPos = client.gameRenderer.getMainCamera().position();
-		float viewDistance = client.gameRenderer.getRenderDistance();
-		
+		Minecraft minecraft = Minecraft.getInstance();
+		Vec3 cameraPos = minecraft.gameRenderer.getMainCamera().position();
+		float viewDistance = minecraft.options.getEffectiveRenderDistance() * 16;
+
 		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
 		
 		List<GSCubeEntry> cubes = new ArrayList<>();
