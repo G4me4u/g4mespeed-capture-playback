@@ -92,7 +92,12 @@ public class GSCapturePlaybackServerModule implements GSIServerModule, GSIAssetH
 	public void onPlayerLeave(ServerPlayer player) {
 		sessionManager.stopAll(player);
 	}
-	
+
+	@Override
+	public void onAutoSave() {
+		assetManager.saveAll();
+	}
+
 	public boolean onSessionRequest(ServerPlayer player, GSESessionRequestType requestType, UUID assetUUID) {
 		return sessionManager.onRequest(player, requestType, assetUUID);
 	}

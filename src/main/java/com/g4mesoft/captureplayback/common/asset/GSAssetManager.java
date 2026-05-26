@@ -347,6 +347,15 @@ public class GSAssetManager implements GSIAssetStorageListener 	{
 			storage.unloadAll();
 	}
 	
+	public boolean saveAll() {
+		boolean success = true;
+		for (GSAssetStorage storage : storages) {
+			if (!storage.saveAll())
+				success = false;
+		}
+		return success;
+	}
+	
 	public GSIAssetHistory getStoredHistory() {
 		return combinedHistory;
 	}
