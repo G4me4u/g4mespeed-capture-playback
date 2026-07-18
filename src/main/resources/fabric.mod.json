@@ -29,9 +29,9 @@
   ],
 
   "depends": {
-  	"minecraft": "1.20.x",
-  	"g4mespeed": ">=1.4.12",
-  	"g4mespeed-ui": ">=0.9.8"
+    "minecraft": "1.20.x",
+    "g4mespeed": ">=1.6.0",
+    "g4mespeed-ui": ">=0.9.8"
   },
 
   "custom": {
