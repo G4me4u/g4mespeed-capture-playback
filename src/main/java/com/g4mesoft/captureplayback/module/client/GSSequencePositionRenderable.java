@@ -11,7 +11,7 @@ import com.g4mesoft.captureplayback.sequence.GSChannelInfo;
 import com.g4mesoft.captureplayback.sequence.GSSequence;
 import com.g4mesoft.captureplayback.session.GSESessionType;
 import com.g4mesoft.captureplayback.session.GSSession;
-import com.g4mesoft.ui.renderer.GSERenderPhase;
+import com.g4mesoft.ui.renderer.GSIRenderCollector3D;
 import com.g4mesoft.ui.renderer.GSIRenderable3D;
 import com.g4mesoft.ui.renderer.GSIRenderer3D;
 import com.g4mesoft.ui.renderer.GSRenderLayers;
@@ -42,17 +42,17 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 	}
 	
 	@Override
-	public void render(GSIRenderer3D renderer) {
+	public void render(GSIRenderCollector3D renderCollector) {
 		GSSession session = assetManager.getSession(GSESessionType.SEQUENCE);
 		if (session != null) {
 			GSSequence sequence = session.get(GSSession.SEQUENCE);
 			
 			switch(module.cChannelRenderingType.get()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
-				renderCubes(renderer, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS);
+				renderCubes(renderCollector, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_NO_DEPTH:
-				renderCubes(renderer, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS_NO_DEPTH);
+				renderCubes(renderCollector, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS_NO_DEPTH);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_DISABLED:
 			default:
@@ -62,9 +62,9 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		}
 	}
 	
-	private void renderCubes(GSIRenderer3D renderer, GSSession session, GSSequence sequence, RenderType renderType) {
+	private void renderCubes(GSIRenderCollector3D renderCollector, GSSession session, GSSequence sequence, RenderType renderType) {
 		Minecraft minecraft = Minecraft.getInstance();
-		Vec3 cameraPos = minecraft.gameRenderer.getMainCamera().position();
+		Vec3 cameraPos = minecraft.gameRenderer.mainCamera().position();
 		float viewDistance = minecraft.options.getEffectiveRenderDistance() * 16;
 
 		UUID selectedChannelUUID = session.get(GSSession.SELECTED_CHANNEL);
@@ -91,34 +91,32 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			return Float.compare(c1.dist, c0.dist);
 		});
 		
-		renderer.build(renderType);
+		renderCollector.submit(renderType, renderer -> {
+			for (GSCubeEntry cube : cubes) {
+				// Render cube relative to camera position
+				float rx = (float)(cube.position.getX() - cameraPos.x());
+				float ry = (float)(cube.position.getY() - cameraPos.y());
+				float rz = (float)(cube.position.getZ() - cameraPos.z());
+				
+				// Offset edges to fix issues with z-fighting
+				float offset = Math.max(MINIMUM_SURFACE_OFFSET, cube.dist * UNIT_SURFACE_OFFSET);
 
-		for (GSCubeEntry cube : cubes) {
-			// Render cube relative to camera position
-			float rx = (float)(cube.position.getX() - cameraPos.x());
-			float ry = (float)(cube.position.getY() - cameraPos.y());
-			float rz = (float)(cube.position.getZ() - cameraPos.z());
-			
-			// Offset edges to fix issues with z-fighting
-			float offset = Math.max(MINIMUM_SURFACE_OFFSET, cube.dist * UNIT_SURFACE_OFFSET);
-
-			// Draw transparent overlay
-			int color = (cube.color & 0x00FFFFFF) | (COLOR_ALPHA << 24);
-			renderer.fillCuboid(rx - offset,
-			                    ry - offset,
-			                    rz - offset,
-			                    rx + 1.0f + offset,
-			                    ry + 1.0f + offset,
-			                    rz + 1.0f + offset,
-			                    color);
-			
-			// Draw solid selection outline
-			if (cube.selected) {
-				renderSelectedOutline(renderer, rx, ry, rz, 2.0f * offset, 0xA0FFFFFF);
+				// Draw transparent overlay
+				int color = (cube.color & 0x00FFFFFF) | (COLOR_ALPHA << 24);
+				renderer.fillCuboid(rx - offset,
+				                    ry - offset,
+				                    rz - offset,
+				                    rx + 1.0f + offset,
+				                    ry + 1.0f + offset,
+				                    rz + 1.0f + offset,
+				                    color);
+				
+				// Draw solid selection outline
+				if (cube.selected) {
+					renderSelectedOutline(renderer, rx, ry, rz, 2.0f * offset, 0xA0FFFFFF);
+				}
 			}
-		}
-		
-		renderer.finish();
+		});
 	}
 	
 	private void renderSelectedOutline(GSIRenderer3D renderer, float rx, float ry, float rz, float offset, int color) {
@@ -142,11 +140,6 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			
 			renderer.vert(x0, y0, z0).color(r, g, b, a).next();
 		}
-	}
-	
-	@Override
-	public GSERenderPhase getRenderPhase() {
-		return GSERenderPhase.TRANSPARENT_LAST;
 	}
 	
 	private static float[] computeSelectionVertices(float thickness, float notch) {
