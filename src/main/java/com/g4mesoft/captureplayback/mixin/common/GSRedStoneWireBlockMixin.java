@@ -10,9 +10,9 @@ import com.g4mesoft.captureplayback.access.GSILevelAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.RedStoneWireBlock;
+import net.minecraft.world.level.block.RedstoneWireBlock;
 
-@Mixin(RedStoneWireBlock.class)
+@Mixin(RedstoneWireBlock.class)
 public class GSRedStoneWireBlockMixin {
 
 	@Inject(

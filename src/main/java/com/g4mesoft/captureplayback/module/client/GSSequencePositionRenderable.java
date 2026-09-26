@@ -18,7 +18,6 @@ import com.g4mesoft.ui.renderer.GSRenderLayers;
 import com.g4mesoft.ui.util.GSColorUtil;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -49,10 +48,10 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			
 			switch(module.cChannelRenderingType.get()) {
 			case GSCapturePlaybackClientModule.RENDERING_DEPTH:
-				renderCubes(renderCollector, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS);
+				renderCubes(renderCollector, session, sequence, false);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_NO_DEPTH:
-				renderCubes(renderCollector, session, sequence, GSRenderLayers.POSITION_COLOR_QUADS_NO_DEPTH);
+				renderCubes(renderCollector, session, sequence, true);
 				break;
 			case GSCapturePlaybackClientModule.RENDERING_DISABLED:
 			default:
@@ -62,7 +61,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 		}
 	}
 	
-	private void renderCubes(GSIRenderCollector3D renderCollector, GSSession session, GSSequence sequence, RenderType renderType) {
+	private void renderCubes(GSIRenderCollector3D renderCollector, GSSession session, GSSequence sequence, boolean alwaysOnTop) {
 		Minecraft minecraft = Minecraft.getInstance();
 		Vec3 cameraPos = minecraft.gameRenderer.mainCamera().position();
 		float viewDistance = minecraft.options.getEffectiveRenderDistance() * 16;
@@ -91,7 +90,7 @@ public class GSSequencePositionRenderable implements GSIRenderable3D {
 			return Float.compare(c1.dist, c0.dist);
 		});
 		
-		renderCollector.submit(renderType, renderer -> {
+		renderCollector.submit(GSRenderLayers.POSITION_COLOR_QUADS, alwaysOnTop, renderer -> {
 			for (GSCubeEntry cube : cubes) {
 				// Render cube relative to camera position
 				float rx = (float)(cube.position.getX() - cameraPos.x());

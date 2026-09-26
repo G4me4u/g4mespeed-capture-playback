@@ -2,7 +2,7 @@ package com.g4mesoft.captureplayback.module.client;
 
 import java.util.function.Function;
 
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLScancode;
 
 import com.g4mesoft.captureplayback.gui.GSCapturePlaybackPanel;
 import com.g4mesoft.captureplayback.gui.GSDefaultChannelProvider;
@@ -76,23 +76,23 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 	
 	@Override
 	public void registerHotkeys(GSKeyManager keyManager) {
-		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN,
+		keyManager.registerKey("channelRenderingType", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN,
 				cChannelRenderingType::increment, GSEKeyEventType.PRESS);
 		
-		keyManager.registerKey("newChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::createNewChannel, GSEKeyEventType.PRESS);
+		keyManager.registerKey("newChannel", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, this::createNewChannel, GSEKeyEventType.PRESS);
 		
-		keyManager.registerKey("extendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::extendChannel, GSEKeyEventType.PRESS);
+		keyManager.registerKey("extendChannel", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, this::extendChannel, GSEKeyEventType.PRESS);
 		
-		keyManager.registerKey("unextendChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, this::unextendChannel, GSEKeyEventType.PRESS);
+		keyManager.registerKey("unextendChannel", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, this::unextendChannel, GSEKeyEventType.PRESS);
 
-		keyManager.registerKey("selectChannel", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, () -> {
+		keyManager.registerKey("selectChannel", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, () -> {
 			GSSession session = assetManager.getSession(GSESessionType.SEQUENCE);
 			GSChannel channel = getChannelAtCrosshair(session);
 			if (channel != null && session != null)
 				session.set(GSSession.SELECTED_CHANNEL, channel.getChannelUUID());
 		}, GSEKeyEventType.PRESS);
 		
-		keyManager.registerKey("pasteChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+		keyManager.registerKey("pasteChannelColor", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, channel -> {
 			GSSession session = assetManager.getSession(GSESessionType.SEQUENCE);
 			
 			if (session != null) {
@@ -104,15 +104,15 @@ public class GSCapturePlaybackClientModule implements GSIClientModule, GSISessio
 			return channel.getInfo();
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
-		keyManager.registerKey("brightenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+		keyManager.registerKey("brightenChannelColor", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, channel -> {
 			return channel.getInfo().withColor(GSColorUtil.brighter(channel.getInfo().getColor()));
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
-		keyManager.registerKey("darkenChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+		keyManager.registerKey("darkenChannelColor", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, channel -> {
 			return channel.getInfo().withColor(GSColorUtil.darker(channel.getInfo().getColor()));
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 
-		keyManager.registerKey("randomizeChannelColor", KEY_CATEGORY, GLFW.GLFW_KEY_UNKNOWN, channel -> {
+		keyManager.registerKey("randomizeChannelColor", KEY_CATEGORY, SDLScancode.SDL_SCANCODE_UNKNOWN, channel -> {
 			return channel.getInfo().withColor(GSDefaultChannelProvider.getUniqueColor(channel.getParent()));
 		}, this::modifyCrosshairChannel, GSEKeyEventType.PRESS);
 	}
