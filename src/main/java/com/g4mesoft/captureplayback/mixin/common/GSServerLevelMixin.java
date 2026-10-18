@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import com.g4mesoft.captureplayback.CapturePlaybackMod;
 import com.g4mesoft.captureplayback.GSCapturePlaybackExtension;
 import com.g4mesoft.captureplayback.access.GSIServerLevelAccess;
 import com.g4mesoft.captureplayback.access.GSILevelAccess;
@@ -182,6 +183,14 @@ public abstract class GSServerLevelMixin extends Level implements GSIServerLevel
 		at = @At("RETURN")
 	)
 	public void onTickReturn(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+        if (gcp_signalFrame.hasNext()) {
+            CapturePlaybackMod.GSCP_LOGGER.warn("{} unhandled playback event(s) at end of tick in {}",
+                    gcp_signalFrame.remaining(), dimension().location().toString());
+            // Should never happen and indicates a skipped phase.
+            while (gcp_signalFrame.hasNext())
+                handleSignalEvent(gcp_signalFrame.next());
+        }
+
 		if (!gcp_captureStreams.isEmpty()) {
 			gcp_signalFrame.reset();
 			
